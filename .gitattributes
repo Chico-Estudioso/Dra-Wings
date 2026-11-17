@@ -1,0 +1,8 @@
+# Finales de línea LF en todas las plataformas (Prettier y el CI de Windows lo esperan).
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.woff2 binary
+*.dwings binary
+*.mp4 binary
+*.wav binary
