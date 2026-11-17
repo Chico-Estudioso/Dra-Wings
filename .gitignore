@@ -35,3 +35,4 @@ test-media/private/
 # Pruebas
 test-results/
 playwright-report/
+*.tsbuildinfo
