@@ -14,7 +14,7 @@ Los modos comparten el mismo formato de proyecto.
 
 ## Estado
 
-Proyecto en fase de investigación y diseño. Las tecnologías y arquitectura definitivas se aprobarán durante M0, antes de construir funcionalidades.
+M0 (arquitectura) y M1 (fundación: proyectos, guardado y recuperación) completados. Siguiente: M2, lienzo y dibujo. Ver `ROADMAP.md`.
 
 ## Principios
 
@@ -27,6 +27,18 @@ Proyecto en fase de investigación y diseño. Las tecnologías y arquitectura de
 
 ## Desarrollo
 
-Consulta `CLAUDE.md`, `AGENTS.md`, `ROADMAP.md` y `prompts/README.md` (orden de las fases).
+Requisitos: Node.js 22 o superior.
+
+```bash
+npm ci             # instalar dependencias
+npm run dev        # app en modo desarrollo con recarga en caliente
+npm run check      # lint, formato, typecheck y pruebas unitarias
+npm run build      # compilar
+npm run test:e2e   # pruebas E2E con Electron (requiere build; en Linux sin pantalla: xvfb-run -a)
+```
+
+Estructura: `src/main` (proceso principal), `src/preload` (puente seguro), `src/renderer` (interfaz React), `src/core` (modelo, tiempo y, más adelante, motor y render; TypeScript puro), `src/shared` (contrato IPC) y `tests/` (unitarias y E2E).
+
+Arquitectura y decisiones: `docs/ARCHITECTURE.md` y `docs/decisions/`. Normas de trabajo: `CLAUDE.md`, `AGENTS.md` y `prompts/README.md`.
 
 Toda contribución debe seguir el flujo de ramas y Pull Requests descrito en `CONTRIBUTING.md`.

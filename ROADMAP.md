@@ -7,7 +7,7 @@ Estado: M0 completado. Siguiente: M1.
 - Prototipo `prototypes/m0` ejecutado en Linux y Windows (y macOS en CI): render determinista, trazos progresivos, exportación MP4 con audio sincronizado.
 - **Salida:** arquitectura y decisiones documentadas en `docs/`.
 
-## M1 — Fundación de la aplicación
+## M1 — Fundación de la aplicación ✅
 - Crear proyecto de escritorio y estructura base.
 - Navegación principal y gestión de proyectos.
 - Guardado, apertura, autosave y recuperación básica.

@@ -64,9 +64,15 @@ AnimatedTransform = { x; y; scaleX; scaleY; rotation; anchorX; anchorY }   // ca
 
 ## Guardado
 
-1. Serializar → `nombre.dwings.tmp` en la misma carpeta → `fsync`.
-2. Si existe `nombre.dwings`, renombrarlo a `nombre.dwings.bak` (sustituye al anterior).
-3. Renombrar `.tmp` → `nombre.dwings`.
-4. Si cualquier paso falla, el archivo original queda intacto y se informa del error.
+Implementado en `src/main/project-file.ts`:
 
-Autoguardado: cada 30 s con cambios pendientes, `project.json` + `manifest.json` se escriben en `userData/recovery/<projectId>/`. Los medios nuevos aún no guardados viven en `userData/media-cache/`. Al abrir, si hay recuperación más reciente que el archivo, se ofrece restaurarla.
+1. Serializar → `nombre.dwings.tmp` en la misma carpeta → `fsync`.
+2. Si existe `nombre.dwings`, copiarlo a `nombre.dwings.bak` (sustituye al anterior).
+3. Renombrar `.tmp` → `nombre.dwings` (reemplazo atómico, con reintentos si Windows bloquea el archivo un instante). El destino nunca desaparece.
+4. Si cualquier paso falla, se borra el `.tmp`, el archivo original queda intacto y se informa del error (disco lleno, permisos…).
+
+Autoguardado (`src/main/recovery.ts`): 3 s después del último cambio, el documento se escribe en `userData/recovery/<projectId>.json` junto con la ruta de su archivo. Al guardar se borra. En la pantalla de inicio se ofrecen las recuperaciones más recientes que su archivo (o de proyectos nunca guardados) para restaurarlas o descartarlas. Los medios nuevos aún no guardados vivirán en `userData/media-cache/` (M3/M5).
+
+## Seguridad de rutas
+
+El proceso principal es la única autoridad sobre rutas. El renderer solo puede pedir «abrir con diálogo», «abrir un reciente» (la ruta debe estar en la lista de recientes), «guardar» (en la ruta que el proceso principal asoció al proyecto) o «guardar como» (con diálogo). Nunca envía una ruta arbitraria para leer o escribir.

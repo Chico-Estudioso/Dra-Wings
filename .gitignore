@@ -31,3 +31,7 @@ test-media/private/
 *.log
 *.tmp
 *.temp
+
+# Pruebas
+test-results/
+playwright-report/

@@ -5,15 +5,47 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validate:
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
     steps:
-      - name: Obtener repositorio
-        uses: actions/checkout@v4
-      - name: Mostrar estructura inicial
-        run: |
-          Write-Host "Repositorio descargado correctamente."
-          Get-ChildItem
-      # Añadir aquí lint, typecheck, pruebas y build cuando M1 configure
-      # las herramientas y scripts reales del proyecto.
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - name: Instalar dependencias
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Formato
+        run: npx prettier --check .
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Pruebas unitarias
+        run: npm test
+      - name: Build
+        run: npm run build
+      - name: Pruebas E2E (Windows)
+        if: runner.os == 'Windows'
+        run: npx playwright test
+      - name: Pruebas E2E (Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: resultados-e2e-${{ matrix.os }}
+          path: test-results/
+          retention-days: 7

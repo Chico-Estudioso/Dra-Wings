@@ -1,0 +1,64 @@
+// Operaciones de documento que hablan con el proceso principal.
+import { createProject, type NewProjectOptions } from '@core/model/factory';
+import type { OpenResult } from '@shared/ipc';
+import { useApp } from './app-store';
+
+const state = () => useApp.getState();
+
+function handleOpenResult(r: OpenResult): boolean {
+  if (r.status === 'canceled') return false;
+  if (r.status === 'error') {
+    state().notify({ kind: 'error', text: r.message, details: r.details });
+    return false;
+  }
+  state().openDoc(r.project, r.filePath, { dirty: r.fromRecovery });
+  if (r.migrated)
+    state().notify({
+      kind: 'info',
+      text: 'El proyecto se ha actualizado al formato actual. Se guardará en el nuevo formato.',
+    });
+  if (r.fromRecovery)
+    state().notify({
+      kind: 'info',
+      text: 'Se ha restaurado el trabajo sin guardar. Guarda el proyecto para conservarlo.',
+    });
+  return true;
+}
+
+export async function saveCurrent(saveAs = false): Promise<boolean> {
+  const doc = state().doc;
+  if (!doc) return false;
+  const snapshot = doc.project;
+  state().setSaveStatus('saving');
+  const r = await window.dw.saveProject(snapshot, saveAs);
+  if (r.status === 'ok') {
+    state().markSaved(r.filePath, r.savedAt, snapshot);
+    return true;
+  }
+  state().setSaveStatus(r.status === 'canceled' ? (doc.dirty ? 'unsaved' : 'saved') : 'error');
+  if (r.status === 'error') state().notify({ kind: 'error', text: r.message });
+  return false;
+}
+
+export function newProject(opts: NewProjectOptions): void {
+  state().openDoc(createProject(opts), null, { dirty: true });
+}
+
+export async function openWithDialog(): Promise<boolean> {
+  return handleOpenResult(await window.dw.openProject());
+}
+
+export async function openRecent(filePath: string): Promise<boolean> {
+  return handleOpenResult(await window.dw.openProject(filePath));
+}
+
+export async function restoreRecovery(projectId: string): Promise<boolean> {
+  return handleOpenResult(await window.dw.restoreRecovery(projectId));
+}
+
+/** Descarta el documento actual (y su copia de recuperación). */
+export async function discardCurrent(): Promise<void> {
+  const doc = state().doc;
+  if (doc?.dirty) await window.dw.discardRecovery(doc.project.id);
+  state().closeDoc();
+}
