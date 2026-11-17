@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import * as Popover from '@radix-ui/react-popover';
 import {
   AudioLines,
@@ -26,13 +26,14 @@ import { snapTo, trimmed, type TrackKind } from '@core/audio/edit';
 import { sceneStart } from '@core/edit/scenes';
 import { keyTimes, transformKeyTimes } from '@core/anim/keyframes';
 import { celAt, layerItemCount } from '@core/edit/ops';
-import type { AudioClip, AudioTrack, Item, Layer, Project, Scene } from '@core/model/types';
+import type { AudioClip, AudioTrack, Cel, Item, Layer, Project, Scene } from '@core/model/types';
 import {
   formatTimecode,
   secondsFromTicks,
   snapToFrame,
   TICKS_PER_SECOND,
   ticksFromSeconds,
+  type Fps,
   type Ticks,
 } from '@core/time/ticks';
 import {
@@ -47,6 +48,7 @@ import {
   updateCurrentScene,
 } from './actions';
 import { TIMELINE_MIN_H, useEditor } from './editor-store';
+import { itemName } from './item-names';
 import { addMarkerAtPlayhead, importAudio, moveClipTo, moveMarkerTo, trimClipBy, updateTrack } from './media-actions';
 import { togglePlay } from './playback';
 import { Waveform } from './Waveform';
@@ -100,44 +102,46 @@ function SceneTabs({ project, sceneId }: { project: Project; sceneId: string }) 
   const [renaming, setRenaming] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   return (
-    <div className="tl-scenes" role="tablist" aria-label="Escenas">
-      {project.scenes.map((s) =>
-        renaming === s.id ? (
-          <input
-            key={s.id}
-            className="input input-sm tl-scene-input"
-            aria-label="Nombre de la escena"
-            autoFocus
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={() => {
-              const v = draft.trim();
-              if (v && v !== s.name) updateCurrentScene('Renombrar escena', (sc) => void (sc.name = v));
-              setRenaming(null);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') e.currentTarget.blur();
-              if (e.key === 'Escape') setRenaming(null);
-            }}
-          />
-        ) : (
-          <button
-            key={s.id}
-            role="tab"
-            aria-selected={s.id === sceneId}
-            className={`tl-scene ${s.id === sceneId ? 'is-active' : ''}`}
-            title="Doble clic para renombrar"
-            onClick={() => goToScene(s.id)}
-            onDoubleClick={() => {
-              goToScene(s.id);
-              setDraft(s.name);
-              setRenaming(s.id);
-            }}
-          >
-            {s.name}
-          </button>
-        ),
-      )}
+    <div className="tl-scenes">
+      <div className="tl-scene-tabs" role="tablist" aria-label="Escenas">
+        {project.scenes.map((s) =>
+          renaming === s.id ? (
+            <input
+              key={s.id}
+              className="input input-sm tl-scene-input"
+              aria-label="Nombre de la escena"
+              autoFocus
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onBlur={() => {
+                const v = draft.trim();
+                if (v && v !== s.name) updateCurrentScene('Renombrar escena', (sc) => void (sc.name = v));
+                setRenaming(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') e.currentTarget.blur();
+                if (e.key === 'Escape') setRenaming(null);
+              }}
+            />
+          ) : (
+            <button
+              key={s.id}
+              role="tab"
+              aria-selected={s.id === sceneId}
+              className={`tl-scene ${s.id === sceneId ? 'is-active' : ''}`}
+              title="Doble clic para renombrar"
+              onClick={() => goToScene(s.id)}
+              onDoubleClick={() => {
+                goToScene(s.id);
+                setDraft(s.name);
+                setRenaming(s.id);
+              }}
+            >
+              {s.name}
+            </button>
+          ),
+        )}
+      </div>
       <button
         className="icon-btn icon-btn-sm"
         aria-label="Nueva escena"
@@ -211,21 +215,85 @@ function DurationInput({ scene }: { scene: Scene }) {
   );
 }
 
+// Piezas que dependen del cabezal: se suscriben por su cuenta para que la línea de tiempo entera
+// no se vuelva a renderizar en cada fotograma de la reproducción.
+
+function TimeReadout({ fps, duration }: { fps: Fps; duration: Ticks }) {
+  const playhead = useEditor((s) => s.playhead);
+  return (
+    <span className="tl-time" data-testid="timeline-time">
+      {formatTimecode(playhead, fps)} / {formatTimecode(duration, fps)}
+    </span>
+  );
+}
+
+function PlayheadLine({ pxPerTick }: { pxPerTick: number }) {
+  const playhead = useEditor((s) => s.playhead);
+  return <div className="tl-playhead" style={{ left: playhead * pxPerTick }} />;
+}
+
+function KeyButton({ t, label, style, camera }: { t: Ticks; label: string; style: CSSProperties; camera?: boolean }) {
+  const current = useEditor((s) => s.playhead === t);
+  return (
+    <button
+      className={`tl-key ${camera ? 'tl-key-camera' : ''} ${current ? 'is-current' : ''}`}
+      style={style}
+      aria-label={label}
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={() => useEditor.getState().setPlayhead(t)}
+    />
+  );
+}
+
+function CelButton({ layer, cel, index, pxPerTick }: { layer: Layer; cel: Cel; index: number; pxPerTick: number }) {
+  const current = useEditor((s) => celAt(layer, s.playhead)?.id === cel.id);
+  return (
+    <button
+      className={`tl-cel ${current ? 'is-current' : ''}`}
+      style={{ left: cel.start * pxPerTick, width: Math.max(4, cel.duration * pxPerTick - 1), top: ROW_PAD }}
+      title={`Fotograma ${index + 1}`}
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={() => {
+        useEditor.getState().setActiveLayer(layer.id);
+        useEditor.getState().setPlayhead(cel.start);
+      }}
+    >
+      {cel.duration * pxPerTick > 16 ? index + 1 : ''}
+    </button>
+  );
+}
+
 /** Tirador para cambiar el alto de la línea de tiempo (arrastrar o flechas). */
 function TimelineResizer() {
+  const ref = useRef<HTMLDivElement>(null);
   const start = useRef<{ y: number; h: number } | null>(null);
-  const current = () =>
-    document.querySelector<HTMLElement>('.timeline')?.getBoundingClientRect().height ?? TIMELINE_MIN_H;
+  const [height, setHeight] = useState(0);
+  const [maxH, setMaxH] = useState(0);
+  // Alto real de la línea de tiempo, para anunciarlo a los lectores de pantalla.
+  useLayoutEffect(() => {
+    const section = ref.current?.parentElement;
+    if (!section) return;
+    const ro = new ResizeObserver(() => {
+      setHeight(Math.round(section.getBoundingClientRect().height));
+      setMaxH(Math.round(window.innerHeight * 0.6));
+    });
+    ro.observe(section);
+    return () => ro.disconnect();
+  }, []);
+  const current = () => ref.current?.parentElement?.getBoundingClientRect().height ?? TIMELINE_MIN_H;
   const set = (h: number) => useEditor.getState().setTimelineHeight(Math.min(h, window.innerHeight * 0.6));
   return (
     <div
+      ref={ref}
       className="tl-resizer"
       role="separator"
       aria-orientation="horizontal"
       aria-label="Alto de la línea de tiempo"
-      aria-valuenow={Math.round(useEditor.getState().timelineHeight ?? 0) || undefined}
+      aria-valuemin={TIMELINE_MIN_H}
+      aria-valuemax={Math.max(TIMELINE_MIN_H, maxH)}
+      aria-valuenow={Math.max(TIMELINE_MIN_H, height)}
       tabIndex={0}
-      title="Arrastra para cambiar el alto"
+      title="Arrastra o usa las flechas para cambiar el alto"
       onPointerDown={(e) => {
         e.currentTarget.setPointerCapture(e.pointerId);
         start.current = { y: e.clientY, h: current() };
@@ -244,7 +312,6 @@ function TimelineResizer() {
 }
 
 export function Timeline({ project, scene }: { project: Project; scene: Scene }) {
-  const playhead = useEditor((s) => s.playhead);
   const playing = useEditor((s) => s.playing);
   const preview = useEditor((s) => s.preview);
   const autoKey = useEditor((s) => s.autoKey);
@@ -301,6 +368,7 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
       // Ajuste magnético a marcas y al cabezal (Alt lo desactiva). Los elementos usan tiempo de escena.
       const local = d.kind === 'shift';
       const targets = project.markers.map((m) => (local ? m.t - offset : m.t));
+      const playhead = useEditor.getState().playhead;
       if (d.kind !== 'marker') targets.push(local ? playhead : offset + playhead);
       const tol = SNAP_PX / pxPerTick;
       const snapped = snapTo(d.base + dt, targets, tol) - d.base;
@@ -379,19 +447,7 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
       return (
         <div key={layer.id} className="tl-row" style={{ height: LANE_H + ROW_PAD * 2 }}>
           {(layer.cels ?? []).map((c, i) => (
-            <button
-              key={c.id}
-              className={`tl-cel ${celAt(layer, playhead) === c ? 'is-current' : ''}`}
-              style={{ left: c.start * pxPerTick, width: Math.max(4, c.duration * pxPerTick - 1), top: ROW_PAD }}
-              title={`Fotograma ${i + 1}`}
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={() => {
-                ed.setActiveLayer(layer.id);
-                ed.setPlayhead(c.start);
-              }}
-            >
-              {c.duration * pxPerTick > 16 ? i + 1 : ''}
-            </button>
+            <CelButton key={c.id} layer={layer} cel={c} index={i} pxPerTick={pxPerTick} />
           ))}
         </div>
       );
@@ -415,7 +471,7 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
               <div
                 className={`tl-bar ${isSel ? 'is-selected' : ''} tl-${b.item.enter?.kind ?? 'none'}`}
                 style={{ width: drawW }}
-                title={`${b.item.name ?? nameOf(b.item)} · aparece en ${formatTimecode(b.start, fps)}`}
+                title={`${itemName(b.item)} · aparece en ${formatTimecode(b.start, fps)}`}
                 data-testid="timeline-bar"
                 onPointerDown={(e) => startBarDrag(e, b, 'shift')}
               >
@@ -424,13 +480,11 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
               <div className="tl-tail" style={{ left: drawW, width: tailW }} />
               {isSel &&
                 keyTimes(b.item).map((k) => (
-                  <button
+                  <KeyButton
                     key={k}
-                    className={`tl-key ${k === playhead ? 'is-current' : ''}`}
+                    t={k}
                     style={{ left: (k - b.start) * pxPerTick }}
-                    aria-label={`Keyframe en ${formatTimecode(k, fps)}`}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onClick={() => ed.setPlayhead(k)}
+                    label={`Keyframe en ${formatTimecode(k, fps)}`}
                   />
                 ))}
             </div>
@@ -519,9 +573,7 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
         >
           {playing ? <Pause size={18} /> : <Play size={18} />}
         </button>
-        <span className="tl-time" data-testid="timeline-time">
-          {formatTimecode(playhead, fps)} / {formatTimecode(scene.duration, fps)}
-        </span>
+        <TimeReadout fps={fps} duration={scene.duration} />
         <SceneTabs project={project} sceneId={scene.id} />
         <span className="topbar-spacer" />
         <DurationInput key={scene.id + scene.duration} scene={scene} />
@@ -696,13 +748,12 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
             {cameraKeys.length > 0 && (
               <div className="tl-row" style={{ height: LANE_H + ROW_PAD * 2 }}>
                 {cameraKeys.map((k) => (
-                  <button
+                  <KeyButton
                     key={k}
-                    className={`tl-key tl-key-camera ${k === playhead ? 'is-current' : ''}`}
+                    t={k}
+                    camera
                     style={{ left: k * pxPerTick, top: ROW_PAD + 2 }}
-                    aria-label={`Keyframe de cámara en ${formatTimecode(k, fps)}`}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onClick={() => ed.setPlayhead(k)}
+                    label={`Keyframe de cámara en ${formatTimecode(k, fps)}`}
                   />
                 ))}
               </div>
@@ -716,26 +767,11 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
             {markersHere.map((m) => (
               <div key={m.id} className="tl-marker-line" style={{ left: (m.t - offset) * pxPerTick }} />
             ))}
-            <div className="tl-playhead" style={{ left: playhead * pxPerTick }} />
+            <PlayheadLine pxPerTick={pxPerTick} />
             <div className="tl-after-end" style={{ left: scene.duration * pxPerTick }} />
           </div>
         </div>
       </div>
     </section>
   );
-}
-
-function nameOf(item: Item): string {
-  switch (item.type) {
-    case 'stroke':
-      return 'Trazo';
-    case 'shape':
-      return 'Forma';
-    case 'text':
-      return `Texto «${item.text.slice(0, 20)}»`;
-    case 'group':
-      return 'Grupo';
-    case 'image':
-      return 'Imagen';
-  }
 }

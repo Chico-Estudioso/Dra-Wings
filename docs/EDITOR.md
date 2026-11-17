@@ -46,6 +46,8 @@ Al crear una forma se activa Seleccionar con la forma ya seleccionada, lista par
 | Keyframe anterior / siguiente de la selección | Mayús+, y Mayús+. |
 | Añadir marca en el cabezal | M |
 | Exportar vídeo | Ctrl+E |
+| Hoja de atajos | ? o F1 |
+| Recorrer los elementos (con el lienzo enfocado) | Tab / Mayús+Tab |
 | Eliminar el clip de audio o la marca seleccionados | Supr o Retroceso |
 
 ## Comportamiento de la goma
@@ -84,6 +86,7 @@ Ver `docs/LIBRARY.md`: recursos, constructor de personajes, escenas de partida, 
 ## Capas
 
 - La lista muestra arriba la capa que se dibuja encima. Siempre queda al menos una.
+- Clic en el nombre para dibujar en esa capa; doble clic o F2 para renombrarla.
 - Los elementos nuevos van a la capa activa. Si está oculta o bloqueada, se avisa y no se dibuja.
 - Los elementos de capas ocultas o bloqueadas no se pueden seleccionar.
 

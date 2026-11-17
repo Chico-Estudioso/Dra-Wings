@@ -8,6 +8,7 @@ import { Editor } from './screens/Editor';
 import { NewProjectDialog } from './components/NewProjectDialog';
 import { LeaveDialog } from './components/LeaveDialog';
 import { NoticeBar } from './components/NoticeBar';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { openExportDialog } from './export/ExportDialog';
 
 export function App() {
@@ -53,7 +54,7 @@ export function App() {
 
   return (
     <>
-      {screen === 'home' ? <Home /> : <Editor />}
+      <ErrorBoundary key={screen}>{screen === 'home' ? <Home /> : <Editor />}</ErrorBoundary>
       <NewProjectDialog />
       <LeaveDialog />
       <NoticeBar />

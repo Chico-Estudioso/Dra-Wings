@@ -39,10 +39,11 @@ El modo Libre no recorta nada: solo oculta ayudas.
 - Interfaz en español, con textos cortos y verbos claros («Añadir escena», «Exportar vídeo»).
 - Estado de guardado siempre visible: «Guardado», «Cambios sin guardar» o «Guardando…».
 - Deshacer y rehacer con Ctrl+Z, Ctrl+Y y Ctrl+Mayús+Z, más botones en la barra.
-- Atajos visibles en los *tooltips* y en una hoja de atajos (tecla `?`).
+- Atajos visibles en los *tooltips* y en una hoja de atajos (tecla `?` o F1, o el botón del teclado en la barra de estado).
 - Operaciones largas con barra de progreso y botón Cancelar. Nunca un diálogo modal sin salida.
 - Los errores explican qué ha pasado y qué hacer («No se pudo guardar: el disco está lleno. Libera espacio y vuelve a intentarlo.»).
-- Foco visible, todo accesible con teclado, contraste AA, y estados que no dependen solo del color.
+- Foco visible, todo accesible con teclado, contraste AA, y estados que no dependen solo del color. Se comprueba en cada PR con axe (WCAG 2.1 AA, temas claro y oscuro). El naranja de acento es `#c2521e` en el tema claro para que el texto blanco de los botones cumpla 4,5:1.
+- El lienzo también se maneja con teclado: con el foco en él, Tab y Mayús+Tab recorren los elementos (se anuncia cuál está seleccionado), las flechas los mueven y Supr los elimina.
 - Tableta gráfica: la presión se usa cuando el sistema la proporciona. Si no hay presión, el grosor es constante; no se inventa.
 - Tema claro por defecto (el lienzo es «papel») y tema oscuro para la interfaz.
 
@@ -51,6 +52,7 @@ El modo Libre no recorta nada: solo oculta ayudas.
 - «Nuevo proyecto» (nombre, formato 16:9, 1:1 o 9:16, FPS y modo inicial).
 - «Abrir…» y la lista de recientes con miniatura. Los recientes que ya no existen se marcan y se pueden quitar.
 - Si hay una recuperación pendiente, aparece primero: «Restaurar» o «Descartar».
+- Mientras no hay proyectos recientes, una guía breve explica en cuatro pasos cómo se hace un vídeo.
 
 ## Puntos de confusión previstos para principiantes
 

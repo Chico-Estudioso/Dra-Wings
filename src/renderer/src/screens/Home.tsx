@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { FileWarning, FolderOpen, History, Plus, RotateCcw, Trash2, X } from 'lucide-react';
+import { Film, FileWarning, FolderOpen, History, Mic, Plus, RotateCcw, Shapes, Trash2, X } from 'lucide-react';
 import type { RecentEntry, RecoveryEntry } from '@shared/ipc';
 import { useApp } from '../state/app-store';
 import { openRecent, openWithDialog, restoreRecovery } from '../state/doc-actions';
@@ -71,6 +71,40 @@ export function Home() {
           <FolderOpen size={20} aria-hidden /> Abrir proyecto…
         </button>
       </div>
+
+      {recent.length === 0 && recovery.length === 0 && (
+        <section aria-labelledby="steps-title" className="first-steps">
+          <h2 id="steps-title" className="section-title">
+            Cómo se hace un vídeo
+          </h2>
+          <ol className="steps">
+            <li>
+              <Plus size={20} aria-hidden />
+              <span>
+                <strong>Crea un proyecto.</strong> Si no dibujas, elige el modo Guiado.
+              </span>
+            </li>
+            <li>
+              <Shapes size={20} aria-hidden />
+              <span>
+                <strong>Añade personajes y escenas</strong> de la Biblioteca, o dibuja: todo aparece dibujándose solo.
+              </span>
+            </li>
+            <li>
+              <Mic size={20} aria-hidden />
+              <span>
+                <strong>Importa tu narración</strong> con el botón «Audio» y ajusta los tiempos en la línea de tiempo.
+              </span>
+            </li>
+            <li>
+              <Film size={20} aria-hidden />
+              <span>
+                <strong>Exporta el vídeo</strong> en MP4, listo para compartir.
+              </span>
+            </li>
+          </ol>
+        </section>
+      )}
 
       <section aria-labelledby="recent-title" className="recent">
         <h2 id="recent-title" className="section-title">

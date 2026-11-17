@@ -15,6 +15,7 @@ import {
 import { useEditor, type Tool } from './editor-store';
 import { zoomAt } from './view';
 import { addMarkerAtPlayhead, deleteClip, deleteMarker } from './media-actions';
+import { openShortcuts } from './ShortcutsDialog';
 
 const TOOL_KEYS: Record<string, Tool> = {
   v: 'select',
@@ -58,6 +59,11 @@ export function useEditorShortcuts(viewport: () => { w: number; h: number }) {
         return;
       }
       if (e.altKey) return;
+      if (e.key === '?' || e.key === 'F1') {
+        openShortcuts();
+        e.preventDefault();
+        return;
+      }
       const fps = app.doc?.project.settings.fps ?? 30;
       if (k === 'enter') togglePlay();
       else if (k === 'home') ed.setPlayhead(0);

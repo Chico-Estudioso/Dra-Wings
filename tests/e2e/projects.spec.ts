@@ -109,3 +109,31 @@ test('al cerrar con cambios pregunta y permite cancelar o guardar', async () => 
   await closed;
   expect((await stat(file)).size).toBeGreaterThan(0);
 });
+
+test('si la interfaz se cae, la ventana se recarga y ofrece recuperar el trabajo', async () => {
+  const userData = await tempDir();
+  const { app, page } = await launch(userData);
+  await createProject(page, 'Caída');
+  const name = page.getByLabel('Nombre del proyecto');
+  await name.fill('Antes de la caída');
+  await name.press('Enter');
+  await expect
+    .poll(async () => readdir(path.join(userData, 'recovery')).catch(() => []), { timeout: 10_000 })
+    .toHaveLength(1);
+
+  await app.evaluate(({ dialog }) => {
+    dialog.showMessageBox = (async () => ({ response: 0, checkboxChecked: false })) as typeof dialog.showMessageBox;
+  });
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.webContents.forcefullyCrashRenderer());
+  // Playwright no reutiliza una página caída: se comprueba la recarga desde el proceso principal.
+  const bodyText = () =>
+    app.evaluate(({ BrowserWindow }) =>
+      BrowserWindow.getAllWindows()[0]!
+        .webContents.executeJavaScript('document.body.textContent')
+        .catch(() => ''),
+    );
+  await expect.poll(bodyText, { timeout: 15_000 }).toContain('Trabajo sin guardar');
+  expect(await bodyText()).toContain('Antes de la caída');
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.destroy());
+  await app.close();
+});

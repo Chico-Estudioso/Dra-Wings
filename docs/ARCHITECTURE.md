@@ -63,9 +63,15 @@ La previsualización y la exportación llaman a `evaluateScene` + `drawRenderLis
 - No se ejecutan procesos externos en el MVP.
 - Al empaquetar (M8): fuses de Electron (`RunAsNode` off, `EnableNodeCliInspectArguments` off, integridad ASAR).
 
+## Robustez
+
+- Una *error boundary* de React rodea cada pantalla. Si la interfaz falla, escribe al momento la copia de recuperación y ofrece «Volver a intentar» o «Ir al inicio», donde se puede restaurar.
+- Si el proceso de la interfaz se cae (`render-process-gone`), el proceso principal cancela una exportación en curso, avisa y recarga la ventana; la pantalla de inicio ofrece el trabajo sin guardar.
+
 ## Rendimiento
 
 - Caché de `Path2D` por trazo, invalidada al editarlo.
+- La línea de tiempo no depende del cabezal: solo lo hacen el tiempo, la línea roja, los rombos y los fotogramas, que se suscriben por su cuenta. Así no se vuelve a renderizar entera en cada fotograma de la reproducción.
 - En M2: mapa de bits por capa estática, y redibujar solo las capas con cambios o animación en el tick actual.
 - Descarte por *bounding box* fuera del viewport.
 - Las operaciones largas (exportar, abrir proyectos grandes) van en workers o en el proceso principal de forma asíncrona, con progreso y cancelación. Los picos de audio se calculan una vez por archivo en el hilo de interfaz (unos milisegundos por minuto de audio); si con audios muy largos se nota, pasarán a un worker.

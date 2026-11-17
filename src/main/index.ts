@@ -165,6 +165,26 @@ function createWindow() {
     if (mainWindow === win) mainWindow = null;
     void exports.cancel(); // una exportación a medias no deja temporales
   });
+  // Si el proceso de la interfaz se cae, se recarga. El trabajo sin guardar está en la copia de
+  // recuperación (autoguardado cada pocos segundos) y la pantalla de inicio la ofrece.
+  win.webContents.on('render-process-gone', (_e, details) => {
+    if (details.reason === 'clean-exit') return;
+    log('renderer caído:', details.reason);
+    void exports.cancel();
+    doc = { projectId: null, filePath: null };
+    windowState = { projectId: null, projectName: null, dirty: false };
+    updateTitle();
+    void dialog
+      .showMessageBox(win, {
+        type: 'error',
+        title: 'Dra-Wings',
+        message: 'La ventana se ha cerrado por un error y se va a recargar.',
+        detail: 'Si tenías cambios sin guardar, podrás recuperarlos desde la pantalla de inicio.',
+        buttons: ['Recargar'],
+        noLink: true,
+      })
+      .then(() => !win.isDestroyed() && win.webContents.reload());
+  });
   win.on('close', (e) => {
     if (closeConfirmed || !windowState.dirty) return;
     e.preventDefault();

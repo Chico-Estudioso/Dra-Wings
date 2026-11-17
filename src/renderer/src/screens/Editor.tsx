@@ -6,6 +6,7 @@ import {
   Film,
   Grid3x3,
   Home as HomeIcon,
+  Keyboard,
   Loader2,
   Magnet,
   Maximize,
@@ -32,6 +33,7 @@ import { usePlayback } from '../editor/playback';
 import { PropertiesPanel } from '../editor/PropertiesPanel';
 import { AudioClipPanel, MarkerPanel } from '../editor/AudioPanel';
 import { ExportDialog, openExportDialog } from '../export/ExportDialog';
+import { openShortcuts, ShortcutsDialog } from '../editor/ShortcutsDialog';
 import { useEditorShortcuts } from '../editor/shortcuts';
 import { zoomAt } from '../editor/view';
 
@@ -291,7 +293,16 @@ export function Editor() {
           <Grid3x3 size={14} />
         </button>
         <ZoomControls />
+        <button
+          className="icon-btn icon-btn-sm"
+          aria-label="Atajos de teclado"
+          title="Atajos de teclado (?)"
+          onClick={openShortcuts}
+        >
+          <Keyboard size={14} />
+        </button>
       </footer>
+      <ShortcutsDialog />
     </div>
   );
 }

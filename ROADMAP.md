@@ -1,6 +1,6 @@
 # Roadmap — Dra-Wings
 
-Estado: M0 a M6 completados. Siguiente: M7.
+Estado: M0 a M7 completados. Siguiente: M8 (empaquetado; publicar requiere aprobación).
 
 ## M0 — Investigación y diseño ✅
 - Stack decidido: Electron + React/TS, renderizador Canvas 2D propio, ZIP `.dwings`, exportación WebCodecs (ADR-001 a ADR-006).
@@ -55,12 +55,14 @@ Estado: M0 a M6 completados. Siguiente: M7.
 - **Salida:** vídeo reproducible y sincronizado fuera de la aplicación.
 - Pendiente de comprobar a mano: colores y audio en los reproductores de Windows, y un vídeo de 10 minutos a 1080p en hardware real.
 
-## M7 — Calidad y experiencia de usuario
+## M7 — Calidad y experiencia de usuario ✅
 - Rendimiento con proyectos grandes.
 - Accesibilidad y navegación por teclado.
 - Recuperación ante fallos y mensajes claros.
 - Tutorial inicial y mejoras de usabilidad.
 - **Salida:** MVP estable y validado con usuarios de distintos niveles.
+- Hecho: mediciones con proyectos de 2000 trazos y línea de tiempo optimizada; auditoría automática de accesibilidad (axe) y correcciones; lienzo usable con teclado; hoja de atajos; recuperación ante fallos de la interfaz; guía de primeros pasos en el inicio.
+- Pendiente (manual): validación con usuarios de distintos niveles, lector de pantalla real (NVDA) y rendimiento en hardware Windows real.
 
 ## M8 — Preparación de lanzamiento
 - Empaquetado para Windows.

@@ -26,6 +26,7 @@ import { TextEditor, type TextEditTarget } from './TextEditor';
 import { LIBRARY } from '@core/library/catalog';
 import { ASSET_MIME, insertAsset } from './LibraryPanel';
 import { imageSourcesFor, useMediaVersion } from './media';
+import { itemName } from './item-names';
 
 const HANDLE_PX = 9;
 const ROTATE_OFFSET_PX = 28;
@@ -778,8 +779,42 @@ export function CanvasView({ project }: { project: Project }) {
   };
   const effectiveCursor = panning ? 'grabbing' : spaceDown ? 'grab' : toolCursor[tool];
 
+  // Teclado: con el lienzo enfocado, Tab y Mayús+Tab recorren los elementos seleccionables. Al pasar
+  // del último (o del primero hacia atrás) el foco sale del lienzo con normalidad.
+  const onCanvasKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key !== 'Tab' || e.ctrlKey || e.altKey || e.metaKey || e.target !== e.currentTarget) return;
+    const ed = useEditor.getState();
+    const items = selectableItems(scene, ed.playhead);
+    const current = items.findIndex((i) => i.id === ed.selection[0]);
+    const next = e.shiftKey ? (current < 0 ? items.length - 1 : current - 1) : current + 1;
+    if (next < 0 || next >= items.length) return;
+    e.preventDefault();
+    if (ed.tool !== 'select') ed.setTool('select');
+    ed.select([items[next]!.id]);
+  };
+  const selectable = selectableItems(scene, playhead);
+  const selIndex = selection.length === 1 ? selectable.findIndex((i) => i.id === selection[0]) : -1;
+  const announcement =
+    selection.length > 1
+      ? `${selection.length} elementos seleccionados`
+      : selIndex >= 0
+        ? `${itemName(selectable[selIndex]!)}, ${selIndex + 1} de ${selectable.length}`
+        : '';
+
   return (
-    <div className="canvas-host" ref={containerRef} data-testid="canvas-host">
+    <div
+      className="canvas-host"
+      ref={containerRef}
+      data-testid="canvas-host"
+      tabIndex={0}
+      role="application"
+      aria-roledescription="lienzo"
+      aria-label="Lienzo de la escena. Tab y Mayús+Tab recorren los elementos; flechas para moverlos; Supr para eliminarlos."
+      onKeyDown={onCanvasKeyDown}
+    >
+      <p className="sr-only" aria-live="polite">
+        {announcement}
+      </p>
       <canvas
         ref={sceneRef}
         className="canvas-layer"

@@ -4,21 +4,25 @@ import type { Scene } from '@core/model/types';
 import { addFramesLayer, addLayerAboveActive, deleteLayer, layerItemCount, shiftLayer, updateLayer } from './actions';
 import { useEditor } from './editor-store';
 
-function LayerName({ id, name }: { id: string; name: string }) {
+function LayerName({ id, name, active }: { id: string; name: string; active: boolean }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(name);
+  const rename = () => {
+    setDraft(name);
+    setEditing(true);
+  };
   if (!editing)
     return (
-      <span
+      <button
         className="layer-name"
-        title="Doble clic para renombrar"
-        onDoubleClick={() => {
-          setDraft(name);
-          setEditing(true);
-        }}
+        aria-pressed={active}
+        title="Clic para dibujar en esta capa · doble clic o F2 para renombrar"
+        onClick={() => useEditor.getState().setActiveLayer(id)}
+        onDoubleClick={rename}
+        onKeyDown={(e) => e.key === 'F2' && rename()}
       >
         {name}
-      </span>
+      </button>
     );
   const commit = () => {
     const v = draft.trim();
@@ -91,12 +95,10 @@ export function LayersPanel({ scene }: { scene: Scene }) {
           </button>
         </div>
       </header>
-      <ul className="layer-list" role="listbox" aria-label="Capas de la escena">
+      <ul className="layer-list" aria-label="Capas de la escena">
         {layers.map((l) => (
           <li
             key={l.id}
-            role="option"
-            aria-selected={l.id === active}
             className={`layer ${l.id === active ? 'is-active' : ''} ${l.visible ? '' : 'is-hidden'}`}
             onClick={() => setActive(l.id)}
           >
@@ -111,7 +113,7 @@ export function LayersPanel({ scene }: { scene: Scene }) {
             >
               {l.visible ? <Eye size={16} /> : <EyeOff size={16} />}
             </button>
-            <LayerName id={l.id} name={l.name} />
+            <LayerName id={l.id} name={l.name} active={l.id === active} />
             {l.kind === 'frames' && <Film size={13} aria-label="Capa de fotogramas" />}
             <span className="layer-count">{layerItemCount(l)}</span>
             <button

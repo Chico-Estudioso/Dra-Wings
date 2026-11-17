@@ -23,6 +23,21 @@
 - Las pruebas de audio no dependen de que haya dispositivo de salida: la reproducción pasa al reloj de pared si el del audio no avanza.
 - La exportación se verifica demultiplexando el MP4 con mediabunny en Node (códecs, tamaño, fotogramas, duración y audio), sin depender de ffmpeg en CI. ffmpeg y ffprobe se usan a mano para revisar fotogramas, niveles de audio y la alineación de las pistas.
 
+## Accesibilidad
+
+`tests/e2e/a11y.spec.ts` audita con axe (`@axe-core/playwright`, WCAG 2.1 A y AA) el inicio, el diálogo de nuevo proyecto, el editor en Guiado y Libre, con un elemento seleccionado, el diálogo de exportación y la hoja de atajos, en tema claro y oscuro. Falla con cualquier problema grave o crítico. Otra prueba recorre el lienzo con Tab y comprueba los anuncios para lectores de pantalla. Queda pendiente probar con un lector de pantalla real (NVDA).
+
+## Rendimiento
+
+`tests/e2e/perf.spec.ts` (solo con `DW_PERF=1`) abre proyectos generados con 300 y 2000 trazos y mide la apertura, la reproducción y el redibujado. Resultados en el contenedor Linux de desarrollo (Xvfb, sin GPU), M7:
+
+| Trazos | Abrir | Reproducir: p50 / p95 / máx. por fotograma | Desplazar la vista con todo visible (p95) | Tareas largas |
+|---|---|---|---|---|
+| 300 | 0,42 s | 16,6 / 17,4 / 21,3 ms | 17,5 ms | 0 |
+| 2000 | 1,0 s | 16,6 / 17,9 / 22,3 ms | 17,3 ms | 0 |
+
+Antes de aislar el cabezal de la línea de tiempo, con 2000 trazos la reproducción daba un p95 de 23,9 ms (máximo 33 ms). Falta repetirlo en hardware real con Windows.
+
 ## Reglas
 
 - Cada error corregido añade una prueba de regresión.
