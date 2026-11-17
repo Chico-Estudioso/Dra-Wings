@@ -24,6 +24,8 @@ export async function launch(userData: string): Promise<Launched> {
   delete env.ELECTRON_RENDERER_URL;
   const app = await electron.launch({ args, env });
   const page = await app.firstWindow();
+  // Mismo tamaño en todas las plataformas (los runners de Windows tienen pantallas de 1024×768).
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.setContentSize(1024, 700));
   await page.getByRole('button', { name: 'Nuevo proyecto' }).waitFor();
   return { app, page };
 }

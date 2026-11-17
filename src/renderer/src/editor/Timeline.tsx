@@ -36,7 +36,7 @@ import {
   shiftItemsTime,
   updateCurrentScene,
 } from './actions';
-import { useEditor } from './editor-store';
+import { TIMELINE_MIN_H, useEditor } from './editor-store';
 import { togglePlay } from './playback';
 
 const NAME_W = 150;
@@ -186,6 +186,38 @@ function DurationInput({ scene }: { scene: Scene }) {
   );
 }
 
+/** Tirador para cambiar el alto de la línea de tiempo (arrastrar o flechas). */
+function TimelineResizer() {
+  const start = useRef<{ y: number; h: number } | null>(null);
+  const current = () =>
+    document.querySelector<HTMLElement>('.timeline')?.getBoundingClientRect().height ?? TIMELINE_MIN_H;
+  const set = (h: number) => useEditor.getState().setTimelineHeight(Math.min(h, window.innerHeight * 0.6));
+  return (
+    <div
+      className="tl-resizer"
+      role="separator"
+      aria-orientation="horizontal"
+      aria-label="Alto de la línea de tiempo"
+      aria-valuenow={Math.round(useEditor.getState().timelineHeight ?? 0) || undefined}
+      tabIndex={0}
+      title="Arrastra para cambiar el alto"
+      onPointerDown={(e) => {
+        e.currentTarget.setPointerCapture(e.pointerId);
+        start.current = { y: e.clientY, h: current() };
+      }}
+      onPointerMove={(e) => start.current && set(start.current.h - (e.clientY - start.current.y))}
+      onPointerUp={() => (start.current = null)}
+      onPointerCancel={() => (start.current = null)}
+      onKeyDown={(e) => {
+        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+          e.preventDefault();
+          set(current() + (e.key === 'ArrowUp' ? 20 : -20));
+        }
+      }}
+    />
+  );
+}
+
 export function Timeline({ project, scene }: { project: Project; scene: Scene }) {
   const playhead = useEditor((s) => s.playhead);
   const playing = useEditor((s) => s.playing);
@@ -193,6 +225,7 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
   const autoKey = useEditor((s) => s.autoKey);
   const onion = useEditor((s) => s.onion);
   const zoom = useEditor((s) => s.timelineZoom);
+  const timelineHeight = useEditor((s) => s.timelineHeight);
   const selection = useEditor((s) => s.selection);
   const activeLayerId = useEditor((s) => s.activeLayerId);
   const ed = useEditor.getState();
@@ -333,7 +366,12 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
   };
 
   return (
-    <section className="timeline" aria-label="Línea de tiempo">
+    <section
+      className="timeline"
+      aria-label="Línea de tiempo"
+      style={timelineHeight ? { height: Math.min(timelineHeight, window.innerHeight * 0.6) } : undefined}
+    >
+      <TimelineResizer />
       <div className="tl-toolbar">
         <button
           className="icon-btn"

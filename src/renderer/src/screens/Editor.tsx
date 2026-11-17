@@ -212,10 +212,10 @@ export function Editor() {
           <ToolOptions />
           <div className="canvas-area">
             <CanvasView project={project} />
-            {project.settings.mode === 'guided' && <GuidedTips />}
           </div>
         </div>
         <aside className="sidepanel" aria-label="Paneles">
+          {project.settings.mode === 'guided' && <GuidedTips />}
           <div className="side-tabs" role="tablist" aria-label="Paneles laterales">
             <button
               role="tab"

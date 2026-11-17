@@ -489,7 +489,8 @@ select {
 /* Espacio de trabajo del editor */
 .workspace {
   display: grid;
-  grid-template-columns: auto 1fr 272px;
+  /* Anchos fijos: el lienzo no cambia de tamaño porque aparezca o no una barra de desplazamiento. */
+  grid-template-columns: 52px minmax(0, 1fr) 272px;
   /* Una sola fila que no crece con el contenido: en ventanas bajas, cada columna se desplaza
      por dentro en lugar de invadir la línea de tiempo. */
   grid-template-rows: minmax(0, 1fr);
@@ -505,10 +506,21 @@ select {
   border-right: 1px solid var(--border);
   min-height: 0;
   overflow-y: auto;
-  scrollbar-width: thin;
+  /* En ventanas muy bajas se desplaza con la rueda, sin barra que ocupe ancho. */
+  scrollbar-width: none;
 }
 .tool-btn {
   flex: none;
+}
+@media (max-height: 760px) {
+  .toolbar {
+    gap: 2px;
+    padding: 6px;
+  }
+  .tool-btn {
+    width: 38px;
+    height: 36px;
+  }
 }
 .tool-btn {
   display: grid;
@@ -935,10 +947,8 @@ select {
   gap: 12px;
 }
 .tips {
-  position: absolute;
-  left: 14px;
-  bottom: 14px;
-  width: min(340px, calc(100% - 28px));
+  flex: none;
+  margin: 10px 10px 0;
   background: var(--surface);
   border: 1px solid var(--border);
   border-left: 4px solid var(--accent);
@@ -946,7 +956,6 @@ select {
   box-shadow: var(--shadow);
   padding: 10px 12px;
   font-size: 13px;
-  z-index: 1;
 }
 .tips-header {
   display: flex;
@@ -965,11 +974,26 @@ select {
 }
 
 /* M4: línea de tiempo y animación */
+.tl-resizer {
+  position: absolute;
+  top: -4px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  cursor: ns-resize;
+  z-index: 4;
+}
+.tl-resizer:hover,
+.tl-resizer:focus-visible {
+  outline: none;
+  background: linear-gradient(transparent 3px, var(--focus) 3px 5px, transparent 5px);
+}
 .timeline {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-width: 0;
-  height: 210px;
+  height: clamp(150px, 27vh, 260px);
   background: var(--surface);
   border-top: 1px solid var(--border);
   min-height: 0;

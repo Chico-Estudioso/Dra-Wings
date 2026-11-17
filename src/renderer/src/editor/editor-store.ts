@@ -68,6 +68,8 @@ interface EditorState {
   onion: boolean;
   /** Píxeles por segundo en la línea de tiempo. */
   timelineZoom: number;
+  /** Alto de la línea de tiempo elegido por el usuario (null: el predeterminado). */
+  timelineHeight: number | null;
 
   setTool(tool: Tool): void;
   setOptions(patch: Partial<ToolOptions>): void;
@@ -85,8 +87,21 @@ interface EditorState {
   toggleAutoKey(): void;
   toggleOnion(): void;
   setTimelineZoom(z: number): void;
+  setTimelineHeight(h: number): void;
   setScene(sceneId: string, layerId: string): void;
   reset(sceneId: string, layerId: string, mode: Mode): void;
+}
+
+export const TIMELINE_MIN_H = 110;
+const TIMELINE_H_KEY = 'dw.timeline.height';
+
+function readTimelineHeight(): number | null {
+  try {
+    const v = Number(localStorage.getItem(TIMELINE_H_KEY));
+    return Number.isFinite(v) && v >= TIMELINE_MIN_H ? v : null;
+  } catch {
+    return null;
+  }
 }
 
 export const useEditor = create<EditorState>()((set) => ({
@@ -115,6 +130,7 @@ export const useEditor = create<EditorState>()((set) => ({
   autoKey: false,
   onion: true,
   timelineZoom: 80,
+  timelineHeight: readTimelineHeight(),
 
   setTool: (tool) => set((s) => ({ tool, selection: tool === 'select' ? s.selection : [], editingTextId: null })),
   setOptions: (patch) => set((s) => ({ options: { ...s.options, ...patch } })),
@@ -132,6 +148,15 @@ export const useEditor = create<EditorState>()((set) => ({
   toggleAutoKey: () => set((s) => ({ autoKey: !s.autoKey })),
   toggleOnion: () => set((s) => ({ onion: !s.onion })),
   setTimelineZoom: (z) => set({ timelineZoom: Math.min(800, Math.max(10, z)) }),
+  setTimelineHeight: (h) => {
+    const v = Math.round(Math.max(TIMELINE_MIN_H, h));
+    try {
+      localStorage.setItem(TIMELINE_H_KEY, String(v));
+    } catch {
+      /* sin almacenamiento: solo en esta sesión */
+    }
+    set({ timelineHeight: v });
+  },
   setScene: (sceneId, layerId) =>
     set({ sceneId, activeLayerId: layerId, selection: [], playhead: 0, editingTextId: null }),
   reset: (sceneId, layerId, mode) =>
