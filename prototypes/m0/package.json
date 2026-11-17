@@ -1,0 +1,19 @@
+{
+  "name": "dra-wings-prototipo-m0",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Prototipos técnicos de M0: capacidades de Electron, trazos progresivos, renderizado determinista y exportación de vídeo.",
+  "main": "src/main.cjs",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "start": "npm run build && electron .",
+    "verify": "node scripts/verify-ffmpeg.mjs"
+  },
+  "dependencies": {
+    "electron": "45.3.3",
+    "esbuild": "0.28.2",
+    "mediabunny": "1.66.0",
+    "perfect-freehand": "1.2.3"
+  }
+}

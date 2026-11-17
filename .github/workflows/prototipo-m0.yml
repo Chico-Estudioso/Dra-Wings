@@ -1,0 +1,52 @@
+name: Prototipo M0
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'prototypes/m0/**'
+      - '.github/workflows/prototipo-m0.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  capacidades-y-exportacion:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: prototypes/m0
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: prototypes/m0/package-lock.json
+      - name: Instalar dependencias
+        run: npm ci
+      - name: Instalar FFmpeg (solo para verificación independiente)
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then choco install ffmpeg -y --no-progress; else brew install ffmpeg; fi
+      - name: Construir
+        run: npm run build
+      - name: Ejecutar prototipo en Electron
+        run: npx electron .
+      - name: Mostrar resultados
+        if: always()
+        shell: bash
+        run: cat out/results-*.json || true
+      - name: Verificar con ffprobe/ffmpeg
+        if: always()
+        run: node scripts/verify-ffmpeg.mjs out
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: prototipo-m0-${{ matrix.os }}
+          path: prototypes/m0/out/
+          retention-days: 14
