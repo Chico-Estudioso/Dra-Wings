@@ -3,6 +3,7 @@ import * as ToggleGroup from '@radix-ui/react-toggle-group';
 import {
   Check,
   CircleAlert,
+  Film,
   Grid3x3,
   Home as HomeIcon,
   Loader2,
@@ -30,6 +31,7 @@ import { Timeline } from '../editor/Timeline';
 import { usePlayback } from '../editor/playback';
 import { PropertiesPanel } from '../editor/PropertiesPanel';
 import { AudioClipPanel, MarkerPanel } from '../editor/AudioPanel';
+import { ExportDialog, openExportDialog } from '../export/ExportDialog';
 import { useEditorShortcuts } from '../editor/shortcuts';
 import { zoomAt } from '../editor/view';
 
@@ -204,6 +206,9 @@ export function Editor() {
         <button className="icon-btn" aria-label="Rehacer" title="Rehacer (Ctrl+Y)" disabled={!canRedo} onClick={redo}>
           <Redo2 size={18} />
         </button>
+        <button className="btn btn-ghost btn-sm" onClick={openExportDialog} title="Exportar vídeo (Ctrl+E)">
+          <Film size={16} aria-hidden /> Exportar
+        </button>
         <button className="btn btn-primary btn-sm" onClick={() => void saveCurrent(false)} title="Guardar (Ctrl+S)">
           <Save size={16} aria-hidden /> Guardar
         </button>
@@ -253,6 +258,7 @@ export function Editor() {
       </div>
 
       <Timeline project={project} scene={scene} />
+      <ExportDialog project={project} />
 
       <footer className="statusbar">
         <span>{scene.name}</span>

@@ -1,6 +1,6 @@
 # Roadmap — Dra-Wings
 
-Estado: M0 a M5 completados. Siguiente: M6.
+Estado: M0 a M6 completados. Siguiente: M7.
 
 ## M0 — Investigación y diseño ✅
 - Stack decidido: Electron + React/TS, renderizador Canvas 2D propio, ZIP `.dwings`, exportación WebCodecs (ADR-001 a ADR-006).
@@ -47,12 +47,13 @@ Estado: M0 a M5 completados. Siguiente: M6.
 - **Salida:** narración sincronizada con escenas y elementos visuales.
 - Pendiente para fases posteriores: grabar la voz desde el micrófono, arrastrar archivos desde el explorador al lienzo, y GIF animados (ahora se usa el primer fotograma).
 
-## M6 — Renderizado y exportación
+## M6 — Renderizado y exportación ✅
 - Renderizar fotogramas a partir del modelo de línea de tiempo.
 - Mezclar audio y vídeo.
 - Exportar MP4 y perfiles de resolución/FPS aprobados.
 - Progreso, cancelación y gestión de temporales.
 - **Salida:** vídeo reproducible y sincronizado fuera de la aplicación.
+- Pendiente de comprobar a mano: colores y audio en los reproductores de Windows, y un vídeo de 10 minutos a 1080p en hardware real.
 
 ## M7 — Calidad y experiencia de usuario
 - Rendimiento con proyectos grandes.

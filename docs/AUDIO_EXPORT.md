@@ -23,15 +23,19 @@ Decisión de base: ADR-004 (WebCodecs + mediabunny, sin FFmpeg empaquetado).
 - **Reproducción:** el reloj maestro es `AudioContext.currentTime`, así que la imagen sigue al sonido. Si el reloj del audio no avanza durante 400 ms (por ejemplo, sin dispositivo de salida), se pasa al reloj de pared para que la vista previa no se congele. Si el audio del documento cambia durante la reproducción, o termina de cargarse un clip, se reprograma desde el instante actual.
 - Nada de audio sale del equipo. Los registros no incluyen nombres de archivo ni contenido.
 
-## Exportación
+## Exportación (M6)
 
-1. Diálogo de exportación: destino (diálogo nativo, con confirmación si el archivo existe), preajuste (720p, 1080p, cuadrado 1080×1080 o vertical 1080×1920), FPS y calidad (Normal, Alta o Máxima). Muestra qué códecs se van a usar.
-2. El proceso principal reserva el destino y el renderer arranca el **worker de exportación** con el documento serializado.
-3. El worker renderiza cada fotograma con `evaluate` + `renderFrame` sobre `OffscreenCanvas` y lo codifica con WebCodecs a través de mediabunny.
-4. El audio se mezcla con `scheduleProject` sobre un `OfflineAudioContext` a 48 kHz en el hilo de interfaz (la mezcla en sí corre en el hilo de audio) y se envía por tramos de 1 s intercalados con el vídeo.
-5. El archivo se escribe en trozos hacia el proceso principal (`StreamTarget`), sin cargar el vídeo entero en memoria. Se usa un temporal `.part` que se renombra al terminar.
-6. Progreso por fotogramas, cancelación que borra el `.part`, y el proyecto nunca se modifica.
-7. Verificación final con mediabunny: se demultiplexa el archivo y se comprueban duración, resolución, FPS y presencia de audio.
+![Diálogo de exportación](img/export-m6.png)
+
+1. **Diálogo** (botón «Exportar» o Ctrl+E): resolución HD (lado corto de 720) o Full HD (1080) con la proporción de la hoja; calidad Normal, Alta o Máxima (`QUALITY_MEDIUM`, `QUALITY_HIGH` y `QUALITY_VERY_HIGH` de mediabunny); y FPS (por defecto, los del proyecto). Antes de exportar muestra la duración, los fotogramas, si lleva audio y **qué códecs se usarán**. Si no hay AAC, avisa de que el audio irá en Opus. Los ajustes no se guardan en el proyecto: exportar no lo modifica.
+2. **Destino:** diálogo nativo en el proceso principal (con confirmación si el archivo existe). El proceso principal abre `<destino>.part` y devuelve al renderer un identificador opaco: el renderer nunca ve la ruta.
+3. **Preparación (hilo de interfaz):** copias de las imágenes usadas (`ImageBitmap`) y mezcla de todo el audio con `scheduleProject` sobre un `OfflineAudioContext` estéreo a 48 kHz. Si falta algún medio, la exportación se detiene con un mensaje claro.
+4. **Worker de exportación** (`src/renderer/src/export/export-worker.ts`): carga las mismas fuentes que el editor, dibuja cada fotograma con `drawProjectFrame` (la misma función que la vista previa: fondo, cámara, apariciones y keyframes) sobre un `OffscreenCanvas` del tamaño final y lo codifica con WebCodecs a través de mediabunny. El audio se intercala por tramos de 1 s, un poco por delante del vídeo. El instante de cada fotograma es exacto (`f × ticks por fotograma`).
+5. **Escritura:** MP4 sin *fast start* (metadatos al final): se escribe de forma progresiva con memoria constante. mediabunny entrega trozos de hasta 4 MiB con su posición; el worker los pasa al hilo de interfaz, este al proceso principal (`export:write`), y cada trozo espera confirmación antes del siguiente. El proceso principal valida el identificador, la posición y el tamaño.
+6. **Final:** `fsync`, cierre y renombrado de `.part` al destino. **Cancelar** (o cerrar la ventana) termina el worker y borra el `.part`; si el destino ya existía, queda intacto.
+7. **Resultado:** nombre del archivo, códecs, tiempo empleado y «Mostrar en la carpeta».
+
+**Verificación:** las pruebas E2E demultiplexan el MP4 con mediabunny en Node y comprueban códecs, tamaño, número de fotogramas, duración y la pista de audio. A mano se comprobó con ffprobe y ffmpeg que vídeo y audio empiezan en 0, que el vídeo dura lo exacto y que el audio tiene el nivel del original. No hay verificación dentro de la app: la escritura ya está validada y verificar exigiría volver a leer el archivo entero.
 
 ## Códecs por plataforma (medido con Electron 45.3.3 / Chromium 156)
 
@@ -45,6 +49,6 @@ Preferencia: H.264 + AAC. Si no hay codificador AAC (Linux, Windows N), se expor
 
 ## Riesgos abiertos
 
-- **Rango de color:** OpenH264 marca `yuvj420p` (rango completo). En M6 hay que comparar colores en el reproductor de Windows y, si hace falta, convertir a rango limitado.
+- **Rango de color:** OpenH264 marca `yuvj420p` (rango completo, `color_range=pc`, confirmado de nuevo en M6). Queda por comprobar a mano que los colores se ven igual en el reproductor de Windows (que usa Media Foundation y probablemente produzca rango limitado); WebCodecs no permite elegir el rango.
 - **Codificación por hardware:** en los runners sin GPU solo se ha visto la ruta por software. En equipos reales, `prefer-hardware` podría acelerar, pero también introducir diferencias. Por ahora se usa `no-preference`.
-- **Vídeos largos:** probar 10 minutos a 1080p (memoria y tiempo) en M6.
+- **Vídeos largos:** la escritura es progresiva, pero el audio mezclado se mantiene en memoria (unos 23 MB por minuto). Falta medir 10 minutos a 1080p en hardware real (M7).

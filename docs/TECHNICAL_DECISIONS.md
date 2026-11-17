@@ -22,9 +22,12 @@ Registro breve. El detalle de cada una está en su ADR (`docs/decisions/`).
 | 16 | Reloj de reproducción = reloj del audio, con reloj de pared si el dispositivo no avanza | Aprobada | `docs/AUDIO_EXPORT.md` |
 | 17 | Al guardar se omiten los medios sin usar (solo en el archivo; la caché los conserva para deshacer) | Aprobada | `docs/PROJECT_FORMAT.md` |
 | 18 | La narración alarga la última escena si se sale del vídeo; música y efectos se cortan al final | Aprobada | `docs/AUDIO_EXPORT.md` |
+| 19 | MP4 sin *fast start* (metadatos al final), escrito por trozos con confirmación a un `.part` que solo maneja el proceso principal | Aprobada | `docs/AUDIO_EXPORT.md` |
+| 20 | La vista previa y la exportación dibujan con la misma función (`drawSceneFrame` / `drawProjectFrame`) | Aprobada | `docs/AUDIO_EXPORT.md` |
+| 21 | Los ajustes de exportación no se guardan en el proyecto (exportar no lo modifica) | Aprobada | `docs/AUDIO_EXPORT.md` |
 
 ## Pendientes (se deciden en su fase)
 
 - Estrategia de caché de capas rasterizadas → cuando haya mediciones en hardware real (ver `docs/EDITOR.md`).
-- Conversión de rango de color en la exportación → M6.
+- Rango de color del vídeo exportado (OpenH264 marca rango completo) → comprobar en reproductores de Windows (M7).
 - Firma de código del instalador Windows → M8.

@@ -44,3 +44,7 @@ Exportación de referencia: 5 s, 1280×720, 30 fps, música + narración con pit
 - Hueco máximo del hilo de interfaz durante la exportación con WebCodecs: 17 ms (no se bloquea).
 - Detalle: OpenH264 marca el vídeo como rango completo (`yuvj420p`). Hay que revisar en M6 que los colores se vean igual en los reproductores de Windows.
 - Capacidades en Windows y macOS: ver `docs/AUDIO_EXPORT.md`.
+
+## Implementación (M6)
+
+Implementada tal como se decidió: `src/renderer/src/export/` (worker, mezcla y diálogo) y `src/main/export.ts` (destino `.part`). La app muestra los códecs antes de exportar. Detalle en `docs/AUDIO_EXPORT.md`.

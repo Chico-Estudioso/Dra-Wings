@@ -45,6 +45,7 @@ Al crear una forma se activa Seleccionar con la forma ya seleccionada, lista par
 | Fotograma anterior / siguiente | , y . |
 | Keyframe anterior / siguiente de la selección | Mayús+, y Mayús+. |
 | Añadir marca en el cabezal | M |
+| Exportar vídeo | Ctrl+E |
 | Eliminar el clip de audio o la marca seleccionados | Supr o Retroceso |
 
 ## Comportamiento de la goma

@@ -8,6 +8,7 @@ import { Editor } from './screens/Editor';
 import { NewProjectDialog } from './components/NewProjectDialog';
 import { LeaveDialog } from './components/LeaveDialog';
 import { NoticeBar } from './components/NoticeBar';
+import { openExportDialog } from './export/ExportDialog';
 
 export function App() {
   const screen = useApp((s) => s.screen);
@@ -29,6 +30,9 @@ export function App() {
           break;
         case 'saveAs':
           if (app.doc) void saveCurrent(true);
+          break;
+        case 'export':
+          if (app.doc) openExportDialog();
           break;
         case 'home':
           requestLeave(() => app.closeDoc());

@@ -11,6 +11,8 @@ import {
   recentPathSchema,
   windowStateSchema,
   type MenuAction,
+  type ExportBeginResult,
+  type ExportFinishResult,
   type MediaImportResult,
   type OpenResult,
   type SaveResult,
@@ -20,6 +22,7 @@ import { PROJECT_EXTENSION, ProjectFileError, readProjectFile, writeProjectFile 
 import { RecoveryStore } from './recovery';
 import { RecentStore } from './recent';
 import { MEDIA_NAME, MediaError, MediaStore } from './media';
+import { ExportError, ExportSessions } from './export';
 import { APP_ORIGIN, MEDIA_EXT_BY_MIME } from '@shared/media';
 
 // Permite aislar los datos en pruebas E2E.
@@ -49,6 +52,8 @@ protocol.registerSchemesAsPrivileged([
 const recovery = new RecoveryStore(path.join(app.getPath('userData'), 'recovery'));
 const recent = new RecentStore(path.join(app.getPath('userData'), 'recent.json'));
 const media = new MediaStore(path.join(app.getPath('userData'), 'media-cache'));
+const exports = new ExportSessions();
+let lastExport: string | null = null;
 const fileFilters = [{ name: 'Proyectos de Dra-Wings', extensions: [PROJECT_EXTENSION] }];
 
 let mainWindow: BrowserWindow | null = null;
@@ -98,6 +103,8 @@ function buildMenu() {
         { type: 'separator' },
         { label: 'Guardar', accelerator: 'CmdOrCtrl+S', click: () => sendMenu('save') },
         { label: 'Guardar como…', accelerator: 'CmdOrCtrl+Shift+S', click: () => sendMenu('saveAs') },
+        { type: 'separator' },
+        { label: 'Exportar vídeo…', accelerator: 'CmdOrCtrl+E', click: () => sendMenu('export') },
         { type: 'separator' },
         { label: 'Ir a inicio', click: () => sendMenu('home') },
         ...(isMac ? [] : [{ type: 'separator' as const }, { label: 'Salir', role: 'quit' as const }]),
@@ -156,6 +163,7 @@ function createWindow() {
   win.once('ready-to-show', () => win.show());
   win.on('closed', () => {
     if (mainWindow === win) mainWindow = null;
+    void exports.cancel(); // una exportación a medias no deja temporales
   });
   win.on('close', (e) => {
     if (closeConfirmed || !windowState.dirty) return;
@@ -306,6 +314,52 @@ function registerIpc() {
     } catch (e) {
       return { status: 'error', message: e instanceof MediaError ? e.message : 'No se pudo importar el archivo.' };
     }
+  });
+
+  ipcMain.handle(CH.exportBegin, async (): Promise<ExportBeginResult> => {
+    if (exports.active) return { status: 'error', message: 'Ya hay una exportación en curso.' };
+    const folder = app.getPath('videos');
+    const r = await dialog.showSaveDialog(mainWindow!, {
+      title: 'Exportar vídeo',
+      defaultPath: path.join(folder, `${sanitizeFileName(windowState.projectName ?? 'Vídeo')}.mp4`),
+      filters: [{ name: 'Vídeo MP4', extensions: ['mp4'] }],
+      properties: ['showOverwriteConfirmation', 'createDirectory'],
+    });
+    if (r.canceled || !r.filePath) return { status: 'canceled' };
+    const target = r.filePath.toLowerCase().endsWith('.mp4') ? r.filePath : `${r.filePath}.mp4`;
+    try {
+      const id = await exports.begin(target);
+      return { status: 'ok', id, fileName: path.basename(target) };
+    } catch (e) {
+      log(e);
+      return {
+        status: 'error',
+        message: e instanceof ExportError ? e.message : 'No se puede escribir en esa carpeta. Elige otra ubicación.',
+      };
+    }
+  });
+  ipcMain.handle(CH.exportWrite, (_e, id: unknown, position: unknown, data: unknown) =>
+    exports.write(id, position, data),
+  );
+  ipcMain.handle(CH.exportFinish, async (_e, id: unknown): Promise<ExportFinishResult> => {
+    try {
+      lastExport = await exports.finish(id);
+      return { status: 'ok', fileName: path.basename(lastExport) };
+    } catch (e) {
+      log(e);
+      const code = (e as NodeJS.ErrnoException).code;
+      return {
+        status: 'error',
+        message:
+          code === 'ENOSPC'
+            ? 'No se pudo terminar el vídeo: el disco está lleno.'
+            : 'No se pudo terminar el vídeo. Si el archivo de destino está abierto en otro programa, ciérralo y vuelve a exportar.',
+      };
+    }
+  });
+  ipcMain.handle(CH.exportCancel, (_e, id: unknown) => exports.cancel(id));
+  ipcMain.handle(CH.exportReveal, () => {
+    if (lastExport) shell.showItemInFolder(lastExport);
   });
 
   ipcMain.handle(CH.recentList, () => recent.list());

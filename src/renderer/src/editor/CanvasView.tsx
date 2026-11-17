@@ -6,7 +6,8 @@ import { hitItem, rectsIntersect, unionRects, worldBounds, type Rect } from '@co
 import { resizeGroup, resizeSingle, rotateGroup, snapAngle, type Handle } from '@core/geometry/manipulate';
 import { matrixFrom, resolveTransform, type Point, type StaticTransform } from '@core/geometry/matrix';
 import { drawRenderList, outlineToPath, PathCache, type Ctx2D } from '@core/render/draw';
-import { cameraMatrix, evaluateScene, hasCamera } from '@core/render/evaluate';
+import { evaluateScene, hasCamera } from '@core/render/evaluate';
+import { drawSceneFrame } from '@core/render/frame';
 import { strokeOutline } from '@core/render/stroke-outline';
 import type { Item, Project, Scene } from '@core/model/types';
 import {
@@ -146,14 +147,7 @@ export function CanvasView({ project }: { project: Project }) {
 
     if (playMode) {
       // Vista previa: lo que saldrá en el vídeo en el instante del cabezal, a través de la cámara.
-      const list = evaluateScene(scene, playhead, { mode: 'play' });
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(0, 0, docW, docH);
-      ctx.clip();
-      ctx.transform(...cameraMatrix(scene, playhead));
-      drawRenderList(ctx, list, cache.current, images);
-      ctx.restore();
+      drawSceneFrame(ctx, project.settings, scene, playhead, cache.current, images);
       return;
     }
 

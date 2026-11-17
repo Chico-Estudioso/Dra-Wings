@@ -16,7 +16,7 @@ Los modos comparten el mismo formato de proyecto.
 
 ## Estado
 
-M0 a M5 completados: arquitectura, proyectos con guardado y recuperación, lienzo y dibujo, biblioteca con modo guiado, animación con línea de tiempo, y audio con narración e imágenes importadas. Siguiente: M6, exportación de vídeo. Ver `ROADMAP.md`, `docs/EDITOR.md`, `docs/LIBRARY.md` y `docs/AUDIO_EXPORT.md`.
+M0 a M6 completados: arquitectura, proyectos con guardado y recuperación, lienzo y dibujo, biblioteca con modo guiado, animación con línea de tiempo, audio con narración e imágenes importadas, y exportación a MP4. Siguiente: M7, calidad y experiencia de usuario. Ver `ROADMAP.md`, `docs/EDITOR.md`, `docs/LIBRARY.md` y `docs/AUDIO_EXPORT.md`.
 
 ## Principios
 

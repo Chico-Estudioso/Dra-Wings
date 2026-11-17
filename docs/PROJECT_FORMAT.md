@@ -23,7 +23,7 @@ Project {
   assets: Asset[]                       // medios usados (imágenes y audio)
   audioTracks: AudioTrack[]
   markers: Marker[]                     // tiempo global en ticks
-  export: { preset: '720p' | '1080p' | 'square' | 'vertical'; fps?: Fps }
+  export: { preset: '720p' | '1080p' | 'square' | 'vertical'; fps?: Fps }   // valor inicial del diálogo: '720p' → HD; el resto → Full HD
 }
 
 Scene { id; name; duration: Ticks; layers: Layer[]; camera: AnimatedTransform }   // cámara: x, y = esquina del encuadre; scaleX = zoom

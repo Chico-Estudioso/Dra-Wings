@@ -38,6 +38,9 @@ Decisiones de base: ADR-001 a ADR-006 en `docs/decisions/`.
 | `core/render` | Dibujar una `RenderList` en un contexto 2D | Conocer la línea de tiempo |
 | `core/audio` | Programar clips, fundidos y mezcla a partir del documento; editar pistas, clips y marcas | Reproducir por su cuenta ni cargar medios |
 | `main/media.ts` | Importar medios validados a la caché y servirlos por nombre `<sha256>.<ext>` | Aceptar rutas del renderer |
+| `main/export.ts` | Destino de la exportación: `.part`, escrituras por posición validadas, renombrado o borrado | Codificar ni conocer el documento |
+| `core/export` | Plan de exportación: tamaño, fotogramas e instantes exactos | Depender del navegador |
+| `renderer/export` | Diálogo, mezcla de audio y worker de exportación (WebCodecs + mediabunny) | Escribir archivos directamente |
 | `renderer/editor` | Herramientas, selección, comandos y undo/redo | Escribir archivos directamente |
 | `renderer/ui` | Componentes y paneles | Contener reglas del modelo |
 

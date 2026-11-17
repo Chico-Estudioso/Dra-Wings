@@ -52,6 +52,11 @@ export type MediaImportResult =
   | { status: 'canceled' }
   | { status: 'error'; message: string };
 
+export type ExportBeginResult =
+  { status: 'ok'; id: string; fileName: string } | { status: 'canceled' } | { status: 'error'; message: string };
+
+export type ExportFinishResult = { status: 'ok'; fileName: string } | { status: 'error'; message: string };
+
 export interface AppInfo {
   version: string;
   platform: string;
@@ -72,6 +77,16 @@ export interface DwApi {
   discardRecovery(projectId: string): Promise<void>;
   /** Importa una imagen o un audio con el diálogo nativo y lo copia a la caché de medios. */
   importMedia(kind: 'image' | 'audio'): Promise<MediaImportResult>;
+  /** Pide el destino del vídeo con el diálogo nativo y abre un temporal. Devuelve un id opaco. */
+  exportBegin(): Promise<ExportBeginResult>;
+  /** Escribe un trozo del vídeo en la posición dada del temporal. */
+  exportWrite(id: string, position: number, data: Uint8Array): Promise<void>;
+  /** Cierra el temporal y lo convierte en el vídeo final. */
+  exportFinish(id: string): Promise<ExportFinishResult>;
+  /** Cancela la exportación y borra el temporal. */
+  exportCancel(id: string): Promise<void>;
+  /** Muestra en la carpeta el último vídeo exportado. */
+  exportReveal(): Promise<void>;
   setWindowState(state: WindowState): void;
   confirmClose(): void;
   onMenuAction(cb: (action: MenuAction) => void): () => void;

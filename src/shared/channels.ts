@@ -14,7 +14,12 @@ export const CH = {
   menuAction: 'menu:action',
   requestSaveAndClose: 'window:request-save-and-close',
   mediaImport: 'media:import',
+  exportBegin: 'export:begin',
+  exportWrite: 'export:write',
+  exportFinish: 'export:finish',
+  exportCancel: 'export:cancel',
+  exportReveal: 'export:reveal',
 } as const;
 
-export const MENU_ACTIONS = ['new', 'open', 'save', 'saveAs', 'home', 'about'] as const;
+export const MENU_ACTIONS = ['new', 'open', 'save', 'saveAs', 'export', 'home', 'about'] as const;
 export type MenuAction = (typeof MENU_ACTIONS)[number];
