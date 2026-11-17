@@ -70,6 +70,10 @@ interface EditorState {
   timelineZoom: number;
   /** Alto de la línea de tiempo elegido por el usuario (null: el predeterminado). */
   timelineHeight: number | null;
+  /** Clip de audio seleccionado (excluye la selección de elementos). */
+  clipId: string | null;
+  /** Marca seleccionada en la regla de la línea de tiempo. */
+  markerId: string | null;
 
   setTool(tool: Tool): void;
   setOptions(patch: Partial<ToolOptions>): void;
@@ -88,6 +92,8 @@ interface EditorState {
   toggleOnion(): void;
   setTimelineZoom(z: number): void;
   setTimelineHeight(h: number): void;
+  selectClip(id: string | null): void;
+  selectMarker(id: string | null): void;
   setScene(sceneId: string, layerId: string): void;
   reset(sceneId: string, layerId: string, mode: Mode): void;
 }
@@ -131,10 +137,12 @@ export const useEditor = create<EditorState>()((set) => ({
   onion: true,
   timelineZoom: 80,
   timelineHeight: readTimelineHeight(),
+  clipId: null,
+  markerId: null,
 
   setTool: (tool) => set((s) => ({ tool, selection: tool === 'select' ? s.selection : [], editingTextId: null })),
   setOptions: (patch) => set((s) => ({ options: { ...s.options, ...patch } })),
-  select: (ids) => set({ selection: ids }),
+  select: (ids) => set({ selection: ids, clipId: null, markerId: null }),
   setActiveLayer: (id) => set({ activeLayerId: id }),
   setView: (view) => set((s) => ({ view: { ...s.view, ...view } })),
   toggleGrid: () => set((s) => ({ showGrid: !s.showGrid })),
@@ -157,8 +165,10 @@ export const useEditor = create<EditorState>()((set) => ({
     }
     set({ timelineHeight: v });
   },
+  selectClip: (id) => set({ clipId: id, markerId: null, selection: [] }),
+  selectMarker: (id) => set({ markerId: id, clipId: null, selection: [] }),
   setScene: (sceneId, layerId) =>
-    set({ sceneId, activeLayerId: layerId, selection: [], playhead: 0, editingTextId: null }),
+    set({ sceneId, activeLayerId: layerId, selection: [], playhead: 0, editingTextId: null, markerId: null }),
   reset: (sceneId, layerId, mode) =>
     set({
       sceneId,
@@ -172,5 +182,7 @@ export const useEditor = create<EditorState>()((set) => ({
       playhead: 0,
       playing: false,
       preview: false,
+      clipId: null,
+      markerId: null,
     }),
 }));

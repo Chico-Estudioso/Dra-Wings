@@ -119,21 +119,25 @@ export function PropertiesPanel({
     commitTransforms('Centrar en el lienzo', next);
   };
 
+  const allImages = items.every((i) => i.type === 'image');
   const kind = allStrokes
     ? 'Trazo'
     : allShapes
       ? 'Forma'
       : allTexts
         ? 'Texto'
-        : singleGroup
-          ? (singleGroup.name ?? 'Grupo')
-          : 'Elementos';
+        : allImages
+          ? 'Imagen'
+          : singleGroup
+            ? (singleGroup.name ?? 'Grupo')
+            : 'Elementos';
+  const plural: Record<string, string> = { Trazo: 'trazos', Forma: 'formas', Texto: 'textos', Imagen: 'imágenes' };
 
   return (
     <section className="panel" aria-labelledby="props-title">
       <header className="panel-header">
         <h2 id="props-title" className="panel-title">
-          {items.length > 1 ? `${items.length} ${kind === 'Elementos' ? 'elementos' : kind.toLowerCase() + 's'}` : kind}
+          {items.length > 1 ? `${items.length} ${plural[kind] ?? 'elementos'}` : kind}
         </h2>
       </header>
       <div className="panel-body">

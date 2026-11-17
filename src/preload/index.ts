@@ -13,6 +13,7 @@ const api: DwApi = {
   listRecovery: () => ipcRenderer.invoke(CH.recoveryList),
   restoreRecovery: (projectId) => ipcRenderer.invoke(CH.recoveryRestore, projectId),
   discardRecovery: (projectId) => ipcRenderer.invoke(CH.recoveryDiscard, projectId),
+  importMedia: (kind) => ipcRenderer.invoke(CH.mediaImport, kind),
   setWindowState: (state) => ipcRenderer.send(CH.windowState, state),
   confirmClose: () => ipcRenderer.send(CH.closeConfirmed),
   onMenuAction: (cb) => {

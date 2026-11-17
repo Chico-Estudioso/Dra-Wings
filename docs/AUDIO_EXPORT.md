@@ -2,14 +2,25 @@
 
 Decisión de base: ADR-004 (WebCodecs + mediabunny, sin FFmpeg empaquetado).
 
-## Audio en el editor
+## Medios del proyecto (M5)
 
-- Importación con diálogo nativo. El archivo se copia a la caché de medios con su SHA-256 como nombre y se añade al proyecto al guardar.
-- Formatos admitidos en el MVP: los que decodifica el Chromium de Electron (WAV, MP3, AAC/M4A, OGG/Opus, FLAC). Se comprueba al importar con `decodeAudioData`, y si falla se muestra un error claro.
-- Picos de la forma de onda calculados en un worker al importar y guardados en `cache/peaks/`.
-- Pistas `narration`, `music` y `sfx`, cada una con volumen y silencio. Clips con posición, recorte (`sourceOffset` y `duration`), ganancia y fundidos lineales.
-- Un mismo `buildAudioGraph(ctx, project, desde)` alimenta la reproducción (`AudioContext`) y la exportación (`OfflineAudioContext`). La mezcla exportada es la misma que se escucha.
-- Marcadores en la línea de tiempo global para sincronizar frases y escenas.
+- **Importar:** diálogo nativo en el proceso principal (canal `media:import`). Se valida la extensión y el tipo esperado (imagen o audio) y se limita el tamaño (50 MB por imagen, 500 MB por audio). El archivo se lee una vez, se calcula su SHA-256 y se escribe de forma atómica en `userData/media-cache/<sha256>.<ext>`. El renderer nunca envía ni recibe rutas.
+- **Leer:** el renderer pide `app://dra-wings/media/<sha256>.<ext>`. El protocolo solo acepta nombres con ese patrón y sirve desde la caché (403 para cualquier otro nombre).
+- **Guardar:** los medios usados se escriben en `media/` dentro del `.dwings`, sin comprimir. Los que ya no usa ningún elemento ni clip se omiten del archivo, pero siguen en la caché: deshacer después de guardar no pierde nada.
+- **Abrir:** los medios del archivo se extraen a la caché comprobando que su contenido coincide con su hash (si no, el archivo se considera dañado). Si falta alguno, el proyecto se abre igualmente, se avisa y los elementos afectados se ven como un marcador gris.
+- **Imágenes:** PNG, JPG, WEBP y GIF (solo el primer fotograma). Se decodifican con `createImageBitmap`, que respeta la orientación EXIF. Se colocan centradas, como mucho al 60 % de la hoja, y entran con un fundido de 1 s según el tiempo automático.
+
+## Audio en el editor (M5)
+
+- **Formatos:** MP3, WAV, OGG/Opus, M4A/AAC y FLAC, es decir, lo que decodifica el Chromium de Electron. Se decodifica con un `OfflineAudioContext` a **48 kHz**: no depende del dispositivo de salida y es la frecuencia que usará la exportación. Si la decodificación falla, se muestra un error y no se añade nada.
+- **Pistas:** narración, música y efectos, en ese orden. Se crean al importar el primer clip de cada tipo y desaparecen al quedarse vacías. Cada una tiene volumen (0–200 %) y silencio.
+- **Clips:** posición en el tiempo global del proyecto (`start`), recorte (`sourceOffset` y `duration`, sin salirse del archivo y con un mínimo de 0,1 s), ganancia (0–200 %), fundidos lineales de entrada y salida (nunca suman más que el clip) y dividir en el cabezal.
+- **Colocación:** un clip nuevo empieza en el cabezal. Si choca con otro de la misma pista, se encadena detrás, para ir añadiendo frases de narración seguidas.
+- **Duración del vídeo:** la narración alarga la última escena si termina después del final (se avisa). La música y los efectos se cortan al final del vídeo.
+- **Forma de onda:** picos mínimo y máximo, 100 por segundo, calculados una vez por audio y guardados solo en memoria. El lienzo de cada clip mide como mucho 4096 px y se estira con más zoom.
+- **Marcas:** en tiempo global, con nombre editable. Se añaden con M o con el botón de la bandera, y se arrastran en la regla. Al arrastrar barras, clips o marcas, se pegan a las marcas y al cabezal (Alt lo desactiva).
+- **Mezcla:** `scheduleProject(ctx, project, buffers, desde)` (`src/core/audio/mix.ts`) programa todos los clips, con su ganancia, el volumen de su pista y sus fundidos, sobre cualquier `BaseAudioContext`. La reproducción lo usa con un `AudioContext` y la exportación (M6) lo usará con un `OfflineAudioContext`: la mezcla exportada será la misma que se escucha.
+- **Reproducción:** el reloj maestro es `AudioContext.currentTime`, así que la imagen sigue al sonido. Si el reloj del audio no avanza durante 400 ms (por ejemplo, sin dispositivo de salida), se pasa al reloj de pared para que la vista previa no se congele. Si el audio del documento cambia durante la reproducción, o termina de cargarse un clip, se reprograma desde el instante actual.
 - Nada de audio sale del equipo. Los registros no incluyen nombres de archivo ni contenido.
 
 ## Exportación
@@ -17,7 +28,7 @@ Decisión de base: ADR-004 (WebCodecs + mediabunny, sin FFmpeg empaquetado).
 1. Diálogo de exportación: destino (diálogo nativo, con confirmación si el archivo existe), preajuste (720p, 1080p, cuadrado 1080×1080 o vertical 1080×1920), FPS y calidad (Normal, Alta o Máxima). Muestra qué códecs se van a usar.
 2. El proceso principal reserva el destino y el renderer arranca el **worker de exportación** con el documento serializado.
 3. El worker renderiza cada fotograma con `evaluate` + `renderFrame` sobre `OffscreenCanvas` y lo codifica con WebCodecs a través de mediabunny.
-4. El audio se mezcla con `OfflineAudioContext` en el hilo de interfaz (la mezcla en sí corre en el hilo de audio) y se envía por tramos de 1 s intercalados con el vídeo.
+4. El audio se mezcla con `scheduleProject` sobre un `OfflineAudioContext` a 48 kHz en el hilo de interfaz (la mezcla en sí corre en el hilo de audio) y se envía por tramos de 1 s intercalados con el vídeo.
 5. El archivo se escribe en trozos hacia el proceso principal (`StreamTarget`), sin cargar el vídeo entero en memoria. Se usa un temporal `.part` que se renombra al terminar.
 6. Progreso por fotogramas, cancelación que borra el `.part`, y el proyecto nunca se modifica.
 7. Verificación final con mediabunny: se demultiplexa el archivo y se comprueban duración, resolución, FPS y presencia de audio.

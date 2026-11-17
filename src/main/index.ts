@@ -11,6 +11,7 @@ import {
   recentPathSchema,
   windowStateSchema,
   type MenuAction,
+  type MediaImportResult,
   type OpenResult,
   type SaveResult,
   type WindowState,
@@ -18,12 +19,13 @@ import {
 import { PROJECT_EXTENSION, ProjectFileError, readProjectFile, writeProjectFile } from './project-file';
 import { RecoveryStore } from './recovery';
 import { RecentStore } from './recent';
+import { MEDIA_NAME, MediaError, MediaStore } from './media';
+import { APP_ORIGIN, MEDIA_EXT_BY_MIME } from '@shared/media';
 
 // Permite aislar los datos en pruebas E2E.
 if (process.env.DW_USER_DATA) app.setPath('userData', process.env.DW_USER_DATA);
 
-const APP_HOST = 'dra-wings';
-const APP_ORIGIN = `app://${APP_HOST}`;
+const APP_HOST = new URL(APP_ORIGIN).host;
 const DEV_URL = !app.isPackaged ? process.env.ELECTRON_RENDERER_URL : undefined;
 const RENDERER_ROOT = path.join(__dirname, '../renderer');
 const CSP = [
@@ -46,6 +48,7 @@ protocol.registerSchemesAsPrivileged([
 
 const recovery = new RecoveryStore(path.join(app.getPath('userData'), 'recovery'));
 const recent = new RecentStore(path.join(app.getPath('userData'), 'recent.json'));
+const media = new MediaStore(path.join(app.getPath('userData'), 'media-cache'));
 const fileFilters = [{ name: 'Proyectos de Dra-Wings', extensions: [PROJECT_EXTENSION] }];
 
 let mainWindow: BrowserWindow | null = null;
@@ -178,10 +181,28 @@ function createWindow() {
   else void win.loadURL(`${APP_ORIGIN}/index.html`);
 }
 
+const MIME_BY_EXT: Record<string, string> = Object.fromEntries(
+  Object.entries(MEDIA_EXT_BY_MIME).map(([mime, ext]) => [ext, mime]),
+);
+const mimeOf = (name: string) => MIME_BY_EXT[name.split('.').pop() ?? ''] ?? 'application/octet-stream';
+
 function registerAppProtocol() {
   protocol.handle('app', async (request) => {
     const url = new URL(request.url);
     if (url.host !== APP_HOST) return new Response('No encontrado', { status: 404 });
+    if (url.pathname.startsWith('/media/')) {
+      // Medios del proyecto: solo nombres `<sha256>.<ext>` de la caché.
+      const name = url.pathname.slice(7);
+      if (!MEDIA_NAME.test(name)) return new Response('No permitido', { status: 403 });
+      try {
+        const bytes = await media.read(name);
+        const headers = new Headers({ 'Content-Type': mimeOf(name), 'Cache-Control': 'max-age=31536000, immutable' });
+        if (DEV_URL) headers.set('Access-Control-Allow-Origin', new URL(DEV_URL).origin);
+        return new Response(Buffer.from(bytes), { status: 200, headers });
+      } catch {
+        return new Response('No encontrado', { status: 404 });
+      }
+    }
     const rel = decodeURIComponent(url.pathname).replace(/^\/+/, '') || 'index.html';
     const full = path.normalize(path.join(RENDERER_ROOT, rel));
     if (!full.startsWith(RENDERER_ROOT + path.sep)) return new Response('No permitido', { status: 403 });
@@ -219,10 +240,10 @@ function registerIpc() {
       filePath = r.filePaths[0];
     }
     try {
-      const { project, migrated } = await readProjectFile(filePath);
+      const { project, migrated, missingMedia } = await readProjectFile(filePath, media);
       doc = { projectId: project.id, filePath };
       await recent.touch(filePath, project.name);
-      return { status: 'ok', project, filePath, migrated, fromRecovery: false };
+      return { status: 'ok', project, filePath, migrated, fromRecovery: false, missingMedia };
     } catch (e) {
       return errorResult(e, 'No se pudo abrir el proyecto.');
     }
@@ -250,13 +271,40 @@ function registerIpc() {
         : `${r.filePath}.${PROJECT_EXTENSION}`;
     }
     try {
-      await writeProjectFile(target, project, app.getVersion());
+      await writeProjectFile(target, project, app.getVersion(), media);
       doc = { projectId: project.id, filePath: target };
       await recent.touch(target, project.name);
       await recovery.discard(project.id);
       return { status: 'ok', filePath: target, savedAt };
     } catch (e) {
       return errorResult(e, 'No se pudo guardar el proyecto.');
+    }
+  });
+
+  ipcMain.handle(CH.mediaImport, async (_e, kind: unknown): Promise<MediaImportResult> => {
+    if (kind !== 'image' && kind !== 'audio') return { status: 'error', message: 'Tipo de medio no válido.' };
+    const filters =
+      kind === 'image'
+        ? [{ name: 'Imágenes', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif'] }]
+        : [{ name: 'Audio', extensions: ['mp3', 'wav', 'ogg', 'opus', 'm4a', 'aac', 'flac'] }];
+    const r = await dialog.showOpenDialog(mainWindow!, {
+      title: kind === 'image' ? 'Importar imagen' : 'Importar audio',
+      properties: ['openFile'],
+      filters,
+    });
+    if (r.canceled || !r.filePaths[0]) return { status: 'canceled' };
+    try {
+      const m = await media.import(r.filePaths[0], kind);
+      return {
+        status: 'ok',
+        hash: m.hash,
+        mime: m.mime,
+        name: m.name,
+        size: m.size,
+        url: `${APP_ORIGIN}/media/${media.fileName(m.hash, m.mime)}`,
+      };
+    } catch (e) {
+      return { status: 'error', message: e instanceof MediaError ? e.message : 'No se pudo importar el archivo.' };
     }
   });
 

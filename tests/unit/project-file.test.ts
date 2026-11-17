@@ -3,7 +3,8 @@ import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promis
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { strToU8, zipSync } from 'fflate';
-import { createProject } from '@core/model/factory';
+import { createImage, createProject } from '@core/model/factory';
+import { MediaError, MediaStore, sha256 } from '../../src/main/media';
 import {
   ProjectFileError,
   decodeProject,
@@ -104,5 +105,76 @@ describe('archivos en disco', () => {
 
   it('informa de archivos inexistentes', async () => {
     await expect(readProjectFile(path.join(dir, 'no-existe.dwings'))).rejects.toMatchObject({ code: 'not-found' });
+  });
+});
+
+describe('medios', () => {
+  let dir: string;
+  beforeEach(async () => {
+    dir = await mkdtemp(path.join(tmpdir(), 'dw-media-'));
+  });
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 1, 2, 3, 4]);
+
+  async function withImage() {
+    const src = path.join(dir, 'Foto.PNG');
+    await writeFile(src, PNG);
+    const store = new MediaStore(path.join(dir, 'cache'));
+    const m = await store.import(src, 'image');
+    const p = project();
+    const asset = { id: 'img1', hash: m.hash, mime: m.mime, name: m.name, size: m.size };
+    p.assets.push(asset);
+    p.scenes[0]!.layers[0]!.items!.push(createImage('img1', 0, 0, 8, 8));
+    return { store, m, p };
+  }
+
+  it('importar copia por contenido y valida tipo y extensión', async () => {
+    const { store, m } = await withImage();
+    expect(m).toMatchObject({ hash: sha256(PNG), mime: 'image/png', name: 'Foto.PNG', kind: 'image' });
+    expect(new Uint8Array(await store.read(`${m.hash}.png`))).toEqual(PNG);
+    await writeFile(path.join(dir, 'nota.txt'), 'hola');
+    await expect(store.import(path.join(dir, 'nota.txt'), 'image')).rejects.toBeInstanceOf(MediaError);
+    await expect(store.import(path.join(dir, 'Foto.PNG'), 'audio')).rejects.toBeInstanceOf(MediaError);
+    expect(() => store.pathOf('../../etc/passwd')).toThrow(MediaError);
+  });
+
+  it('el proyecto guarda sus medios y al abrirlo en otro equipo se extraen verificados', async () => {
+    const { store, p, m } = await withImage();
+    const file = path.join(dir, 'con-imagen.dwings');
+    await writeProjectFile(file, p, '0.1.0', store);
+    const other = new MediaStore(path.join(dir, 'otro-equipo'));
+    const r = await readProjectFile(file, other);
+    expect(r.missingMedia).toEqual([]);
+    expect(new Uint8Array(await other.read(`${m.hash}.png`))).toEqual(PNG);
+    expect(r.project).toEqual(p);
+  });
+
+  it('un medio manipulado se rechaza al abrir', async () => {
+    const { p, m } = await withImage();
+    const bytes = encodeProject(p, '0.1.0', { [`${m.hash}.png`]: new Uint8Array([9, 9, 9]) });
+    const file = path.join(dir, 'manipulado.dwings');
+    await writeFile(file, bytes);
+    await expect(readProjectFile(file, new MediaStore(path.join(dir, 'c2')))).rejects.toMatchObject({
+      code: 'corrupt',
+    });
+  });
+
+  it('si falta un medio, se abre igualmente y se informa', async () => {
+    const { p } = await withImage();
+    const file = path.join(dir, 'incompleto.dwings');
+    await writeFile(file, encodeProject(p, '0.1.0'));
+    const r = await readProjectFile(file, new MediaStore(path.join(dir, 'vacia')));
+    expect(r.missingMedia).toEqual(['Foto.PNG']);
+  });
+
+  it('no se puede guardar si un medio ya no está en la caché', async () => {
+    const { p } = await withImage();
+    const empty = new MediaStore(path.join(dir, 'sin-medios'));
+    await expect(writeProjectFile(path.join(dir, 'x.dwings'), p, '0.1.0', empty)).rejects.toMatchObject({
+      code: 'io',
+    });
   });
 });

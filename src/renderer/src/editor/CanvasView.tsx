@@ -24,6 +24,7 @@ import { fitView, toScene, zoomAt } from './view';
 import { TextEditor, type TextEditTarget } from './TextEditor';
 import { LIBRARY } from '@core/library/catalog';
 import { ASSET_MIME, insertAsset } from './LibraryPanel';
+import { imageSourcesFor, useMediaVersion } from './media';
 
 const HANDLE_PX = 9;
 const ROTATE_OFFSET_PX = 28;
@@ -96,6 +97,7 @@ export function CanvasView({ project }: { project: Project }) {
   const playMode = useEditor((s) => s.preview || s.playing);
   const onion = useEditor((s) => s.onion);
   const activeLayerId = useEditor((s) => s.activeLayerId);
+  const mediaVersion = useMediaVersion((s) => s.v);
   const [cameraOverride, setCameraOverride] = useState<{ x: number; y: number; zoom: number } | null>(null);
   const scene = project.scenes.find((s) => s.id === sceneId) ?? project.scenes[0]!;
   const { width: docW, height: docH, background } = project.settings;
@@ -140,6 +142,7 @@ export function CanvasView({ project }: { project: Project }) {
     const g = gesture.current;
     const shown = g?.kind === 'erase' ? withReplacements(scene, g.working) : scene;
     const hidden = editingTextId ? new Set([editingTextId]) : undefined;
+    const images = imageSourcesFor(project);
 
     if (playMode) {
       // Vista previa: lo que saldrá en el vídeo en el instante del cabezal, a través de la cámara.
@@ -149,7 +152,7 @@ export function CanvasView({ project }: { project: Project }) {
       ctx.rect(0, 0, docW, docH);
       ctx.clip();
       ctx.transform(...cameraMatrix(scene, playhead));
-      drawRenderList(ctx, list, cache.current);
+      drawRenderList(ctx, list, cache.current, images);
       ctx.restore();
       return;
     }
@@ -159,7 +162,7 @@ export function CanvasView({ project }: { project: Project }) {
     // Fuera de la hoja se ve atenuado (no saldrá en el vídeo).
     ctx.save();
     ctx.globalAlpha = 0.25;
-    drawRenderList(ctx, list, cache.current);
+    drawRenderList(ctx, list, cache.current, images);
     ctx.restore();
     ctx.save();
     ctx.beginPath();
@@ -185,11 +188,11 @@ export function CanvasView({ project }: { project: Project }) {
           ...scene,
           layers: [{ ...active, kind: 'vector', items: neighbour.items, cels: undefined }],
         };
-        drawRenderList(ctx, evaluateScene(ghost, playhead, { mode: 'edit' }), cache.current);
+        drawRenderList(ctx, evaluateScene(ghost, playhead, { mode: 'edit' }), cache.current, images);
         ctx.restore();
       }
     }
-    drawRenderList(ctx, list, cache.current);
+    drawRenderList(ctx, list, cache.current, images);
     if (showGrid) {
       const step = 60;
       ctx.strokeStyle = 'rgba(47,111,214,0.18)';
@@ -221,6 +224,8 @@ export function CanvasView({ project }: { project: Project }) {
     playhead,
     onion,
     activeLayerId,
+    project,
+    mediaVersion,
   ]);
 
   // Capa superpuesta: trazo en curso, selección, marco y cursor de goma.

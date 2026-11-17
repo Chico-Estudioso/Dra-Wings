@@ -18,7 +18,15 @@ export const windowStateSchema = z.object({
 export type WindowState = z.infer<typeof windowStateSchema>;
 
 export type OpenResult =
-  | { status: 'ok'; project: Project; filePath: string | null; migrated: boolean; fromRecovery: boolean }
+  | {
+      status: 'ok';
+      project: Project;
+      filePath: string | null;
+      migrated: boolean;
+      fromRecovery: boolean;
+      /** Nombres de medios que faltan (el proyecto se abre igualmente). */
+      missingMedia?: string[];
+    }
   | { status: 'canceled' }
   | { status: 'error'; message: string; details?: string[] };
 
@@ -39,6 +47,11 @@ export interface RecoveryEntry {
   filePath: string | null;
 }
 
+export type MediaImportResult =
+  | { status: 'ok'; hash: string; mime: string; name: string; size: number; url: string }
+  | { status: 'canceled' }
+  | { status: 'error'; message: string };
+
 export interface AppInfo {
   version: string;
   platform: string;
@@ -57,6 +70,8 @@ export interface DwApi {
   listRecovery(): Promise<RecoveryEntry[]>;
   restoreRecovery(projectId: string): Promise<OpenResult>;
   discardRecovery(projectId: string): Promise<void>;
+  /** Importa una imagen o un audio con el diálogo nativo y lo copia a la caché de medios. */
+  importMedia(kind: 'image' | 'audio'): Promise<MediaImportResult>;
   setWindowState(state: WindowState): void;
   confirmClose(): void;
   onMenuAction(cb: (action: MenuAction) => void): () => void;

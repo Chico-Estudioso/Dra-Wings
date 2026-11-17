@@ -149,8 +149,31 @@ export function measureText(ctx: Ctx2D, text: string, font: FontId, size: number
   return { w: Math.ceil(w), h: Math.ceil(lines.length * size * lineHeight) };
 }
 
+/** Imágenes decodificadas por id de medio (las prepara el editor o el exportador). */
+export type ImageSources = ReadonlyMap<string, CanvasImageSource>;
+
+function drawImageItem(ctx: Ctx2D, item: Extract<RenderItem['item'], { type: 'image' }>, images?: ImageSources) {
+  const img = images?.get(item.assetId);
+  if (img) {
+    ctx.drawImage(img, 0, 0, item.w, item.h);
+    return;
+  }
+  // Aún sin cargar (o ausente): marcador neutro del tamaño de la imagen.
+  ctx.fillStyle = 'rgba(0,0,0,0.06)';
+  ctx.fillRect(0, 0, item.w, item.h);
+  ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+  ctx.lineWidth = Math.max(item.w, item.h) / 200;
+  ctx.strokeRect(0, 0, item.w, item.h);
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(item.w, item.h);
+  ctx.moveTo(item.w, 0);
+  ctx.lineTo(0, item.h);
+  ctx.stroke();
+}
+
 /** Dibuja la lista sobre la transformación actual del contexto (la del lienzo o de la vista). */
-export function drawRenderList(ctx: Ctx2D, list: RenderItem[], cache: PathCache) {
+export function drawRenderList(ctx: Ctx2D, list: RenderItem[], cache: PathCache, images?: ImageSources) {
   for (const r of list) {
     ctx.save();
     ctx.transform(...r.matrix);
@@ -173,6 +196,9 @@ export function drawRenderList(ctx: Ctx2D, list: RenderItem[], cache: PathCache)
         break;
       case 'text':
         drawText(ctx, item, r.progress);
+        break;
+      case 'image':
+        drawImageItem(ctx, item, images);
         break;
       case 'group':
         // Los grupos llegan aplanados desde evaluateScene.

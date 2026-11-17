@@ -8,9 +8,10 @@ Contenedor y estrategia de guardado: ver ADR-003. Unidades de tiempo: ver ADR-00
 |---|---|---|
 | `manifest.json` | deflate | `{ "format": "dra-wings", "formatVersion": 1, "appVersion": "x.y.z" }` |
 | `project.json` | deflate | Documento (ver abajo) |
-| `media/<sha256>.<ext>` | store | Imágenes y audio importados |
-| `cache/peaks/<sha256>.bin` | store | Picos de forma de onda (regenerables; se pueden borrar) |
-| `thumbnail.png` | store | Miniatura de la primera escena |
+| `media/<sha256>.<ext>` | store | Imágenes y audio usados por el proyecto. `ext`: png, jpg, webp, gif, mp3, wav, ogg, m4a o flac |
+| `thumbnail.png` | store | Miniatura de la primera escena (prevista; aún no se escribe) |
+
+Los picos de la forma de onda no se guardan: se recalculan al abrir.
 
 ## Documento (esquema lógico)
 
@@ -19,7 +20,7 @@ Project {
   id: string; name: string; createdAt: string; updatedAt: string   // ISO 8601
   settings: { width: number; height: number; fps: Fps; background: Color; mode: 'guided' | 'mixed' | 'free' }
   scenes: Scene[]                       // se reproducen en orden
-  assets: Asset[]                       // medios referenciados por hash
+  assets: Asset[]                       // medios usados (imágenes y audio)
   audioTracks: AudioTrack[]
   markers: Marker[]                     // tiempo global en ticks
   export: { preset: '720p' | '1080p' | 'square' | 'vertical'; fps?: Fps }
@@ -34,7 +35,7 @@ Layer {
   cels?: Cel[]                          // kind = 'frames' (fotograma a fotograma)
 }
 
-Item = Stroke | Shape | Text | Group    // Image llega en M5
+Item = Stroke | Shape | Text | Group | Image
 ItemBase {
   id; transform: AnimatedTransform; opacity: Animated<number>
   in: Ticks; out?: Ticks                // relativos a la escena
@@ -69,10 +70,27 @@ Group extends ItemBase {
 }
 // ItemBase.slot?: string → ranura a la que pertenece una pieza dentro de un grupo
 
+Image extends ItemBase {
+  type: 'image'; assetId: string        // → Asset con mime image/*
+  w: number; h: number                  // tamaño en la hoja; la imagen se estira a la caja local (0,0)-(w,h)
+}
+
+Asset {
+  id: string
+  hash: string                          // SHA-256 del contenido, en hexadecimal; da nombre al archivo en media/
+  mime: string                          // image/png | image/jpeg | image/webp | image/gif | audio/mpeg | audio/wav | audio/ogg | audio/mp4 | audio/flac
+  name: string                          // nombre original del archivo (informativo)
+  size: number                          // bytes
+  durationTicks?: Ticks                 // solo audio
+}
+
 Cel { id; start: Ticks; duration: Ticks; items: Item[] }   // alineado a la rejilla de fotogramas
 
 AudioTrack { id; name; kind: 'narration' | 'music' | 'sfx'; volume: number; muted: boolean; clips: AudioClip[] }
 AudioClip { id; assetId; start: Ticks; sourceOffset: Ticks; duration: Ticks; gain: number; fadeIn: Ticks; fadeOut: Ticks }
+// start: tiempo global del proyecto (las escenas se suceden); sourceOffset: dónde empieza dentro del archivo;
+// gain y volume: 0–4 (la interfaz ofrece 0–200 %); fadeIn + fadeOut ≤ duration
+Marker { id; t: Ticks; label: string }  // t: tiempo global
 
 Animated<T> = { value: T } | { keys: { t: Ticks; v: T; ease: Ease }[] }    // t relativo a la escena
 AnimatedTransform = { x; y; scaleX; scaleY; rotation; anchorX; anchorY }   // cada uno Animated<number>
@@ -85,7 +103,9 @@ Compatibilidad: hasta la primera versión publicada, el formato v1 puede ampliar
 ## Reglas
 
 - Los identificadores son cadenas aleatorias únicas dentro del proyecto (nanoid).
-- No hay rutas absolutas. Los medios se referencian por `assetId` → `Asset { id, hash, mime, name, size, durationTicks? }`.
+- No hay rutas absolutas. Los medios se referencian por `assetId` → `Asset`, y su archivo es `media/<hash>.<ext>`.
+- Cada medio del ZIP debe coincidir con su hash; si no, el archivo se rechaza por dañado. Si falta un medio, el proyecto se abre igualmente y se avisa (los elementos sin medio se ven como marcador).
+- Al guardar se omiten los medios que no usa ningún elemento ni clip (`pruneAssets`). Las referencias a medios inexistentes se rechazan al abrir (`checkReferences`).
 - Validación completa con zod antes de entregar el documento al editor. Si falla, mensaje comprensible con la ruta del campo.
 - Migraciones encadenadas `v1 → v2 → …` aplicadas al JSON antes de validar. Antes de migrar se guarda una copia `.bak`.
 - Un archivo con `formatVersion` mayor que el soportado no se abre: se pide actualizar la aplicación.
@@ -100,7 +120,7 @@ Implementado en `src/main/project-file.ts`:
 3. Renombrar `.tmp` → `nombre.dwings` (reemplazo atómico, con reintentos si Windows bloquea el archivo un instante). El destino nunca desaparece.
 4. Si cualquier paso falla, se borra el `.tmp`, el archivo original queda intacto y se informa del error (disco lleno, permisos…).
 
-Autoguardado (`src/main/recovery.ts`): 3 s después del último cambio, el documento se escribe en `userData/recovery/<projectId>.json` junto con la ruta de su archivo. Al guardar se borra. En la pantalla de inicio se ofrecen las recuperaciones más recientes que su archivo (o de proyectos nunca guardados) para restaurarlas o descartarlas. Los medios nuevos aún no guardados vivirán en `userData/media-cache/` (M3/M5).
+Autoguardado (`src/main/recovery.ts`): 3 s después del último cambio, el documento se escribe en `userData/recovery/<projectId>.json` junto con la ruta de su archivo. Al guardar se borra. En la pantalla de inicio se ofrecen las recuperaciones más recientes que su archivo (o de proyectos nunca guardados) para restaurarlas o descartarlas. Los medios importados viven en `userData/media-cache/<sha256>.<ext>` desde que se importan, así que la recuperación los encuentra aunque el proyecto no se haya guardado nunca.
 
 ## Seguridad de rutas
 

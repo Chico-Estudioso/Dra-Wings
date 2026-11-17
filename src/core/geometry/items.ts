@@ -46,6 +46,7 @@ export function localBounds(item: Item): Rect {
     }
     case 'text':
     case 'group':
+    case 'image':
       return { x: 0, y: 0, w: item.w, h: item.h };
   }
 }
@@ -171,7 +172,8 @@ export function hitItem(item: Item, p: Point, tol: number, tick = 0): boolean {
       return hitStroke(item, local, localTol);
     case 'shape':
       return hitShape(item, local, localTol);
-    case 'text': {
+    case 'text':
+    case 'image': {
       const b = localBounds(item);
       return (
         local.x >= b.x - localTol &&

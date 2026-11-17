@@ -13,10 +13,15 @@ Registro breve. El detalle de cada una está en su ADR (`docs/decisions/`).
 | 7 | Fuentes del texto empaquetadas (OFL): Patrick Hand (manuscrita), Caveat (caligráfica) y Nunito (redondeada), vía @fontsource. Las licencias se incluirán en el instalador (M8). | Aprobada | — |
 | 8 | Goma no destructiva: divide trazos y elimina formas y textos completos | Aprobada | `docs/EDITOR.md` |
 | 10 | Biblioteca original generada por código (trazos + rellenos) e insertada como grupos autosuficientes con ranuras de color | Aprobada | `docs/LIBRARY.md` |
-| 11 | Importación de imágenes junto con el canal de medios del audio (M5) | Aprobada | `ROADMAP.md` |
+| 11 | Importación de imágenes junto con el canal de medios del audio (implementada en M5) | Aprobada | `docs/AUDIO_EXPORT.md` |
 | 12 | Apariciones por elemento (`in`, `enter`, `out`, `exit`) con tiempo automático secuencial; los grupos se dibujan contorno a contorno y después colorean | Aprobada | `docs/ANIMATION_ENGINE.md` |
 | 13 | Edición con todo visible en el instante del cabezal y vista previa separada (muestra el vídeo con cámara) | Aprobada | `docs/EDITOR.md` |
 | 9 | Rotación en grados y transformación T·R·S alrededor de un ancla (centro de la caja local) | Aprobada | `docs/PROJECT_FORMAT.md` |
+| 14 | Medios por contenido (SHA-256) en una caché local servida por `app://dra-wings/media/`. El renderer nunca maneja rutas; los medios se verifican contra su hash al abrir. | Aprobada | `docs/AUDIO_EXPORT.md` |
+| 15 | Audio decodificado a 48 kHz con `OfflineAudioContext` y una sola función de mezcla (`scheduleProject`) para reproducción y exportación | Aprobada | `docs/AUDIO_EXPORT.md` |
+| 16 | Reloj de reproducción = reloj del audio, con reloj de pared si el dispositivo no avanza | Aprobada | `docs/AUDIO_EXPORT.md` |
+| 17 | Al guardar se omiten los medios sin usar (solo en el archivo; la caché los conserva para deshacer) | Aprobada | `docs/PROJECT_FORMAT.md` |
+| 18 | La narración alarga la última escena si se sale del vídeo; música y efectos se cortan al final | Aprobada | `docs/AUDIO_EXPORT.md` |
 
 ## Pendientes (se deciden en su fase)
 

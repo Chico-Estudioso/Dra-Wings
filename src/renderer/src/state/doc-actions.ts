@@ -1,4 +1,5 @@
 // Operaciones de documento que hablan con el proceso principal.
+import { pruneAssets } from '@core/audio/clips';
 import { createProject, type NewProjectOptions } from '@core/model/factory';
 import type { OpenResult } from '@shared/ipc';
 import { useApp } from './app-store';
@@ -17,6 +18,11 @@ function handleOpenResult(r: OpenResult): boolean {
       kind: 'info',
       text: 'El proyecto se ha actualizado al formato actual. Se guardará en el nuevo formato.',
     });
+  if (r.missingMedia?.length)
+    state().notify({
+      kind: 'error',
+      text: `Faltan ${r.missingMedia.length === 1 ? 'un medio' : `${r.missingMedia.length} medios`} del proyecto: ${r.missingMedia.slice(0, 3).join(', ')}. Se muestran como marcadores; vuelve a importarlos.`,
+    });
   if (r.fromRecovery)
     state().notify({
       kind: 'info',
@@ -30,7 +36,9 @@ export async function saveCurrent(saveAs = false): Promise<boolean> {
   if (!doc) return false;
   const snapshot = doc.project;
   state().setSaveStatus('saving');
-  const r = await window.dw.saveProject(snapshot, saveAs);
+  // Los medios que ya no usa ningún elemento ni clip no se escriben en el archivo (siguen en la
+  // caché local, así que deshacer después de guardar no pierde nada).
+  const r = await window.dw.saveProject(pruneAssets(snapshot), saveAs);
   if (r.status === 'ok') {
     state().markSaved(r.filePath, r.savedAt, snapshot);
     return true;

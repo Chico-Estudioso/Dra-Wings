@@ -16,6 +16,12 @@
 - Ubuntu ejecuta las mismas pruebas para detectar diferencias de plataforma (el renderizado con Xvfb).
 - Workflow de prototipos o capacidades bajo demanda cuando cambie la versión de Electron.
 
+## E2E: condiciones fijas
+
+- La ventana se fija a 1024×700 en todas las plataformas: es la geometría que tienen los runners de Windows (pantallas de 1024×768) y así Linux prueba lo mismo. Una prueba específica comprueba que, con la ventana al tamaño mínimo, el lienzo no invade la línea de tiempo.
+- Los medios de prueba (PNG y WAV) se generan en la propia prueba: no hay binarios en el repositorio.
+- Las pruebas de audio no dependen de que haya dispositivo de salida: la reproducción pasa al reloj de pared si el del audio no avanza.
+
 ## Reglas
 
 - Cada error corregido añade una prueba de regresión.

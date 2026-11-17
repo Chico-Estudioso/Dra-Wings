@@ -23,14 +23,14 @@ Cada elemento tiene `in` (cuándo empieza a aparecer), `out` opcional (cuándo t
 
 | `enter.kind` | Efecto |
 |---|---|
-| `draw` | **Trazos:** se revelan por longitud de arco (`mode: 'length'`) o con los tiempos grabados (`'recorded'`). **Formas:** el contorno avanza con `lineDash` durante el 75 % de la duración y el relleno aparece en el 25 % final. **Textos:** se escriben letra a letra. **Grupos:** ver abajo. |
+| `draw` | **Trazos:** se revelan por longitud de arco (`mode: 'length'`) o con los tiempos grabados (`'recorded'`). **Formas:** el contorno avanza con `lineDash` durante el 75 % de la duración y el relleno aparece en el 25 % final. **Textos:** se escriben letra a letra. **Imágenes:** aparecen con un fundido. **Grupos:** ver abajo. |
 | `fade` | Opacidad de 0 a 1. |
 | `pop` | Escala desde 0 con rebote suave, alrededor del ancla. |
 | `none` | Aparece de golpe en `in`. |
 
 `exit` (`fade` o `pop`) ocupa los últimos `duration` ticks antes de `out`.
 
-**Grupos que se dibujan** (recursos de biblioteca y personajes): sus piezas se aplanan y, durante el 75 % inicial (`OUTLINE_SHARE`), los trazos y textos se dibujan **uno tras otro** con un tiempo proporcional a su longitud. En el 25 % final aparecen los rellenos («primero la línea, luego el color», como en un Draw My Life).
+**Grupos que se dibujan** (recursos de biblioteca y personajes): sus piezas se aplanan y, durante el 75 % inicial (`OUTLINE_SHARE`), los trazos y textos se dibujan **uno tras otro** con un tiempo proporcional a su longitud. En el 25 % final aparecen los rellenos y las imágenes («primero la línea, luego el color», como en un Draw My Life).
 
 El último punto visible de un trazo se interpola entre dos puntos guardados, así que el resultado no depende del número de eventos del ratón.
 
@@ -39,7 +39,7 @@ El último punto visible de un trazo se interpola entre dos puntos guardados, as
 Al crear o insertar algo en una capa vectorial (`src/core/anim/timing.ts`):
 
 - `in` = final de la última aparición de la escena (`contentEnd`), así que los elementos se dibujan en el orden en que se crearon.
-- `enter = draw` con duración proporcional: trazos a ~1000 unidades/s (0,25–4 s), formas por perímetro, textos a 0,06 s por letra y grupos a 2,5 s.
+- `enter = draw` con duración proporcional: trazos a ~1000 unidades/s (0,25–4 s), formas por perímetro, textos a 0,06 s por letra y grupos a 2,5 s. Las imágenes importadas entran con `fade` de 1 s.
 - La escena se alarga si hace falta (`fitSceneDuration`: final del contenido + 1 s).
 
 Todo se puede ajustar después en la línea de tiempo o en el panel «Animación».

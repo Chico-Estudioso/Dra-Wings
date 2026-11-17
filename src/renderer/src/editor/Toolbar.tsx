@@ -3,6 +3,7 @@ import {
   Circle,
   Eraser,
   Hand,
+  ImagePlus,
   Video,
   MousePointer2,
   Pencil,
@@ -12,6 +13,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useEditor, type Tool } from './editor-store';
+import { importImage } from './media-actions';
 
 export const TOOLS: { id: Tool; label: string; key: string; icon: LucideIcon }[] = [
   { id: 'select', label: 'Seleccionar', key: 'V', icon: MousePointer2 },
@@ -43,6 +45,15 @@ export function Toolbar() {
           <t.icon size={20} />
         </button>
       ))}
+      <span className="toolbar-sep" aria-hidden />
+      <button
+        className="tool-btn"
+        aria-label="Importar imagen"
+        title="Importar imagen (PNG, JPG, WEBP o GIF)"
+        onClick={() => void importImage()}
+      >
+        <ImagePlus size={20} />
+      </button>
     </nav>
   );
 }

@@ -1,6 +1,6 @@
 # Roadmap — Dra-Wings
 
-Estado: M0 a M4 completados. Siguiente: M5.
+Estado: M0 a M5 completados. Siguiente: M6.
 
 ## M0 — Investigación y diseño ✅
 - Stack decidido: Electron + React/TS, renderizador Canvas 2D propio, ZIP `.dwings`, exportación WebCodecs (ADR-001 a ADR-006).
@@ -36,14 +36,16 @@ Estado: M0 a M4 completados. Siguiente: M5.
 - Reproducción determinista.
 - **Salida:** previsualizar una secuencia animada con tiempos controlables.
 
-## M5 — Audio y narración
-- Canal de medios del proyecto (caché por hash, guardado en el `.dwings`, protocolo `media://`).
+## M5 — Audio y narración ✅
+- Canal de medios del proyecto (caché por hash, guardado en el `.dwings`, servido por `app://dra-wings/media/`).
 - Importar imágenes (movido desde M3: comparte canal con el audio).
 - Importar audio local.
 - Pistas de narración, música y efectos.
 - Forma de onda, recorte, volumen y fundidos básicos.
 - Marcadores para sincronización.
+- Reproducción con el reloj del audio.
 - **Salida:** narración sincronizada con escenas y elementos visuales.
+- Pendiente para fases posteriores: grabar la voz desde el micrófono, arrastrar archivos desde el explorador al lienzo, y GIF animados (ahora se usa el primer fotograma).
 
 ## M6 — Renderizado y exportación
 - Renderizar fotogramas a partir del modelo de línea de tiempo.

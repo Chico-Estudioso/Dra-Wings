@@ -15,6 +15,7 @@ import type {
   shapeSchema,
   strokeSchema,
   textSchema,
+  imageSchema,
   transformSchema,
 } from './schema';
 import type { AnyItem, GroupItem } from './schema';
@@ -41,3 +42,4 @@ export type Group = GroupItem;
 export type ColorSlot = z.infer<typeof colorSlotSchema>;
 export type Enter = NonNullable<Item['enter']>;
 export type Exit = NonNullable<Item['exit']>;
+export type ImageItem = z.infer<typeof imageSchema>;

@@ -1,6 +1,6 @@
 import type { z } from 'zod';
 import { projectSchema } from './schema';
-import type { Project } from './types';
+import type { Item, Project } from './types';
 
 export type ValidationResult = { ok: true; project: Project } | { ok: false; issues: string[] };
 
@@ -43,6 +43,17 @@ export function checkReferences(project: Project): string[] {
     }
   }
   const assetIds = new Set(project.assets.map((a) => a.id));
+  const imageRefs = (items: Item[]): void =>
+    items.forEach((it) => {
+      if (it.type === 'image' && !assetIds.has(it.assetId))
+        problems.push(`La imagen «${it.id}» apunta a un medio inexistente`);
+      if (it.type === 'group') imageRefs(it.children);
+    });
+  for (const s of project.scenes)
+    for (const l of s.layers) {
+      imageRefs(l.items ?? []);
+      for (const c of l.cels ?? []) imageRefs(c.items);
+    }
   for (const t of project.audioTracks)
     for (const c of t.clips)
       if (!assetIds.has(c.assetId)) problems.push(`El clip de audio «${c.id}» apunta a un medio inexistente`);

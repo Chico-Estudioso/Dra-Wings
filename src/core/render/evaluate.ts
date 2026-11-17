@@ -128,7 +128,7 @@ function pushGroupLeaves(out: RenderItem[], list: Leaf[], draw: number) {
     const start = acc / total;
     acc += w;
     const end = acc / total;
-    if (l.item.type === 'shape' && w === 0) {
+    if (w === 0) {
       // Rellenos y formas: aparecen en la fase de color.
       if (fillDraw > 0) out.push({ ...l, opacity: l.opacity * fillDraw, progress: 1, fill: 1 });
       return;
@@ -148,6 +148,10 @@ function pushItem(out: RenderItem[], item: Item, matrix: Mat, opacity: number, d
     const progress = hasLine ? clamp01(draw / OUTLINE_SHARE) : 1;
     const fill = hasLine ? clamp01((draw - OUTLINE_SHARE) / (1 - OUTLINE_SHARE)) : draw;
     out.push({ item, matrix, opacity: hasLine ? opacity : opacity * draw, progress, fill });
+    return;
+  }
+  if (item.type === 'image' && draw < 1) {
+    out.push({ item, matrix, opacity: opacity * draw, progress: 1, fill: 1 });
     return;
   }
   out.push({ item, matrix, opacity, progress: draw, fill: 1 });

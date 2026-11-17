@@ -20,6 +20,7 @@
 | Texto | T | Clic para escribir (Esc o Ctrl+Intro para terminar). Clic sobre un texto existente para editarlo. |
 | Mano | H o mantener Espacio | Desplazar el lienzo. También con el botón central del ratón. |
 | Encuadre | C | Mover el marco de la cámara o hacer zoom desde su esquina inferior derecha. |
+| Importar imagen | (botón) | Diálogo para elegir una imagen PNG, JPG, WEBP o GIF. Se coloca centrada en la capa activa. |
 
 Al crear una forma se activa Seleccionar con la forma ya seleccionada, lista para ajustarla.
 
@@ -43,6 +44,8 @@ Al crear una forma se activa Seleccionar con la forma ya seleccionada, lista par
 | Ir al inicio de la escena | Inicio |
 | Fotograma anterior / siguiente | , y . |
 | Keyframe anterior / siguiente de la selección | Mayús+, y Mayús+. |
+| Añadir marca en el cabezal | M |
+| Eliminar el clip de audio o la marca seleccionados | Supr o Retroceso |
 
 ## Comportamiento de la goma
 
@@ -66,6 +69,16 @@ Ver `docs/LIBRARY.md`: recursos, constructor de personajes, escenas de partida, 
 - **Pistas:** una por capa. Cada elemento es una barra con su aparición (color según el tipo: dibujar, fundido o pop) y una línea fina hasta que desaparece. Arrastrar la barra cambia cuándo aparece (y desplaza sus keyframes); arrastrar su borde derecho cambia la duración. Con la selección se ven sus keyframes (rombos), y un clic en uno lleva el cabezal allí.
 - **Regla:** clic o arrastre para mover el cabezal; activa la vista previa para ver el vídeo en ese instante. Tocar el lienzo vuelve al modo edición.
 - **Vista previa frente a edición:** al editar se ve todo completo, con las posiciones del instante del cabezal. La vista previa muestra exactamente lo que saldrá en el vídeo (apariciones y cámara).
+- **Alto:** se adapta a la ventana y se puede cambiar con el tirador del borde superior (arrastrando o con las flechas). Se recuerda.
+
+## Audio y marcas
+
+- **Importar:** botón «Audio» de la línea de tiempo → Narración (voz), Música o Efecto de sonido. El clip se coloca en el cabezal, en la pista de ese tipo (se crea si no existe).
+- **Pistas de audio:** debajo de las capas, con su forma de onda. El altavoz de cada pista la silencia.
+- **Clips:** arrastrar para moverlos; arrastrar sus bordes para recortarlos. Al seleccionar uno, el panel lateral muestra su volumen, la entrada y salida suaves (fundidos), el volumen de la pista, «Dividir en el cabezal» y «Eliminar».
+- **Marcas:** con M o con el botón de la bandera se añade una en el cabezal. En la regla, un clic lleva el cabezal a la marca y la selecciona (su nombre se edita en el panel lateral); arrastrarla la mueve.
+- **Ajuste magnético en el tiempo:** al arrastrar barras de elementos, clips o marcas, se pegan a las marcas y al cabezal. Alt lo desactiva.
+- Detalles del motor de audio y de los medios: `docs/AUDIO_EXPORT.md`.
 
 ## Capas
 

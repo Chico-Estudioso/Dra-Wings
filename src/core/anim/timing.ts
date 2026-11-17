@@ -30,6 +30,8 @@ export function defaultDrawDuration(item: Item): Ticks {
       return clamp([...item.text].length * 0.06, 0.4, 4);
     case 'group':
       return sec(2.5);
+    case 'image':
+      return sec(1);
   }
 }
 
@@ -45,7 +47,7 @@ export function contentEnd(scene: Scene): Ticks {
 /** Programa un elemento nuevo al final de lo que ya aparece y le asigna la animación «dibujar». */
 export function appendTiming(scene: Scene, item: Item): void {
   item.in = contentEnd(scene);
-  item.enter = { kind: 'draw', duration: defaultDrawDuration(item) };
+  item.enter = { kind: item.type === 'image' ? 'fade' : 'draw', duration: defaultDrawDuration(item) };
 }
 
 /** Alarga la escena si su contenido termina después de su duración (deja un margen para verlo). */

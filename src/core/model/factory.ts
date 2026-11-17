@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid';
 import { TICKS_PER_SECOND, type Fps } from '../time/ticks';
-import type { Layer, Mode, Project, Scene, Shape, Stroke, TextItem, Transform } from './types';
+import type { ImageItem, Layer, Mode, Project, Scene, Shape, Stroke, TextItem, Transform } from './types';
 
 export const ASPECT_PRESETS = {
   landscape: { label: 'Horizontal 16:9', width: 1920, height: 1080, exportPreset: '1080p' },
@@ -143,4 +143,22 @@ export function createText(
   t.anchorX = props.w / 2;
   t.anchorY = props.h / 2;
   return { id: newId(), type: 'text', transform: t, opacity: { value: 1 }, in: 0, ...props };
+}
+
+/** Imagen importada de `w`×`h` unidades de escena con la esquina superior izquierda en (x, y). */
+export function createImage(assetId: string, x: number, y: number, w: number, h: number, name?: string): ImageItem {
+  const t = identityTransform(x, y);
+  t.anchorX = w / 2;
+  t.anchorY = h / 2;
+  return {
+    id: newId(),
+    type: 'image',
+    ...(name ? { name } : {}),
+    transform: t,
+    opacity: { value: 1 },
+    in: 0,
+    assetId,
+    w,
+    h,
+  };
 }

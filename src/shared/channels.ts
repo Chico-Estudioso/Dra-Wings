@@ -13,6 +13,7 @@ export const CH = {
   closeConfirmed: 'window:close-confirmed',
   menuAction: 'menu:action',
   requestSaveAndClose: 'window:request-save-and-close',
+  mediaImport: 'media:import',
 } as const;
 
 export const MENU_ACTIONS = ['new', 'open', 'save', 'saveAs', 'home', 'about'] as const;

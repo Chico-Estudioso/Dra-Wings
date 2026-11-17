@@ -1,22 +1,32 @@
 import { useMemo, useRef, useState } from 'react';
+import * as Popover from '@radix-ui/react-popover';
 import {
+  AudioLines,
   ChevronLeft,
   ChevronRight,
   Circle,
   Copy,
   Eye,
+  Flag,
   Layers,
+  Mic,
   Minus,
+  Music,
   Pause,
   Play,
   Plus,
   SkipBack,
   Trash2,
   Video,
+  Volume2,
+  VolumeX,
+  type LucideIcon,
 } from 'lucide-react';
+import { snapTo, trimmed, type TrackKind } from '@core/audio/edit';
+import { sceneStart } from '@core/edit/scenes';
 import { keyTimes, transformKeyTimes } from '@core/anim/keyframes';
 import { celAt, layerItemCount } from '@core/edit/ops';
-import type { Item, Layer, Project, Scene } from '@core/model/types';
+import type { AudioClip, AudioTrack, Item, Layer, Project, Scene } from '@core/model/types';
 import {
   formatTimecode,
   secondsFromTicks,
@@ -37,13 +47,26 @@ import {
   updateCurrentScene,
 } from './actions';
 import { TIMELINE_MIN_H, useEditor } from './editor-store';
+import { addMarkerAtPlayhead, importAudio, moveClipTo, moveMarkerTo, trimClipBy, updateTrack } from './media-actions';
 import { togglePlay } from './playback';
+import { Waveform } from './Waveform';
 
 const NAME_W = 150;
 const RULER_H = 24;
 const LANE_H = 12;
 const ROW_PAD = 5;
 const MIN_BAR_PX = 6;
+const AUDIO_ROW_H = 36;
+const CLIP_H = 30;
+/** Distancia (px) a la que se pega un arrastre a una marca o al cabezal. */
+const SNAP_PX = 8;
+
+const TRACK_ICONS: Record<TrackKind, LucideIcon> = { narration: Mic, music: Music, sfx: AudioLines };
+const IMPORT_OPTIONS: { kind: TrackKind; label: string }[] = [
+  { kind: 'narration', label: 'Narración (voz)' },
+  { kind: 'music', label: 'Música' },
+  { kind: 'sfx', label: 'Efecto de sonido' },
+];
 
 interface Bar {
   item: Item;
@@ -69,7 +92,9 @@ function packBars(items: Item[], sceneDuration: Ticks, minTicks: Ticks): { bars:
   return { bars, lanes: Math.max(1, laneEnds.length) };
 }
 
-type Drag = { kind: 'shift' | 'duration'; x0: number; id: string; base: number } | { kind: 'scrub' };
+type DragKind = 'shift' | 'duration' | 'clip-move' | 'clip-start' | 'clip-end' | 'marker';
+/** `base`: inicio del elemento (local), duración de la entrada, inicio o borde del clip, o instante de la marca (globales). */
+type Drag = { kind: DragKind; x0: number; id: string; base: number } | { kind: 'scrub' };
 
 function SceneTabs({ project, sceneId }: { project: Project; sceneId: string }) {
   const [renaming, setRenaming] = useState<string | null>(null);
@@ -232,7 +257,9 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
   const fps = project.settings.fps;
   const scrollRef = useRef<HTMLDivElement>(null);
   const drag = useRef<Drag | null>(null);
-  const [dragDelta, setDragDelta] = useState<{ id: string; kind: 'shift' | 'duration'; dt: number } | null>(null);
+  const [dragDelta, setDragDelta] = useState<{ id: string; kind: DragKind; dt: number } | null>(null);
+  const clipId = useEditor((s) => s.clipId);
+  const markerId = useEditor((s) => s.markerId);
 
   const pxPerTick = zoom / TICKS_PER_SECOND;
   const width = Math.max(scene.duration * pxPerTick + 120, 400);
@@ -242,6 +269,11 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
   const cameraKeys = transformKeyTimes(scene.camera);
   const activeLayer = scene.layers.find((l) => l.id === activeLayerId);
   const hasFrames = scene.layers.some((l) => l.kind === 'frames');
+  /** Inicio global de la escena: el audio y las marcas viven en el tiempo del proyecto. */
+  const offset = sceneStart(project, scene.id);
+  const viewEnd = width / pxPerTick;
+  const assets = useMemo(() => new Map(project.assets.map((a) => [a.id, a])), [project.assets]);
+  const markersHere = project.markers.filter((m) => m.t >= offset && m.t <= offset + scene.duration);
 
   const tickAt = (clientX: number) => {
     const r = scrollRef.current!.getBoundingClientRect();
@@ -264,7 +296,20 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
       ed.setPlayhead(snapToFrame(tickAt(e.clientX), fps));
       return;
     }
-    const dt = snapToFrame((e.clientX - d.x0) / pxPerTick, fps);
+    let dt = snapToFrame((e.clientX - d.x0) / pxPerTick, fps);
+    if (d.kind !== 'duration' && !e.altKey) {
+      // Ajuste magnético a marcas y al cabezal (Alt lo desactiva). Los elementos usan tiempo de escena.
+      const local = d.kind === 'shift';
+      const targets = project.markers.map((m) => (local ? m.t - offset : m.t));
+      if (d.kind !== 'marker') targets.push(local ? playhead : offset + playhead);
+      const tol = SNAP_PX / pxPerTick;
+      const snapped = snapTo(d.base + dt, targets, tol) - d.base;
+      const clip =
+        d.kind === 'clip-move' ? project.audioTracks.flatMap((t) => t.clips).find((c) => c.id === d.id) : null;
+      // Un clip también se pega por su final.
+      dt =
+        snapped !== dt || !clip ? snapped : snapTo(d.base + clip.duration + dt, targets, tol) - d.base - clip.duration;
+    }
     setDragDelta({ id: d.id, kind: d.kind, dt });
   };
 
@@ -275,9 +320,16 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
       setDragDelta(null);
       return;
     }
-    if (d.kind === 'shift') shiftItemsTime(selection.includes(d.id) ? selection : [d.id], dragDelta.dt);
-    else setEnterDuration(d.id, Math.max(snapToFrame(d.base + dragDelta.dt, fps), TICKS_PER_SECOND / fps));
+    const dt = dragDelta.dt;
     setDragDelta(null);
+    if (dt === 0) return;
+    if (d.kind === 'shift') shiftItemsTime(selection.includes(d.id) ? selection : [d.id], dt);
+    else if (d.kind === 'duration')
+      setEnterDuration(d.id, Math.max(snapToFrame(d.base + dt, fps), TICKS_PER_SECOND / fps));
+    else if (d.kind === 'clip-move') moveClipTo(d.id, d.base + dt);
+    else if (d.kind === 'clip-start') trimClipBy(d.id, 'start', dt);
+    else if (d.kind === 'clip-end') trimClipBy(d.id, 'end', dt);
+    else moveMarkerTo(d.id, d.base + dt);
   };
 
   const startBarDrag = (e: React.PointerEvent, bar: Bar, kind: 'shift' | 'duration') => {
@@ -288,7 +340,30 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
     else if (!selected.has(id)) ed.select([id]);
     ed.setTool('select');
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-    drag.current = { kind, x0: e.clientX, id, base: bar.item.enter?.duration ?? 0 };
+    drag.current = { kind, x0: e.clientX, id, base: kind === 'shift' ? bar.item.in : (bar.item.enter?.duration ?? 0) };
+  };
+
+  const startClipDrag = (e: React.PointerEvent, clip: AudioClip, kind: 'clip-move' | 'clip-start' | 'clip-end') => {
+    e.stopPropagation();
+    if (e.button !== 0) return;
+    ed.selectClip(clip.id);
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    drag.current = {
+      kind,
+      x0: e.clientX,
+      id: clip.id,
+      base: kind === 'clip-end' ? clip.start + clip.duration : clip.start,
+    };
+  };
+
+  const startMarkerDrag = (e: React.PointerEvent, id: string, t: Ticks) => {
+    e.stopPropagation();
+    if (e.button !== 0) return;
+    ed.selectMarker(id);
+    ed.setPlaying(false);
+    ed.setPlayhead(t - offset);
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    drag.current = { kind: 'marker', x0: e.clientX, id, base: t };
   };
 
   const shiftFor = (id: string) =>
@@ -365,6 +440,61 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
     );
   };
 
+  const renderClip = (track: AudioTrack, clip: AudioClip) => {
+    const asset = assets.get(clip.assetId);
+    let g = { start: clip.start, sourceOffset: clip.sourceOffset, duration: clip.duration };
+    if (dragDelta?.id === clip.id) {
+      if (dragDelta.kind === 'clip-move') g = { ...g, start: Math.max(0, g.start + dragDelta.dt) };
+      else if (dragDelta.kind === 'clip-start' || dragDelta.kind === 'clip-end')
+        g = trimmed(clip, dragDelta.kind === 'clip-start' ? 'start' : 'end', dragDelta.dt, asset?.durationTicks);
+    }
+    const localStart = g.start - offset;
+    const localEnd = localStart + g.duration;
+    const visStart = Math.max(0, localStart);
+    const visEnd = Math.min(viewEnd, localEnd);
+    if (visEnd <= visStart) return null;
+    const w = (visEnd - visStart) * pxPerTick;
+    const a = (localStart - visStart) * pxPerTick; // borde izquierdo del clip completo (≤ 0 si empieza antes)
+    const fadeIn = Math.min(clip.fadeIn, g.duration) * pxPerTick;
+    const fadeOut = Math.min(clip.fadeOut, g.duration) * pxPerTick;
+    const full = g.duration * pxPerTick;
+    const name = asset?.name ?? 'Medio ausente';
+    return (
+      <div
+        key={clip.id}
+        className={`tl-clip tl-clip-${track.kind} ${clip.id === clipId ? 'is-selected' : ''} ${track.muted ? 'is-muted' : ''}`}
+        style={{ left: visStart * pxPerTick, width: w, top: (AUDIO_ROW_H - CLIP_H) / 2, height: CLIP_H }}
+        title={`${name} · ${formatTimecode(localStart, fps)} – ${formatTimecode(localEnd, fps)}`}
+        data-testid="audio-clip"
+        onPointerDown={(e) => startClipDrag(e, clip, 'clip-move')}
+      >
+        {asset && (
+          <Waveform
+            asset={asset}
+            sourceStart={g.sourceOffset + (visStart - localStart)}
+            sourceLength={visEnd - visStart}
+            width={w}
+            height={CLIP_H - 2}
+            gain={clip.gain * track.volume}
+          />
+        )}
+        {(fadeIn > 0 || fadeOut > 0) && (
+          <svg className="tl-fades" width={w} height={CLIP_H} aria-hidden>
+            {fadeIn > 0 && <polygon points={`${a},0 ${a + fadeIn},0 ${a},${CLIP_H}`} />}
+            {fadeOut > 0 && <polygon points={`${a + full - fadeOut},0 ${a + full},0 ${a + full},${CLIP_H}`} />}
+          </svg>
+        )}
+        <span className="tl-clip-name">{name}</span>
+        {localStart >= 0 && (
+          <span className="tl-clip-handle is-start" onPointerDown={(e) => startClipDrag(e, clip, 'clip-start')} />
+        )}
+        {localEnd <= viewEnd && (
+          <span className="tl-clip-handle is-end" onPointerDown={(e) => startClipDrag(e, clip, 'clip-end')} />
+        )}
+      </div>
+    );
+  };
+
   return (
     <section
       className="timeline"
@@ -434,6 +564,35 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
             </button>
           </>
         )}
+        <Popover.Root>
+          <Popover.Trigger asChild>
+            <button className="btn btn-ghost btn-sm" title="Importar audio en el cabezal">
+              <Music size={14} aria-hidden /> Audio
+            </button>
+          </Popover.Trigger>
+          <Popover.Portal>
+            <Popover.Content className="menu-popover" sideOffset={4} align="end" aria-label="Importar audio">
+              {IMPORT_OPTIONS.map(({ kind, label }) => {
+                const Icon = TRACK_ICONS[kind];
+                return (
+                  <Popover.Close asChild key={kind}>
+                    <button className="menu-item" onClick={() => void importAudio(kind)}>
+                      <Icon size={15} aria-hidden /> {label}
+                    </button>
+                  </Popover.Close>
+                );
+              })}
+            </Popover.Content>
+          </Popover.Portal>
+        </Popover.Root>
+        <button
+          className="icon-btn icon-btn-sm"
+          aria-label="Añadir marca"
+          title="Añadir marca en el cabezal (M)"
+          onClick={addMarkerAtPlayhead}
+        >
+          <Flag size={14} />
+        </button>
         <button
           className="icon-btn icon-btn-sm"
           aria-label="Alejar línea de tiempo"
@@ -473,6 +632,25 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
               </button>
             );
           })}
+          {project.audioTracks.map((t) => {
+            const Icon = TRACK_ICONS[t.kind];
+            return (
+              <div key={t.id} className="tl-name tl-audio-name" style={{ height: AUDIO_ROW_H }}>
+                <Icon size={13} aria-hidden /> {t.name}
+                <button
+                  className={`icon-btn icon-btn-xs ${t.muted ? 'is-on' : ''}`}
+                  aria-pressed={t.muted}
+                  aria-label={`Silenciar ${t.name}`}
+                  title={t.muted ? 'Activar sonido' : 'Silenciar pista'}
+                  onClick={() =>
+                    updateTrack(t.id, t.muted ? 'Activar pista' : 'Silenciar pista', (x) => void (x.muted = !x.muted))
+                  }
+                >
+                  {t.muted ? <VolumeX size={13} /> : <Volume2 size={13} />}
+                </button>
+              </div>
+            );
+          })}
         </div>
         <div
           className="tl-scroll"
@@ -498,6 +676,22 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
                 </span>
               ))}
               <span className="tl-end" style={{ left: scene.duration * pxPerTick }} title="Fin de la escena" />
+              {markersHere.map((m) => {
+                const t = dragDelta?.kind === 'marker' && dragDelta.id === m.id ? m.t + dragDelta.dt : m.t;
+                return (
+                  <button
+                    key={m.id}
+                    className={`tl-marker ${m.id === markerId ? 'is-selected' : ''}`}
+                    style={{ left: (t - offset) * pxPerTick }}
+                    aria-label={`Marca «${m.label}»`}
+                    title={`${m.label} · ${formatTimecode(t - offset, fps)}`}
+                    data-testid="marker"
+                    onPointerDown={(e) => startMarkerDrag(e, m.id, m.t)}
+                  >
+                    <span className="tl-marker-label">{m.label}</span>
+                  </button>
+                );
+              })}
             </div>
             {cameraKeys.length > 0 && (
               <div className="tl-row" style={{ height: LANE_H + ROW_PAD * 2 }}>
@@ -514,6 +708,14 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
               </div>
             )}
             {layers.map(renderLayerRow)}
+            {project.audioTracks.map((t) => (
+              <div key={t.id} className="tl-row tl-audio-row" style={{ height: AUDIO_ROW_H }}>
+                {t.clips.map((c) => renderClip(t, c))}
+              </div>
+            ))}
+            {markersHere.map((m) => (
+              <div key={m.id} className="tl-marker-line" style={{ left: (m.t - offset) * pxPerTick }} />
+            ))}
             <div className="tl-playhead" style={{ left: playhead * pxPerTick }} />
             <div className="tl-after-end" style={{ left: scene.duration * pxPerTick }} />
           </div>
@@ -533,5 +735,7 @@ function nameOf(item: Item): string {
       return `Texto «${item.text.slice(0, 20)}»`;
     case 'group':
       return 'Grupo';
+    case 'image':
+      return 'Imagen';
   }
 }

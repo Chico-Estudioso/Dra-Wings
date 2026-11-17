@@ -133,8 +133,10 @@ function recolorItem(item: Item, slot: string, color: string): void {
   if (item.slot !== slot) return;
   if (item.type === 'stroke') item.style.color = color;
   else if (item.type === 'text') item.color = color;
-  else if (item.style.fill !== null) item.style.fill = color;
-  else item.style.stroke = color;
+  else if (item.type === 'shape') {
+    if (item.style.fill !== null) item.style.fill = color;
+    else item.style.stroke = color;
+  }
 }
 
 /** Cambia el color de una ranura (piel, pelo, ropa…) en todo el grupo. */

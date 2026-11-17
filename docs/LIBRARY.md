@@ -54,7 +54,7 @@ Casa en el campo, Ciudad, En clase, De noche y Conversación. Insertan recursos 
 | Pestaña lateral inicial | Biblioteca | Biblioteca | Capas |
 | Herramienta inicial | Seleccionar | Lápiz | Lápiz |
 | Guías magnéticas | Activadas | Activadas | Desactivadas (botón del imán) |
-| Tarjeta «Primeros pasos» | Sí (se puede ocultar para siempre) | No | No |
+| Tarjeta «Primeros pasos» (en el panel lateral) | Sí (se puede ocultar para siempre) | No | No |
 
 Cambiar de modo nunca toca el documento: solo ajusta paneles y ayudas.
 

@@ -14,6 +14,7 @@ import {
 } from './actions';
 import { useEditor, type Tool } from './editor-store';
 import { zoomAt } from './view';
+import { addMarkerAtPlayhead, deleteClip, deleteMarker } from './media-actions';
 
 const TOOL_KEYS: Record<string, Tool> = {
   v: 'select',
@@ -68,8 +69,12 @@ export function useEditorShortcuts(viewport: () => { w: number; h: number }) {
       } else if (k === ',' || k === '.') {
         ed.setPreview(true);
         ed.setPlayhead(ed.playhead + (k === '.' ? 1 : -1) * ticksPerFrame(fps));
-      } else if (k === 'delete' || k === 'backspace') deleteSelection();
-      else if (k === 'escape') ed.select([]);
+      } else if (k === 'delete' || k === 'backspace') {
+        if (ed.clipId) deleteClip(ed.clipId);
+        else if (ed.markerId) deleteMarker(ed.markerId);
+        else deleteSelection();
+      } else if (k === 'escape') ed.select([]);
+      else if (k === 'm') addMarkerAtPlayhead();
       else if (k.startsWith('arrow')) {
         const d = e.shiftKey ? 10 : 1;
         nudgeSelection(

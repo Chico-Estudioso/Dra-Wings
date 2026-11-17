@@ -29,6 +29,7 @@ import { GuidedTips } from '../editor/GuidedTips';
 import { Timeline } from '../editor/Timeline';
 import { usePlayback } from '../editor/playback';
 import { PropertiesPanel } from '../editor/PropertiesPanel';
+import { AudioClipPanel, MarkerPanel } from '../editor/AudioPanel';
 import { useEditorShortcuts } from '../editor/shortcuts';
 import { zoomAt } from '../editor/view';
 
@@ -141,6 +142,8 @@ export function Editor() {
   const toggleSnap = useEditor((s) => s.toggleSnap);
   const sideTab = useEditor((s) => s.sideTab);
   const setSideTab = useEditor((s) => s.setSideTab);
+  const clipId = useEditor((s) => s.clipId);
+  const markerId = useEditor((s) => s.markerId);
 
   // Al abrir otro proyecto, se reinicia el estado del editor.
   useEffect(() => {
@@ -234,11 +237,17 @@ export function Editor() {
               Capas
             </button>
           </div>
-          <PropertiesPanel
-            scene={scene}
-            docSize={{ w: project.settings.width, h: project.settings.height }}
-            fps={project.settings.fps}
-          />
+          {clipId ? (
+            <AudioClipPanel project={project} clipId={clipId} />
+          ) : markerId ? (
+            <MarkerPanel key={markerId} project={project} markerId={markerId} />
+          ) : (
+            <PropertiesPanel
+              scene={scene}
+              docSize={{ w: project.settings.width, h: project.settings.height }}
+              fps={project.settings.fps}
+            />
+          )}
           {sideTab === 'library' ? <LibraryPanel project={project} /> : <LayersPanel scene={scene} />}
         </aside>
       </div>

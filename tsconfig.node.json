@@ -18,5 +18,5 @@
     "src/renderer/src/state/app-store.ts"
   ],
   // El dibujo usa Path2D y Canvas (DOM): solo se compila con tsconfig.web.json.
-  "exclude": ["src/core/render/draw.ts"]
+  "exclude": ["src/core/render/draw.ts", "src/core/audio/mix.ts"]
 }

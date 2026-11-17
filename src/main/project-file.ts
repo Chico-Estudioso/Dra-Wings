@@ -5,6 +5,8 @@ import { CURRENT_FORMAT_VERSION, FORMAT_ID, manifestSchema } from '@core/model/s
 import { migrate, UnsupportedVersionError } from '@core/model/migrations';
 import { checkReferences, validateProject } from '@core/model/validate';
 import type { Project } from '@core/model/types';
+import { MEDIA_NAME, MediaError, type MediaStore } from './media';
+import { mediaFileName } from '@shared/media';
 
 export const PROJECT_EXTENSION = 'dwings';
 
@@ -29,12 +31,18 @@ export class ProjectFileError extends Error {
   }
 }
 
-export function encodeProject(project: Project, appVersion: string): Uint8Array {
+/** `media`: nombre (`<sha256>.<ext>`) → contenido. Los medios van sin comprimir (STORE). */
+export function encodeProject(
+  project: Project,
+  appVersion: string,
+  media: Record<string, Uint8Array> = {},
+): Uint8Array {
   const manifest = { format: FORMAT_ID, formatVersion: CURRENT_FORMAT_VERSION, appVersion };
   const files: Zippable = {
     'manifest.json': [strToU8(JSON.stringify(manifest, null, 2)), { level: 6 }],
     'project.json': [strToU8(JSON.stringify(project)), { level: 6 }],
   };
+  for (const [name, bytes] of Object.entries(media)) files[`media/${name}`] = [bytes, { level: 0 }];
   return zipSync(files);
 }
 
@@ -48,6 +56,10 @@ export interface DecodedProject {
   project: Project;
   migrated: boolean;
   formatVersion: number;
+  /** Medios incluidos en el archivo: nombre (`<sha256>.<ext>`) → contenido. */
+  media: Record<string, Uint8Array>;
+  /** Medios que usa el proyecto y no están ni en el archivo ni en la caché (solo con almacén). */
+  missingMedia: string[];
 }
 
 export function decodeProject(bytes: Uint8Array): DecodedProject {
@@ -81,7 +93,12 @@ export function decodeProject(bytes: Uint8Array): DecodedProject {
 
   let files: Record<string, Uint8Array>;
   try {
-    files = unzipSync(bytes, { filter: (f) => f.name === 'manifest.json' || f.name === 'project.json' });
+    files = unzipSync(bytes, {
+      filter: (f) =>
+        f.name === 'manifest.json' ||
+        f.name === 'project.json' ||
+        (f.name.startsWith('media/') && MEDIA_NAME.test(f.name.slice(6))),
+    });
   } catch {
     throw new ProjectFileError('corrupt', 'El proyecto está dañado y no se puede descomprimir.');
   }
@@ -112,10 +129,13 @@ export function decodeProject(bytes: Uint8Array): DecodedProject {
   const refs = checkReferences(result.project);
   if (refs.length)
     throw new ProjectFileError('invalid', 'El proyecto contiene referencias incoherentes.', refs.slice(0, 5));
-  return { project: result.project, migrated, formatVersion: manifest.data.formatVersion };
+  const media: Record<string, Uint8Array> = {};
+  for (const [name, data] of Object.entries(files))
+    if (name.startsWith('media/') && MEDIA_NAME.test(name.slice(6))) media[name.slice(6)] = data;
+  return { project: result.project, migrated, formatVersion: manifest.data.formatVersion, media, missingMedia: [] };
 }
 
-export async function readProjectFile(filePath: string): Promise<DecodedProject> {
+export async function readProjectFile(filePath: string, store?: MediaStore): Promise<DecodedProject> {
   let size: number;
   try {
     size = (await stat(filePath)).size;
@@ -130,7 +150,20 @@ export async function readProjectFile(filePath: string): Promise<DecodedProject>
   } catch {
     throw new ProjectFileError('io', 'No se pudo leer el archivo. Comprueba que tienes permiso para abrirlo.');
   }
-  return decodeProject(bytes);
+  const decoded = decodeProject(bytes);
+  if (store) {
+    try {
+      for (const [name, data] of Object.entries(decoded.media)) await store.putVerified(name, data);
+    } catch (e) {
+      throw new ProjectFileError('corrupt', e instanceof MediaError ? e.message : 'No se pudieron extraer los medios.');
+    }
+    // Un proyecto incompleto se abre igualmente: los elementos sin medio se ven como marcadores.
+    for (const asset of decoded.project.assets) {
+      const name = mediaFileName(asset.hash, asset.mime);
+      if (!name || !(await store.has(name))) decoded.missingMedia.push(asset.name);
+    }
+  }
+  return decoded;
 }
 
 async function renameWithRetry(from: string, to: string, attempts = 5): Promise<void> {
@@ -175,9 +208,24 @@ export async function writeFileAtomic(target: string, bytes: Uint8Array, { backu
   }
 }
 
-export async function writeProjectFile(filePath: string, project: Project, appVersion: string): Promise<void> {
+export async function writeProjectFile(
+  filePath: string,
+  project: Project,
+  appVersion: string,
+  store?: MediaStore,
+): Promise<void> {
+  const media: Record<string, Uint8Array> = {};
+  if (store)
+    for (const asset of project.assets) {
+      try {
+        const name = store.fileName(asset.hash, asset.mime);
+        media[name] = await store.read(name);
+      } catch {
+        throw new ProjectFileError('io', `No se encuentra el medio «${asset.name}». Vuelve a importarlo.`);
+      }
+    }
   try {
-    await writeFileAtomic(filePath, encodeProject(project, appVersion));
+    await writeFileAtomic(filePath, encodeProject(project, appVersion, media));
   } catch (e) {
     const code = (e as NodeJS.ErrnoException).code;
     const message =

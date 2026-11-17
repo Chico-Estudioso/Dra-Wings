@@ -4,7 +4,7 @@
 
 También ofrece herramientas de dibujo y animación libres para usuarios que prefieren trabajar sin ayudas.
 
-![Editor de Dra-Wings con la línea de tiempo](docs/img/editor-m4.png)
+![Editor de Dra-Wings con imagen, narración, música y marcas en la línea de tiempo](docs/img/editor-m5.png)
 
 ## Modos de creación
 
@@ -16,7 +16,7 @@ Los modos comparten el mismo formato de proyecto.
 
 ## Estado
 
-M0 a M4 completados: arquitectura, proyectos con guardado y recuperación, lienzo y dibujo, biblioteca con modo guiado, y animación con línea de tiempo. Siguiente: M5, audio y narración. Ver `ROADMAP.md`, `docs/EDITOR.md` y `docs/LIBRARY.md`.
+M0 a M5 completados: arquitectura, proyectos con guardado y recuperación, lienzo y dibujo, biblioteca con modo guiado, animación con línea de tiempo, y audio con narración e imágenes importadas. Siguiente: M6, exportación de vídeo. Ver `ROADMAP.md`, `docs/EDITOR.md`, `docs/LIBRARY.md` y `docs/AUDIO_EXPORT.md`.
 
 ## Principios
 
@@ -39,7 +39,7 @@ npm run build      # compilar
 npm run test:e2e   # pruebas E2E con Electron (requiere build; en Linux sin pantalla: xvfb-run -a)
 ```
 
-Estructura: `src/main` (proceso principal), `src/preload` (puente seguro), `src/renderer` (interfaz React), `src/core` (modelo, tiempo y, más adelante, motor y render; TypeScript puro), `src/shared` (contrato IPC) y `tests/` (unitarias y E2E).
+Estructura: `src/main` (proceso principal), `src/preload` (puente seguro), `src/renderer` (interfaz React), `src/core` (modelo, tiempo, animación, render y audio; TypeScript puro), `src/shared` (contrato IPC) y `tests/` (unitarias y E2E).
 
 Arquitectura y decisiones: `docs/ARCHITECTURE.md` y `docs/decisions/`. Normas de trabajo: `CLAUDE.md`, `AGENTS.md` y `prompts/README.md`.
 

@@ -206,10 +206,13 @@ export function shiftLayer(layerId: string, direction: 'up' | 'down'): void {
 // Biblioteca y grupos
 
 /** Inserta elementos en la capa activa y los selecciona. */
-export function insertItems(items: Item[], label: string): boolean {
+export function insertItems(items: Item[], label: string, prepare?: (project: Project) => void): boolean {
   const layer = writableActiveLayer();
   if (!layer || items.length === 0) return false;
-  editScene(label, (scene) => addTimed(scene, findLayer(scene, layer.id), items));
+  editScene(label, (scene, project) => {
+    prepare?.(project);
+    addTimed(scene, findLayer(scene, layer.id), items);
+  });
   useEditor.getState().setTool('select');
   useEditor.getState().select(items.map((i) => i.id));
   return true;

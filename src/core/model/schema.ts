@@ -116,6 +116,15 @@ export const textSchema = z.object({
   h: z.number().nonnegative().max(100_000),
 });
 
+/** Imagen importada: referencia a un medio del proyecto, dibujada en la caja local (0,0)-(w,h). */
+export const imageSchema = z.object({
+  ...itemBase,
+  type: z.literal('image'),
+  assetId: id,
+  w: z.number().positive().max(100_000),
+  h: z.number().positive().max(100_000),
+});
+
 export const colorSlotSchema = z.object({ id: z.string().min(1).max(40), label: z.string().max(80), color });
 
 type ItemBase = z.infer<z.ZodObject<typeof itemBase>>;
@@ -132,7 +141,11 @@ export interface GroupItem extends ItemBase {
 }
 
 export type AnyItem =
-  z.infer<typeof strokeSchema> | z.infer<typeof shapeSchema> | z.infer<typeof textSchema> | GroupItem;
+  | z.infer<typeof strokeSchema>
+  | z.infer<typeof shapeSchema>
+  | z.infer<typeof textSchema>
+  | z.infer<typeof imageSchema>
+  | GroupItem;
 
 export const groupSchema = z.object({
   ...itemBase,
@@ -146,11 +159,11 @@ export const groupSchema = z.object({
   slots: z.array(colorSlotSchema).max(20).optional(),
 });
 
-// La imagen importada se añade junto con el resto de medios (M5).
 export const itemSchema: z.ZodType<AnyItem> = z.discriminatedUnion('type', [
   strokeSchema,
   shapeSchema,
   textSchema,
+  imageSchema,
   groupSchema,
 ]);
 
