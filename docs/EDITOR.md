@@ -19,6 +19,7 @@
 | Línea, Flecha | L, A | Arrastrar (Mayús: ángulos de 45°). |
 | Texto | T | Clic para escribir (Esc o Ctrl+Intro para terminar). Clic sobre un texto existente para editarlo. |
 | Mano | H o mantener Espacio | Desplazar el lienzo. También con el botón central del ratón. |
+| Encuadre | C | Mover el marco de la cámara o hacer zoom desde su esquina inferior derecha. |
 
 Al crear una forma se activa Seleccionar con la forma ya seleccionada, lista para ajustarla.
 
@@ -38,6 +39,10 @@ Al crear una forma se activa Seleccionar con la forma ya seleccionada, lista par
 | Zoom | Ctrl+rueda, Ctrl++ y Ctrl+- |
 | Ajustar a la ventana | Ctrl+0 |
 | Desplazar | Rueda (Mayús+rueda en horizontal) |
+| Reproducir / Pausa | Intro |
+| Ir al inicio de la escena | Inicio |
+| Fotograma anterior / siguiente | , y . |
+| Keyframe anterior / siguiente de la selección | Mayús+, y Mayús+. |
 
 ## Comportamiento de la goma
 
@@ -55,6 +60,13 @@ Al crear una forma se activa Seleccionar con la forma ya seleccionada, lista par
 
 Ver `docs/LIBRARY.md`: recursos, constructor de personajes, escenas de partida, grupos con ranuras de color, guías magnéticas (Alt para desactivarlas al arrastrar) y comportamiento por modo. Los recursos se insertan con un clic en el centro de la hoja o arrastrándolos al lienzo.
 
+## Línea de tiempo
+
+- **Barra superior:** ir al inicio, reproducir, tiempo, pestañas de escena (doble clic para renombrar, +, mover, duplicar y eliminar), duración de la escena, **Vista previa** (ojo), **Grabar movimiento** (●), papel cebolla y botones de fotograma (con una capa de fotogramas activa) y zoom.
+- **Pistas:** una por capa. Cada elemento es una barra con su aparición (color según el tipo: dibujar, fundido o pop) y una línea fina hasta que desaparece. Arrastrar la barra cambia cuándo aparece (y desplaza sus keyframes); arrastrar su borde derecho cambia la duración. Con la selección se ven sus keyframes (rombos), y un clic en uno lleva el cabezal allí.
+- **Regla:** clic o arrastre para mover el cabezal; activa la vista previa para ver el vídeo en ese instante. Tocar el lienzo vuelve al modo edición.
+- **Vista previa frente a edición:** al editar se ve todo completo, con las posiciones del instante del cabezal. La vista previa muestra exactamente lo que saldrá en el vídeo (apariciones y cámara).
+
 ## Capas
 
 - La lista muestra arriba la capa que se dibuja encima. Siempre queda al menos una.
@@ -64,4 +76,3 @@ Ver `docs/LIBRARY.md`: recursos, constructor de personajes, escenas de partida, 
 ## Pendiente (siguientes fases)
 
 - Caché rasterizada por capa, si las mediciones en hardware real lo justifican (con 2000 trazos, 32–57 ms por fotograma con raster por software en CI).
-- Edición de keyframes desde el lienzo (M4).

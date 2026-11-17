@@ -1,6 +1,6 @@
 # Roadmap — Dra-Wings
 
-Estado: M0 a M3 completados. Siguiente: M4.
+Estado: M0 a M4 completados. Siguiente: M5.
 
 ## M0 — Investigación y diseño ✅
 - Stack decidido: Electron + React/TS, renderizador Canvas 2D propio, ZIP `.dwings`, exportación WebCodecs (ADR-001 a ADR-006).
@@ -28,7 +28,7 @@ Estado: M0 a M3 completados. Siguiente: M4.
 - Ayudas opcionales y plantillas de composición.
 - **Salida:** crear una escena sin dibujar a mano y cambiar a modo mixto/libre.
 
-## M4 — Animación y línea de tiempo
+## M4 — Animación y línea de tiempo ✅
 - Escenas, pistas y clips.
 - Aparición progresiva de trazos.
 - Transformaciones animadas de objetos.

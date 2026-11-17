@@ -105,7 +105,7 @@ test('capas: bloquear impide dibujar, y se dibuja en la capa activa', async () =
   await expect(page.getByRole('status').filter({ hasText: 'está bloqueada' })).toBeVisible();
   await expect.poll(() => itemCount(page)).toBe(0);
 
-  await page.getByRole('button', { name: 'Nueva capa' }).click();
+  await page.getByRole('button', { name: 'Nueva capa', exact: true }).click();
   await expect(page.getByRole('option', { name: /Capa 2/ })).toHaveAttribute('aria-selected', 'true');
   await drag(page, { x: c.x - 100, y: c.y }, { x: c.x + 100, y: c.y });
   await expect(page.locator('.layer-count').first()).toHaveText('1'); // Capa 2 aparece arriba
@@ -120,7 +120,7 @@ test('zoom con los controles y ajuste a la ventana', async () => {
   await newFreeProject(page, 'Zoom');
   const zoom = page.getByTestId('zoom-value');
   const initial = parseInt((await zoom.textContent())!, 10);
-  await page.getByRole('button', { name: 'Acercar' }).click();
+  await page.getByRole('button', { name: 'Acercar', exact: true }).click();
   await expect.poll(async () => parseInt((await zoom.textContent())!, 10)).toBeGreaterThan(initial);
   await page.getByRole('button', { name: 'Ajustar a la ventana' }).click();
   await expect.poll(async () => parseInt((await zoom.textContent())!, 10)).toBe(initial);

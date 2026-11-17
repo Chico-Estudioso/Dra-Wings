@@ -25,7 +25,7 @@ Project {
   export: { preset: '720p' | '1080p' | 'square' | 'vertical'; fps?: Fps }
 }
 
-Scene { id; name; duration: Ticks; layers: Layer[]; camera: AnimatedTransform }
+Scene { id; name; duration: Ticks; layers: Layer[]; camera: AnimatedTransform }   // cámara: x, y = esquina del encuadre; scaleX = zoom
 
 Layer {
   id; name; visible: boolean; locked: boolean; opacity: number
@@ -35,13 +35,17 @@ Layer {
 }
 
 Item = Stroke | Shape | Text | Group    // Image llega en M5
-ItemBase { id; transform: AnimatedTransform; opacity: Animated<number>; in: Ticks; out?: Ticks }
+ItemBase {
+  id; transform: AnimatedTransform; opacity: Animated<number>
+  in: Ticks; out?: Ticks                // relativos a la escena
+  enter?: { kind: 'none' | 'draw' | 'fade' | 'pop'; duration: Ticks; mode?: 'length' | 'recorded' }
+  exit?: { kind: 'none' | 'fade' | 'pop'; duration: Ticks }
+}
 
 Stroke extends ItemBase {
   type: 'stroke'
   points: number[]                      // empaquetado [x, y, presión, tMs, ...]; presión = -1 si el dispositivo no la da
   style: { color: Color; size: number; thinning: number; smoothing: number; streamline: number; opacity: number }
-  reveal: { start: Ticks; duration: Ticks; mode: 'length' | 'recorded' } | null   // null = visible desde `in`
 }
 
 Shape extends ItemBase {

@@ -14,6 +14,8 @@ Registro breve. El detalle de cada una está en su ADR (`docs/decisions/`).
 | 8 | Goma no destructiva: divide trazos y elimina formas y textos completos | Aprobada | `docs/EDITOR.md` |
 | 10 | Biblioteca original generada por código (trazos + rellenos) e insertada como grupos autosuficientes con ranuras de color | Aprobada | `docs/LIBRARY.md` |
 | 11 | Importación de imágenes junto con el canal de medios del audio (M5) | Aprobada | `ROADMAP.md` |
+| 12 | Apariciones por elemento (`in`, `enter`, `out`, `exit`) con tiempo automático secuencial; los grupos se dibujan contorno a contorno y después colorean | Aprobada | `docs/ANIMATION_ENGINE.md` |
+| 13 | Edición con todo visible en el instante del cabezal y vista previa separada (muestra el vídeo con cámara) | Aprobada | `docs/EDITOR.md` |
 | 9 | Rotación en grados y transformación T·R·S alrededor de un ancla (centro de la caja local) | Aprobada | `docs/PROJECT_FORMAT.md` |
 
 ## Pendientes (se deciden en su fase)

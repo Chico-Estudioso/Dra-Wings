@@ -17,31 +17,53 @@ renderFrame(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, l
 - El fotograma `f` se exporta en `tick = f · 705600000 / fps`.
 - Reproducción: el reloj maestro es `AudioContext.currentTime` cuando hay audio. El fotograma visible es el correspondiente a ese instante. Si la interfaz va lenta, se saltan fotogramas, pero nunca se desincroniza el audio.
 
-## Trazos progresivos
+## Apariciones y desapariciones (implementado en M4)
 
-- Cada punto guarda `x`, `y`, la presión y `tMs` (milisegundos desde el inicio del trazo, capturados al dibujar).
-- `reveal.mode = 'length'`: el progreso `p = (t - start) / duration` se aplica sobre la longitud de arco, así que la velocidad es constante, que es el estilo habitual de los vídeos Draw My Life.
-- `reveal.mode = 'recorded'`: el progreso sigue los tiempos reales de dibujo, escalados a `duration`.
-- El último punto visible se interpola entre dos puntos guardados, así que el resultado no depende del número de eventos del ratón.
-- `getStroke(…, { last: p >= 1 })` de perfect-freehand cierra el extremo solo cuando el trazo está completo.
+Cada elemento tiene `in` (cuándo empieza a aparecer), `out` opcional (cuándo termina de desaparecer), `enter` y `exit`:
 
-Validado en el prototipo M0: el revelado por longitud de arco es determinista y 150 de 150 fotogramas fueron idénticos entre el worker y la previsualización.
+| `enter.kind` | Efecto |
+|---|---|
+| `draw` | **Trazos:** se revelan por longitud de arco (`mode: 'length'`) o con los tiempos grabados (`'recorded'`). **Formas:** el contorno avanza con `lineDash` durante el 75 % de la duración y el relleno aparece en el 25 % final. **Textos:** se escriben letra a letra. **Grupos:** ver abajo. |
+| `fade` | Opacidad de 0 a 1. |
+| `pop` | Escala desde 0 con rebote suave, alrededor del ancla. |
+| `none` | Aparece de golpe en `in`. |
 
-## Objetos y cámara
+`exit` (`fade` o `pop`) ocupa los últimos `duration` ticks antes de `out`.
 
-- Propiedades animables: `x`, `y`, `scaleX`, `scaleY`, `rotation` y `opacity` (además del ancla).
-- `Animated<T>`: valor fijo o keyframes `{ t, v, ease }`. Antes del primer keyframe se mantiene el primer valor y después del último, el último.
-- Curvas: `linear`, `easeIn`, `easeOut`, `easeInOut` (cúbicas) y `hold` (escalón).
-- `in` y `out` del item: fuera de ese intervalo, el item no aparece en la `RenderList`.
-- La cámara es una `AnimatedTransform` por escena que se aplica como matriz inversa. Las coordenadas del proyecto no dependen del zoom del editor.
+**Grupos que se dibujan** (recursos de biblioteca y personajes): sus piezas se aplanan y, durante el 75 % inicial (`OUTLINE_SHARE`), los trazos y textos se dibujan **uno tras otro** con un tiempo proporcional a su longitud. En el 25 % final aparecen los rellenos («primero la línea, luego el color», como en un Draw My Life).
+
+El último punto visible de un trazo se interpola entre dos puntos guardados, así que el resultado no depende del número de eventos del ratón.
+
+## Tiempo automático
+
+Al crear o insertar algo en una capa vectorial (`src/core/anim/timing.ts`):
+
+- `in` = final de la última aparición de la escena (`contentEnd`), así que los elementos se dibujan en el orden en que se crearon.
+- `enter = draw` con duración proporcional: trazos a ~1000 unidades/s (0,25–4 s), formas por perímetro, textos a 0,06 s por letra y grupos a 2,5 s.
+- La escena se alarga si hace falta (`fitSceneDuration`: final del contenido + 1 s).
+
+Todo se puede ajustar después en la línea de tiempo o en el panel «Animación».
+
+## Keyframes
+
+- `setValueAt(valor, t, v, grabar, desde)`: si la propiedad ya tiene keyframes, crea o actualiza el de `t`. Si es constante y «Grabar movimiento» está activo con `t > in`, crea la animación `[in → t]`. En otro caso cambia el valor constante.
+- Mover, escalar, rotar, desplazar con flechas, centrar y la opacidad usan esta regla en el instante del cabezal.
+- Mover un elemento en la línea de tiempo desplaza a la vez `in`, `out` y sus keyframes (`shiftItemTime`).
+
+## Cámara
+
+`scene.camera` es el **encuadre**: `x` e `y` son la esquina superior izquierda en la hoja y `scaleX` el zoom (1 = hoja completa). `cameraMatrix = S(zoom) · T(−x, −y)` se aplica en la vista previa y en el vídeo, nunca al editar. La herramienta **Encuadre** (C) mueve el marco o hace zoom desde su esquina, con keyframes si «Grabar movimiento» está activo.
 
 ## Fotograma a fotograma
 
-- Una capa `kind: 'frames'` contiene `cels` con `start` y `duration` en ticks, alineados a la rejilla de FPS (exposición de 1, 2 o 3 fotogramas…).
-- En un tick dado se muestra el cel cuyo intervalo lo contiene, o ninguno.
-- Los items de un cel son items normales: se pueden editar con las mismas herramientas y también admiten el revelado de trazos.
-- Onion skin: solo en el editor. Los cels anterior y siguiente se dibujan con un tinte y opacidad configurables.
-- Convive con capas vectoriales animadas en la misma escena sin aplanar nada.
+- Una capa `kind: 'frames'` tiene `cels` con `start` y `duration` (al crear: 2 fotogramas del proyecto). Al dibujar en ella, el elemento va al fotograma del cabezal o crea uno.
+- En cualquier modo se ve solo el fotograma que contiene el instante. Los elementos de un fotograma no usan `in` ni el tiempo automático.
+- **Papel cebolla** (solo en el editor): anterior al 28 % y siguiente al 14 % de opacidad.
+- Botones «Fotograma» (vacío) y «Duplicar» (copia el actual) crean el siguiente fotograma justo después y desplazan los posteriores.
+
+## Reproducción
+
+`usePlayback` avanza el cabezal con `requestAnimationFrame` y recorre las escenas en orden con el tiempo global (`locateTime`). En M5 el reloj maestro pasará a ser `AudioContext.currentTime`.
 
 ## Pruebas obligatorias
 
