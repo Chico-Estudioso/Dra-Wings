@@ -1,0 +1,30 @@
+# Dependencias y builds
+node_modules/
+dist/
+out/
+release/
+coverage/
+
+# Entornos locales
+.env
+.env.*
+!.env.example
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+
+# Datos de usuario y proyectos de prueba
+# (añadir aquí la extensión de proyecto cuando se decida en M0)
+.local-projects/
+test-media/private/
+
+# Logs y temporales
+*.log
+*.tmp
+*.temp
