@@ -14,7 +14,7 @@ Los modos comparten el mismo formato de proyecto.
 
 ## Estado
 
-M0 (arquitectura) y M1 (fundación: proyectos, guardado y recuperación) completados. Siguiente: M2, lienzo y dibujo. Ver `ROADMAP.md`.
+M0 (arquitectura), M1 (proyectos, guardado y recuperación) y M2 (lienzo y dibujo) completados. Siguiente: M3, modo guiado y biblioteca. Ver `ROADMAP.md` y `docs/EDITOR.md`.
 
 ## Principios
 

@@ -25,6 +25,7 @@ export const animatedNumberSchema = z.union([
   }),
 ]);
 
+// Rotación en grados. Matriz: T(x + anchorX, y + anchorY) · R(rotation) · S(scaleX, scaleY) · T(-anchorX, -anchorY).
 export const transformSchema = z.object({
   x: animatedNumberSchema,
   y: animatedNumberSchema,
@@ -63,8 +64,39 @@ export const strokeSchema = z.object({
   reveal: z.object({ start: ticks, duration: ticks, mode: z.enum(['length', 'recorded']) }).nullable(),
 });
 
-// Los demás tipos de elemento (forma, texto, imagen, biblioteca y grupo) se añaden en M2 y M3.
-export const itemSchema = z.discriminatedUnion('type', [strokeSchema]);
+export const shapeSchema = z.object({
+  ...itemBase,
+  type: z.literal('shape'),
+  shape: z.enum(['rect', 'ellipse', 'line', 'arrow']),
+  // rect/ellipse: caja local (0,0)-(w,h). line/arrow: segmento de (0,0) a (w,h); w y h pueden ser negativos.
+  w: z.number().finite().min(-100_000).max(100_000),
+  h: z.number().finite().min(-100_000).max(100_000),
+  style: z.object({
+    stroke: color.nullable(),
+    strokeWidth: z.number().min(0).max(200),
+    fill: color.nullable(),
+    opacity: unit,
+  }),
+});
+
+export const FONT_IDS = ['hand', 'script', 'rounded'] as const;
+
+export const textSchema = z.object({
+  ...itemBase,
+  type: z.literal('text'),
+  text: z.string().max(5000),
+  font: z.enum(FONT_IDS),
+  size: z.number().positive().max(1000),
+  color,
+  align: z.enum(['left', 'center', 'right']),
+  lineHeight: z.number().min(0.5).max(3),
+  // Caja medida al editar el texto: la selección y el ajuste no dependen de medir en cada render.
+  w: z.number().nonnegative().max(100_000),
+  h: z.number().nonnegative().max(100_000),
+});
+
+// Imagen, recurso de biblioteca y grupo se añaden en M3.
+export const itemSchema = z.discriminatedUnion('type', [strokeSchema, shapeSchema, textSchema]);
 
 export const celSchema = z.object({ id, start: ticks, duration: ticks.positive(), items: z.array(itemSchema) });
 

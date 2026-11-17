@@ -12,7 +12,9 @@ import type {
   modeSchema,
   projectSchema,
   sceneSchema,
+  shapeSchema,
   strokeSchema,
+  textSchema,
   transformSchema,
 } from './schema';
 
@@ -31,3 +33,6 @@ export type Marker = z.infer<typeof markerSchema>;
 export type AnimatedNumber = z.infer<typeof animatedNumberSchema>;
 export type Transform = z.infer<typeof transformSchema>;
 export type Manifest = z.infer<typeof manifestSchema>;
+export type Shape = z.infer<typeof shapeSchema>;
+export type TextItem = z.infer<typeof textSchema>;
+export type FontId = TextItem['font'];

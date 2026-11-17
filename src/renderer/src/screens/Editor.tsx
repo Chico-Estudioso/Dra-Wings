@@ -1,12 +1,32 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import * as ToggleGroup from '@radix-ui/react-toggle-group';
-import { Check, CircleAlert, Home as HomeIcon, Loader2, Redo2, Save, Undo2 } from 'lucide-react';
+import {
+  Check,
+  CircleAlert,
+  Grid3x3,
+  Home as HomeIcon,
+  Loader2,
+  Maximize,
+  Minus,
+  Plus,
+  Redo2,
+  Save,
+  Undo2,
+} from 'lucide-react';
 import { formatTimecode } from '@core/time/ticks';
 import type { Mode } from '@core/model/types';
 import { useApp, type SaveStatus } from '../state/app-store';
 import { saveCurrent } from '../state/doc-actions';
 import { requestLeave } from '../state/leave-guard';
 import { MODES } from '../modes';
+import { useEditor } from '../editor/editor-store';
+import { CanvasView } from '../editor/CanvasView';
+import { Toolbar } from '../editor/Toolbar';
+import { ToolOptions } from '../editor/ToolOptions';
+import { LayersPanel } from '../editor/LayersPanel';
+import { PropertiesPanel } from '../editor/PropertiesPanel';
+import { useEditorShortcuts } from '../editor/shortcuts';
+import { zoomAt } from '../editor/view';
 
 const SAVE_LABEL: Record<SaveStatus, string> = {
   saved: 'Guardado',
@@ -62,57 +82,78 @@ function ProjectName() {
   );
 }
 
-/** Hoja de papel con la proporción del proyecto, ajustada al espacio disponible. */
-function Stage({ width, height, background }: { width: number; height: number; background: string }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [box, setBox] = useState({ w: 0, h: 0 });
-  useLayoutEffect(() => {
-    const el = ref.current!;
-    const ro = new ResizeObserver(([entry]) => {
-      const r = entry!.contentRect;
-      setBox({ w: r.width, h: r.height });
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-  const scale = Math.min((box.w - 64) / width, (box.h - 64) / height, 1);
-  const w = Math.max(0, width * scale);
-  const h = Math.max(0, height * scale);
+function ZoomControls() {
+  const view = useEditor((s) => s.view);
+  const setView = useEditor((s) => s.setView);
+  const zoomBy = (f: number) => {
+    const host = document.querySelector('[data-testid="canvas-host"]')?.getBoundingClientRect();
+    setView(zoomAt(view, f, { x: (host?.width ?? 0) / 2, y: (host?.height ?? 0) / 2 }));
+  };
   return (
-    <div className="stage" ref={ref}>
-      <div className="paper" style={{ width: w, height: h, background }} data-testid="paper" />
-      <span className="stage-zoom">{Math.round(scale * 100)} %</span>
+    <div className="zoom-controls" role="group" aria-label="Zoom">
+      <button
+        className="icon-btn icon-btn-sm"
+        aria-label="Alejar"
+        title="Alejar (Ctrl -)"
+        onClick={() => zoomBy(1 / 1.25)}
+      >
+        <Minus size={14} />
+      </button>
+      <span className="zoom-value" data-testid="zoom-value">
+        {Math.round(view.zoom * 100)} %
+      </span>
+      <button
+        className="icon-btn icon-btn-sm"
+        aria-label="Acercar"
+        title="Acercar (Ctrl +)"
+        onClick={() => zoomBy(1.25)}
+      >
+        <Plus size={14} />
+      </button>
+      <button
+        className="icon-btn icon-btn-sm"
+        aria-label="Ajustar a la ventana"
+        title="Ajustar (Ctrl 0)"
+        onClick={() => setView({ fit: true })}
+      >
+        <Maximize size={14} />
+      </button>
     </div>
   );
 }
 
-function isEditable(t: EventTarget | null) {
-  return t instanceof HTMLElement && (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName));
-}
-
 export function Editor() {
   const project = useApp((s) => s.doc!.project);
+  const projectId = project.id;
   const status = useApp((s) => s.doc!.saveStatus);
   const canUndo = useApp((s) => s.past.length > 0);
   const canRedo = useApp((s) => s.future.length > 0);
   const { apply, undo, redo, closeDoc } = useApp.getState();
-  const scene = project.scenes[0]!;
+  const sceneId = useEditor((s) => s.sceneId);
+  const activeLayerId = useEditor((s) => s.activeLayerId);
+  const showGrid = useEditor((s) => s.showGrid);
+  const toggleGrid = useEditor((s) => s.toggleGrid);
 
+  // Al abrir otro proyecto, se reinicia el estado del editor.
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (!(e.ctrlKey || e.metaKey) || isEditable(e.target)) return;
-      const k = e.key.toLowerCase();
-      if (k === 'z' && !e.shiftKey) {
-        e.preventDefault();
-        undo();
-      } else if (k === 'y' || (k === 'z' && e.shiftKey)) {
-        e.preventDefault();
-        redo();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [undo, redo]);
+    const p = useApp.getState().doc!.project;
+    const scene = p.scenes[0]!;
+    useEditor.getState().reset(scene.id, scene.layers[scene.layers.length - 1]!.id, p.settings.mode);
+  }, [projectId]);
+
+  const scene = project.scenes.find((s) => s.id === sceneId) ?? project.scenes[0]!;
+
+  // Si la capa activa desaparece (deshacer, eliminar), se elige la superior.
+  useEffect(() => {
+    if (!scene.layers.some((l) => l.id === activeLayerId))
+      useEditor.getState().setActiveLayer(scene.layers[scene.layers.length - 1]!.id);
+  }, [scene, activeLayerId]);
+
+  const viewport = useCallback(() => {
+    const r = document.querySelector('[data-testid="canvas-host"]')?.getBoundingClientRect();
+    return { w: r?.width ?? 0, h: r?.height ?? 0 };
+  }, []);
+  useEditorShortcuts(viewport);
 
   return (
     <div className="editor">
@@ -149,7 +190,17 @@ export function Editor() {
         </button>
       </header>
 
-      <Stage width={project.settings.width} height={project.settings.height} background={project.settings.background} />
+      <div className="workspace">
+        <Toolbar />
+        <div className="canvas-column">
+          <ToolOptions />
+          <CanvasView project={project} />
+        </div>
+        <aside className="sidepanel" aria-label="Paneles">
+          <LayersPanel scene={scene} />
+          <PropertiesPanel scene={scene} docSize={{ w: project.settings.width, h: project.settings.height }} />
+        </aside>
+      </div>
 
       <footer className="statusbar">
         <span>{scene.name}</span>
@@ -157,6 +208,17 @@ export function Editor() {
         <span>
           {project.settings.width} × {project.settings.height} · {project.settings.fps} fps
         </span>
+        <span className="statusbar-spacer" />
+        <button
+          className={`icon-btn icon-btn-sm ${showGrid ? 'is-on' : ''}`}
+          aria-pressed={showGrid}
+          aria-label="Cuadrícula"
+          title="Cuadrícula"
+          onClick={toggleGrid}
+        >
+          <Grid3x3 size={14} />
+        </button>
+        <ZoomControls />
       </footer>
     </div>
   );

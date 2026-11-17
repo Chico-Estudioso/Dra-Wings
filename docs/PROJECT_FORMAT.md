@@ -34,7 +34,7 @@ Layer {
   cels?: Cel[]                          // kind = 'frames' (fotograma a fotograma)
 }
 
-Item = Stroke | Shape | Text | Image | LibraryInstance | Group
+Item = Stroke | Shape | Text            // Image, LibraryInstance y Group llegan en M3
 ItemBase { id; transform: AnimatedTransform; opacity: Animated<number>; in: Ticks; out?: Ticks }
 
 Stroke extends ItemBase {
@@ -42,6 +42,18 @@ Stroke extends ItemBase {
   points: number[]                      // empaquetado [x, y, presión, tMs, ...]; presión = -1 si el dispositivo no la da
   style: { color: Color; size: number; thinning: number; smoothing: number; streamline: number; opacity: number }
   reveal: { start: Ticks; duration: Ticks; mode: 'length' | 'recorded' } | null   // null = visible desde `in`
+}
+
+Shape extends ItemBase {
+  type: 'shape'; shape: 'rect' | 'ellipse' | 'line' | 'arrow'
+  w: number; h: number                  // rect/elipse: caja local (0,0)-(w,h); línea/flecha: de (0,0) a (w,h)
+  style: { stroke: Color | null; strokeWidth: number; fill: Color | null; opacity: number }
+}
+
+Text extends ItemBase {
+  type: 'text'; text: string; font: 'hand' | 'script' | 'rounded'; size: number; color: Color
+  align: 'left' | 'center' | 'right'; lineHeight: number
+  w: number; h: number                  // caja medida al editar
 }
 
 Cel { id; start: Ticks; duration: Ticks; items: Item[] }   // alineado a la rejilla de fotogramas
@@ -52,6 +64,10 @@ AudioClip { id; assetId; start: Ticks; sourceOffset: Ticks; duration: Ticks; gai
 Animated<T> = { value: T } | { keys: { t: Ticks; v: T; ease: Ease }[] }    // t relativo a la escena
 AnimatedTransform = { x; y; scaleX; scaleY; rotation; anchorX; anchorY }   // cada uno Animated<number>
 ```
+
+Transformación: `rotation` en grados. Matriz = T(x + anchorX, y + anchorY) · R(rotation) · S(scaleX, scaleY) · T(−anchorX, −anchorY). Los trazos guardan sus puntos en coordenadas de escena (con transformación identidad al crearlos) y el ancla en el centro de su caja.
+
+Compatibilidad: hasta la primera versión publicada, el formato v1 puede ampliarse con nuevos tipos de elemento. Los archivos antiguos siguen siendo válidos. A partir de la primera versión pública, cualquier cambio incompatible sube `formatVersion` y añade su migración.
 
 ## Reglas
 

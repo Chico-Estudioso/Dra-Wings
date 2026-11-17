@@ -1,6 +1,6 @@
 # Roadmap — Dra-Wings
 
-Estado: M0 completado. Siguiente: M1.
+Estado: M0, M1 y M2 completados. Siguiente: M3.
 
 ## M0 — Investigación y diseño ✅
 - Stack decidido: Electron + React/TS, renderizador Canvas 2D propio, ZIP `.dwings`, exportación WebCodecs (ADR-001 a ADR-006).
@@ -15,7 +15,7 @@ Estado: M0 completado. Siguiente: M1.
 - CI en Windows con lint, typecheck, pruebas y build.
 - **Salida:** crear, guardar, cerrar y reabrir un proyecto sin pérdida de datos.
 
-## M2 — Lienzo y dibujo libre
+## M2 — Lienzo y dibujo libre ✅
 - Lienzo, zoom y desplazamiento.
 - Lápiz, goma, selección, formas y texto básico.
 - Capas, orden, visibilidad y bloqueo.
