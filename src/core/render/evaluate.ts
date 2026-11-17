@@ -1,19 +1,34 @@
 // Evaluación de una escena en un instante: lista plana de lo que hay que dibujar (ver ANIMATION_ENGINE.md).
 import { valueAt } from '../anim/animated';
-import { matrixFrom, multiply, resolveTransform, type Mat, type StaticTransform } from '../geometry/matrix';
+import {
+  matrixFrom,
+  multiply,
+  resolveTransform,
+  scale,
+  translate,
+  type Mat,
+  type StaticTransform,
+} from '../geometry/matrix';
+import { POINT_STRIDE } from '../geometry/items';
 import type { Item, Scene } from '../model/types';
+import { layerItemsAt } from '../edit/ops';
 import type { Ticks } from '../time/ticks';
 
 export interface RenderItem {
   item: Item;
   matrix: Mat;
   opacity: number;
-  /** Progreso de revelado de trazos (0..1). */
+  /** Progreso de dibujo (0..1): trazos parciales, contorno de formas, letras de un texto. */
   progress: number;
+  /** Solo formas: proporción del relleno ya visible (0..1). */
+  fill?: number;
 }
 
 export interface EvaluateOptions {
-  /** 'edit': todo visible y completo (edición). 'play': respeta entradas, salidas y revelado. */
+  /**
+   * 'edit': todo visible y completo, con las transformaciones del instante (para editar).
+   * 'play': respeta entradas, salidas, animaciones de aparición y keyframes (vista previa y vídeo).
+   */
   mode: 'edit' | 'play';
   /** Transformaciones provisionales (por ejemplo, mientras se arrastra). */
   overrides?: ReadonlyMap<string, StaticTransform>;
@@ -21,37 +36,155 @@ export interface EvaluateOptions {
   hidden?: ReadonlySet<string>;
 }
 
+const clamp01 = (v: number) => (v <= 0 ? 0 : v >= 1 ? 1 : v);
+const easeOutBack = (u: number) => 1 + 2.70158 * (u - 1) ** 3 + 1.70158 * (u - 1) ** 2;
+const easeInCubic = (u: number) => u * u * u;
+
+/** Parte de la entrada de un dibujo dedicada al contorno; el resto colorea los rellenos. */
+export const OUTLINE_SHARE = 0.75;
+
+interface Appearance {
+  visible: boolean;
+  opacity: number;
+  /** Progreso de la entrada «dibujar» (1 si no se dibuja). */
+  draw: number;
+  /** Escala multiplicativa por «pop». */
+  pop: number;
+}
+
+/** Estado de aparición de un elemento en el instante `t` (relativo a la escena). */
+export function appearance(item: Item, t: Ticks): Appearance {
+  if (t < item.in || (item.out !== undefined && t >= item.out)) return { visible: false, opacity: 0, draw: 0, pop: 0 };
+  let opacity = 1;
+  let draw = 1;
+  let pop = 1;
+  const enter = item.enter;
+  if (enter && enter.kind !== 'none') {
+    const e = enter.duration > 0 ? clamp01((t - item.in) / enter.duration) : 1;
+    if (enter.kind === 'draw') draw = e;
+    else if (enter.kind === 'fade') opacity *= e;
+    else pop *= easeOutBack(e);
+  }
+  const exit = item.exit;
+  if (exit && exit.kind !== 'none' && item.out !== undefined && exit.duration > 0) {
+    const x = clamp01((t - (item.out - exit.duration)) / exit.duration);
+    if (exit.kind === 'fade') opacity *= 1 - x;
+    else pop *= 1 - easeInCubic(x);
+  }
+  return { visible: opacity > 0 && pop > 0 && (draw > 0 || enter?.kind !== 'draw'), opacity, draw, pop };
+}
+
+function popMatrix(m: Mat, item: Item, k: number): Mat {
+  if (k === 1) return m;
+  const { anchorX: ax, anchorY: ay } = item.transform;
+  return multiply(m, multiply(multiply(translate(ax, ay), scale(k, k)), translate(-ax, -ay)));
+}
+
+/** Peso de un elemento al repartir el tiempo de dibujo de un grupo (longitud aproximada). */
+function strokeLength(item: Item): number {
+  if (item.type !== 'stroke') return 0;
+  let len = 0;
+  const p = item.points;
+  for (let i = POINT_STRIDE; i < p.length; i += POINT_STRIDE)
+    len += Math.hypot(p[i]! - p[i - POINT_STRIDE]!, p[i + 1]! - p[i - POINT_STRIDE + 1]!);
+  return len;
+}
+
+interface Leaf {
+  item: Item;
+  matrix: Mat;
+  opacity: number;
+}
+
+function leaves(group: Extract<Item, { type: 'group' }>, m: Mat, opacity: number, tick: Ticks, out: Leaf[]): Leaf[] {
+  for (const child of group.children) {
+    const o = opacity * valueAt(child.opacity, tick);
+    if (o <= 0) continue;
+    const cm = multiply(m, matrixFrom(resolveTransform(child.transform, tick)));
+    if (child.type === 'group') leaves(child, cm, o, tick, out);
+    else out.push({ item: child, matrix: cm, opacity: o });
+  }
+  return out;
+}
+
+/**
+ * Dibujo secuencial de un grupo con progreso `draw`: los contornos (trazos, textos, formas sin
+ * relleno) se dibujan uno tras otro según su longitud, y después aparecen los rellenos.
+ */
+function pushGroupLeaves(out: RenderItem[], list: Leaf[], draw: number) {
+  if (draw >= 1) {
+    for (const l of list) out.push({ ...l, progress: 1, fill: 1 });
+    return;
+  }
+  const lineDraw = clamp01(draw / OUTLINE_SHARE);
+  const fillDraw = clamp01((draw - OUTLINE_SHARE) / (1 - OUTLINE_SHARE));
+  const weights = list.map((l) =>
+    l.item.type === 'stroke' ? Math.max(1, strokeLength(l.item)) : l.item.type === 'text' ? 40 : 0,
+  );
+  const total = weights.reduce((a, b) => a + b, 0) || 1;
+  let acc = 0;
+  list.forEach((l, i) => {
+    const w = weights[i]!;
+    const start = acc / total;
+    acc += w;
+    const end = acc / total;
+    if (l.item.type === 'shape' && w === 0) {
+      // Rellenos y formas: aparecen en la fase de color.
+      if (fillDraw > 0) out.push({ ...l, opacity: l.opacity * fillDraw, progress: 1, fill: 1 });
+      return;
+    }
+    const p = end > start ? clamp01((lineDraw - start) / (end - start)) : lineDraw >= start ? 1 : 0;
+    if (p > 0) out.push({ ...l, progress: p, fill: 1 });
+  });
+}
+
+function pushItem(out: RenderItem[], item: Item, matrix: Mat, opacity: number, draw: number, tick: Ticks) {
+  if (item.type === 'group') {
+    pushGroupLeaves(out, leaves(item, matrix, opacity, tick, []), draw);
+    return;
+  }
+  if (item.type === 'shape' && draw < 1) {
+    const hasLine = !!item.style.stroke && item.style.strokeWidth > 0 && item.shape !== 'polygon';
+    const progress = hasLine ? clamp01(draw / OUTLINE_SHARE) : 1;
+    const fill = hasLine ? clamp01((draw - OUTLINE_SHARE) / (1 - OUTLINE_SHARE)) : draw;
+    out.push({ item, matrix, opacity: hasLine ? opacity : opacity * draw, progress, fill });
+    return;
+  }
+  out.push({ item, matrix, opacity, progress: draw, fill: 1 });
+}
+
 export function evaluateScene(scene: Scene, tick: Ticks, opts: EvaluateOptions): RenderItem[] {
   const out: RenderItem[] = [];
   for (const layer of scene.layers) {
     if (!layer.visible || layer.opacity <= 0) continue;
-    for (const item of layer.items ?? []) {
+    for (const item of layerItemsAt(layer, tick)) {
       if (opts.hidden?.has(item.id)) continue;
-      if (opts.mode === 'play' && (tick < item.in || (item.out !== undefined && tick >= item.out))) continue;
-      let progress = 1;
-      if (opts.mode === 'play' && item.type === 'stroke' && item.reveal) {
-        const { start, duration } = item.reveal;
-        progress = duration <= 0 ? (tick >= start ? 1 : 0) : Math.min(1, Math.max(0, (tick - start) / duration));
-        if (progress <= 0) continue;
+      let a: Appearance = { visible: true, opacity: 1, draw: 1, pop: 1 };
+      if (opts.mode === 'play') {
+        a = appearance(item, tick);
+        if (!a.visible) continue;
       }
-      const opacity = valueAt(item.opacity, tick) * layer.opacity;
+      const opacity = valueAt(item.opacity, tick) * layer.opacity * a.opacity;
       if (opacity <= 0) continue;
       const t = opts.overrides?.get(item.id) ?? resolveTransform(item.transform, tick);
-      pushItem(out, item, matrixFrom(t), opacity, progress, tick);
+      pushItem(out, item, popMatrix(matrixFrom(t), item, a.pop), opacity, a.draw, tick);
     }
   }
   return out;
 }
 
-/** Añade un elemento; los grupos se aplanan componiendo matriz y opacidad. */
-function pushItem(out: RenderItem[], item: Item, matrix: Mat, opacity: number, progress: number, tick: Ticks) {
-  if (item.type !== 'group') {
-    out.push({ item, matrix, opacity, progress });
-    return;
-  }
-  for (const child of item.children) {
-    const o = opacity * valueAt(child.opacity, tick);
-    if (o <= 0) continue;
-    pushItem(out, child, multiply(matrix, matrixFrom(resolveTransform(child.transform, tick))), o, progress, tick);
-  }
+/**
+ * Matriz de la cámara de la escena: `x`, `y` son la esquina superior izquierda del encuadre en la
+ * hoja y `scaleX` el zoom (1 = hoja completa). Se aplica antes de dibujar en vista previa y vídeo.
+ */
+export function cameraMatrix(scene: Scene, tick: Ticks): Mat {
+  const c = resolveTransform(scene.camera, tick);
+  const zoom = c.scaleX > 0 ? c.scaleX : 1;
+  return multiply(scale(zoom, zoom), translate(-c.x, -c.y));
+}
+
+/** ¿La cámara de la escena se mueve o hace zoom en algún momento? */
+export function hasCamera(scene: Scene): boolean {
+  const c = scene.camera;
+  return [c.x, c.y, c.scaleX].some((a) => 'keys' in a || ('value' in a && a.value !== (a === c.scaleX ? 1 : 0)));
 }

@@ -1,6 +1,9 @@
 // Atajos de teclado del editor (no actúan mientras se escribe en un campo de texto).
 import { useEffect } from 'react';
 import { useApp } from '../state/app-store';
+import { ticksPerFrame } from '@core/time/ticks';
+import { selectionKeyTimes } from './actions';
+import { togglePlay } from './playback';
 import {
   deleteSelection,
   duplicateSelection,
@@ -23,6 +26,7 @@ const TOOL_KEYS: Record<string, Tool> = {
   a: 'arrow',
   t: 'text',
   h: 'hand',
+  c: 'camera',
 };
 
 function isEditable(t: EventTarget | null) {
@@ -53,7 +57,18 @@ export function useEditorShortcuts(viewport: () => { w: number; h: number }) {
         return;
       }
       if (e.altKey) return;
-      if (k === 'delete' || k === 'backspace') deleteSelection();
+      const fps = app.doc?.project.settings.fps ?? 30;
+      if (k === 'enter') togglePlay();
+      else if (k === 'home') ed.setPlayhead(0);
+      else if ((k === ',' || k === '.' || k === ';' || k === ':') && e.shiftKey) {
+        const keys = selectionKeyTimes();
+        const fwd = k === '.' || k === ':';
+        const target = fwd ? keys.find((t) => t > ed.playhead) : [...keys].reverse().find((t) => t < ed.playhead);
+        if (target !== undefined) ed.setPlayhead(target);
+      } else if (k === ',' || k === '.') {
+        ed.setPreview(true);
+        ed.setPlayhead(ed.playhead + (k === '.' ? 1 : -1) * ticksPerFrame(fps));
+      } else if (k === 'delete' || k === 'backspace') deleteSelection();
       else if (k === 'escape') ed.select([]);
       else if (k.startsWith('arrow')) {
         const d = e.shiftKey ? 10 : 1;

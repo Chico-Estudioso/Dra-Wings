@@ -1,11 +1,12 @@
 // Acciones del editor sobre el documento. Todas pasan por `apply` (historial de deshacer).
-import { fixed } from '@core/anim/animated';
 import {
   addItem,
   addLayer,
+  celAt,
   duplicateItems,
   findLayer,
   findScene,
+  layerItemCount,
   locateItem,
   moveLayer,
   removeItems,
@@ -13,12 +14,19 @@ import {
   reorderItems,
   replaceItem,
   selectableItems,
-  translateItems,
+  withNewIds,
   type ZMove,
 } from '@core/edit/ops';
 import type { StaticTransform } from '@core/geometry/matrix';
+import { appendTiming, fitSceneDuration } from '@core/anim/timing';
+import { ANIMATABLE, clearAnimation, keyTimes, removeKeyAt, setValueAt, shiftItemTime } from '@core/anim/keyframes';
+import { addScene, duplicateScene, moveScene, removeScene } from '@core/edit/scenes';
+import { ticksPerFrame } from '@core/time/ticks';
 import { groupItems, recolorSlot, ungroupItem } from '@core/edit/group';
-import type { Item, Layer, Project, Scene } from '@core/model/types';
+import { deepClone } from '@core/edit/clone';
+import { newId } from '@core/model/factory';
+import type { Enter, Exit, Item, Layer, Project, Scene } from '@core/model/types';
+import { resolveTransform } from '@core/geometry/matrix';
 import { useApp } from '../state/app-store';
 import { useEditor } from './editor-store';
 
@@ -52,10 +60,26 @@ export function writableActiveLayer(): Layer | null {
   return layer;
 }
 
+const playhead = () => useEditor.getState().playhead;
+const fps = () => useApp.getState().doc!.project.settings.fps;
+
+/** Añade elementos a la capa: en capas vectoriales con tiempo automático; en fotogramas, al del cabezal. */
+function addTimed(scene: Scene, layer: Layer, items: Item[]) {
+  if (layer.kind === 'frames') {
+    for (const it of items) addItem(scene, layer.id, it, playhead(), ticksPerFrame(fps()) * 2);
+    return;
+  }
+  for (const it of items) {
+    appendTiming(scene, it);
+    addItem(scene, layer.id, it);
+  }
+  fitSceneDuration(scene);
+}
+
 export function addToActiveLayer(item: Item, label: string, select = false): boolean {
   const layer = writableActiveLayer();
   if (!layer) return false;
-  editScene(label, (scene) => addItem(scene, layer.id, item));
+  editScene(label, (scene) => addTimed(scene, findLayer(scene, layer.id), [item]));
   if (select) useEditor.getState().select([item.id]);
   return true;
 }
@@ -79,12 +103,22 @@ export function duplicateSelection(): void {
 
 export function selectAll(): void {
   const scene = currentScene();
-  if (scene) useEditor.getState().select(selectableItems(scene).map((i) => i.id));
+  if (scene) useEditor.getState().select(selectableItems(scene, playhead()).map((i) => i.id));
 }
 
 export function nudgeSelection(dx: number, dy: number): void {
+  const scene = currentScene();
   const ids = useEditor.getState().selection;
-  if (ids.length) editScene('Mover', (scene) => translateItems(scene, ids, dx, dy));
+  if (!scene || !ids.length) return;
+  const t = playhead();
+  const next = new Map<string, StaticTransform>();
+  for (const id of ids) {
+    const it = locateItem(scene, id)?.item;
+    if (!it) continue;
+    const st = resolveTransform(it.transform, t);
+    next.set(id, { ...st, x: st.x + dx, y: st.y + dy });
+  }
+  commitTransforms('Mover', next);
 }
 
 export function reorderSelection(move: ZMove): void {
@@ -92,20 +126,28 @@ export function reorderSelection(move: ZMove): void {
   if (ids.length) editScene('Ordenar', (scene) => reorderItems(scene, new Set(ids), move));
 }
 
+/**
+ * Aplica transformaciones en el instante del cabezal: crea o actualiza keyframes si la propiedad ya
+ * está animada o si «Grabar movimiento» está activo; si no, cambia el valor constante.
+ */
 export function commitTransforms(label: string, transforms: ReadonlyMap<string, StaticTransform>): void {
   if (transforms.size === 0) return;
+  const t = playhead();
+  const record = useEditor.getState().autoKey;
   editScene(label, (scene) => {
-    for (const [id, t] of transforms) {
+    for (const [id, st] of transforms) {
       const loc = locateItem(scene, id);
       if (!loc) continue;
       const tr = loc.item.transform;
-      tr.x = fixed(t.x);
-      tr.y = fixed(t.y);
-      tr.scaleX = fixed(t.scaleX);
-      tr.scaleY = fixed(t.scaleY);
-      tr.rotation = fixed(t.rotation);
+      for (const p of ANIMATABLE) tr[p] = setValueAt(tr[p], t, st[p], record, loc.item.in);
     }
   });
+}
+
+export function setSelectedOpacity(v: number): void {
+  const t = playhead();
+  const record = useEditor.getState().autoKey;
+  updateSelected('Cambiar opacidad', (it) => void (it.opacity = setValueAt(it.opacity, t, v, record, it.in)));
 }
 
 export function commitErase(replacements: ReadonlyMap<string, Item[]>): void {
@@ -152,7 +194,7 @@ export function updateLayer(layerId: string, label: string, fn: (layer: Layer) =
   // Si la capa deja de ser editable, se quita su contenido de la selección.
   const layer = currentScene()?.layers.find((l) => l.id === layerId);
   if (layer && (layer.locked || !layer.visible)) {
-    const inLayer = new Set((layer.items ?? []).map((i) => i.id));
+    const inLayer = new Set(itemListsIds(layer));
     useEditor.getState().select(useEditor.getState().selection.filter((id) => !inLayer.has(id)));
   }
 }
@@ -167,10 +209,7 @@ export function shiftLayer(layerId: string, direction: 'up' | 'down'): void {
 export function insertItems(items: Item[], label: string): boolean {
   const layer = writableActiveLayer();
   if (!layer || items.length === 0) return false;
-  editScene(label, (scene) => {
-    for (const it of items) addItem(scene, layer.id, it);
-  });
-  useEditor.getState().select(items.map((i) => i.id));
+  editScene(label, (scene) => addTimed(scene, findLayer(scene, layer.id), items));
   useEditor.getState().setTool('select');
   useEditor.getState().select(items.map((i) => i.id));
   return true;
@@ -201,3 +240,200 @@ export function recolorSelected(slotId: string, color: string): void {
     if (it.type === 'group') recolorSlot(it, slotId, color);
   });
 }
+
+// Animación
+
+export function setEnter(enter: Enter): void {
+  updateSelected('Aparición', (it) => void (it.enter = { ...enter, mode: it.enter?.mode }));
+  const scene = currentScene();
+  if (scene) editScene('Aparición', (sc) => fitSceneDuration(sc));
+}
+
+export function setExit(exit: Exit | null, atPlayhead: boolean): void {
+  const t = playhead();
+  updateSelected('Desaparición', (it) => {
+    if (!exit) {
+      delete it.out;
+      delete it.exit;
+      return;
+    }
+    if (atPlayhead) it.out = Math.max(it.in + 1, t);
+    it.exit = exit;
+  });
+}
+
+export function setInAtPlayhead(): void {
+  const t = playhead();
+  updateSelected('Mover en el tiempo', (it) => shiftItemTime(it, t - it.in));
+  editScene('Mover en el tiempo', (sc) => fitSceneDuration(sc));
+}
+
+/** Desplaza en el tiempo los elementos (entrada, salida y keyframes). */
+export function shiftItemsTime(ids: string[], dt: number, label = 'Mover en el tiempo'): void {
+  if (!ids.length || dt === 0) return;
+  editScene(label, (scene) => {
+    for (const id of ids) {
+      const loc = locateItem(scene, id);
+      if (loc) shiftItemTime(loc.item, Math.max(dt, -loc.item.in));
+    }
+    fitSceneDuration(scene);
+  });
+}
+
+export function setEnterDuration(id: string, duration: number): void {
+  editScene('Duración de la aparición', (scene) => {
+    const it = locateItem(scene, id)?.item;
+    if (it)
+      it.enter = {
+        kind: it.enter?.kind && it.enter.kind !== 'none' ? it.enter.kind : 'draw',
+        duration: Math.max(1, Math.round(duration)),
+        mode: it.enter?.mode,
+      };
+    fitSceneDuration(scene);
+  });
+}
+
+export function removeKeyAtPlayhead(): void {
+  const t = playhead();
+  updateSelected('Quitar keyframe', (it) => {
+    for (const p of ANIMATABLE) it.transform[p] = removeKeyAt(it.transform[p], t);
+    it.opacity = removeKeyAt(it.opacity, t);
+  });
+}
+
+export function clearSelectionAnimation(): void {
+  const t = playhead();
+  updateSelected('Quitar movimiento', (it) => clearAnimation(it, t));
+}
+
+export function selectionKeyTimes(): number[] {
+  const scene = currentScene();
+  if (!scene) return [];
+  const set = new Set<number>();
+  for (const id of useEditor.getState().selection) {
+    const it = locateItem(scene, id)?.item;
+    if (it) keyTimes(it).forEach((k) => set.add(k));
+  }
+  return [...set].sort((a, b) => a - b);
+}
+
+// Escenas
+
+function topLayerId(scene: Scene): string {
+  return scene.layers[scene.layers.length - 1]!.id;
+}
+
+export function goToScene(sceneId: string): void {
+  const scene = useApp.getState().doc?.project.scenes.find((s) => s.id === sceneId);
+  if (scene) useEditor.getState().setScene(scene.id, topLayerId(scene));
+}
+
+export function addSceneAfterCurrent(): void {
+  let id = '';
+  useApp.getState().apply('Nueva escena', (p) => {
+    id = addScene(p, useEditor.getState().sceneId ?? undefined);
+  });
+  goToScene(id);
+}
+
+export function duplicateCurrentScene(): void {
+  const current = useEditor.getState().sceneId;
+  if (!current) return;
+  let id: string | null = null;
+  useApp.getState().apply('Duplicar escena', (p) => {
+    id = duplicateScene(p, current);
+  });
+  if (id) goToScene(id);
+}
+
+export function deleteCurrentScene(): void {
+  const current = useEditor.getState().sceneId;
+  if (!current) return;
+  let next = current;
+  useApp.getState().apply('Eliminar escena', (p) => {
+    next = removeScene(p, current);
+  });
+  goToScene(next);
+}
+
+export function moveCurrentScene(direction: -1 | 1): void {
+  const current = useEditor.getState().sceneId;
+  if (current) useApp.getState().apply('Ordenar escenas', (p) => moveScene(p, current, direction));
+}
+
+export function updateCurrentScene(label: string, fn: (scene: Scene) => void): void {
+  editScene(label, (scene) => fn(scene));
+}
+
+// Cámara
+
+export function commitCamera(next: { x: number; y: number; zoom: number }): void {
+  const t = playhead();
+  const record = useEditor.getState().autoKey;
+  editScene('Encuadre', (scene) => {
+    const c = scene.camera;
+    c.x = setValueAt(c.x, t, next.x, record, 0);
+    c.y = setValueAt(c.y, t, next.y, record, 0);
+    c.scaleX = setValueAt(c.scaleX, t, next.zoom, record, 0);
+    c.scaleY = setValueAt(c.scaleY, t, next.zoom, record, 0);
+  });
+}
+
+export function resetCamera(): void {
+  editScene('Restablecer encuadre', (scene) => {
+    const c = scene.camera;
+    c.x = { value: 0 };
+    c.y = { value: 0 };
+    c.scaleX = { value: 1 };
+    c.scaleY = { value: 1 };
+  });
+}
+
+// Fotogramas
+
+export function addFramesLayer(): void {
+  let id = '';
+  editScene('Nueva capa de fotogramas', (scene) => {
+    id = addLayer(scene, useEditor.getState().activeLayerId ?? undefined, 'frames');
+  });
+  if (id) useEditor.getState().setActiveLayer(id);
+}
+
+/** Crea un fotograma vacío (o una copia del actual) justo después del fotograma del cabezal. */
+export function addCelAfterPlayhead(copy: boolean): void {
+  const layerId = useEditor.getState().activeLayerId;
+  const tpf = ticksPerFrame(fps());
+  let nextStart = playhead();
+  editScene(copy ? 'Duplicar fotograma' : 'Nuevo fotograma', (scene) => {
+    const layer = findLayer(scene, layerId!);
+    if (layer.kind !== 'frames') return;
+    layer.cels ??= [];
+    const current = celAt(layer, playhead());
+    const start = current ? current.start + current.duration : playhead();
+    const duration = current?.duration ?? tpf * 2;
+    // Hace hueco desplazando los fotogramas posteriores.
+    for (const c of layer.cels) if (c.start >= start) c.start += duration;
+    const items = copy && current ? current.items.map((i) => withNewIdsDeep(i)) : [];
+    layer.cels.push({ id: newIdLocal(), start, duration, items });
+    layer.cels.sort((a, b) => a.start - b.start);
+    nextStart = start;
+    fitCelsDuration(scene, layer);
+  });
+  useEditor.getState().setPlayhead(nextStart);
+}
+
+function fitCelsDuration(scene: Scene, layer: Layer) {
+  const end = Math.max(0, ...(layer.cels ?? []).map((c) => c.start + c.duration));
+  if (end > scene.duration) scene.duration = end;
+}
+
+const newIdLocal = () => newId();
+const withNewIdsDeep = (i: Item) => withNewIds(deepClone(i));
+
+function itemListsIds(layer: Layer): string[] {
+  return layer.kind === 'frames'
+    ? (layer.cels ?? []).flatMap((c) => c.items.map((i) => i.id))
+    : (layer.items ?? []).map((i) => i.id);
+}
+
+export { layerItemCount };

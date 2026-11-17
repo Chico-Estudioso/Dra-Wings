@@ -1,6 +1,7 @@
 import type { FontId } from '@core/model/types';
 import { ColorPicker, ValueSlider } from './controls';
 import { useEditor } from './editor-store';
+import { resetCamera } from './actions';
 import { FONT_LABELS } from './fonts';
 import { TOOLS } from './Toolbar';
 
@@ -17,6 +18,18 @@ export function ToolOptions() {
   const hasSelection = useEditor((s) => s.selection.length > 0);
   const label = TOOLS.find((t) => t.id === tool)?.label;
 
+  if (tool === 'camera')
+    return (
+      <div className="tool-options" role="note">
+        <span className="tool-hint">
+          Arrastra el marco para encuadrar; la esquina inferior derecha hace zoom. Con «Grabar movimiento» crea
+          keyframes en el cabezal.
+        </span>
+        <button className="btn btn-ghost btn-sm" onClick={resetCamera}>
+          Restablecer encuadre
+        </button>
+      </div>
+    );
   if (tool === 'select' || tool === 'hand')
     return (
       <div className="tool-options" role="note">

@@ -136,7 +136,7 @@ describe('operaciones de escena', () => {
 describe('evaluación y trazos progresivos', () => {
   it('en edición todo es visible; en reproducción respeta entrada y revelado', () => {
     const sec = ticksFromSeconds(1);
-    const s = { ...line(0, 100), in: sec, reveal: { start: sec, duration: 2 * sec, mode: 'length' as const } };
+    const s = { ...line(0, 100), in: sec, enter: { kind: 'draw' as const, duration: 2 * sec, mode: 'length' as const } };
     const scene = { ...base().scenes[0]!, layers: [{ ...base().scenes[0]!.layers[0]!, items: [s] }] };
     expect(evaluateScene(scene, 0, { mode: 'edit' })).toHaveLength(1);
     expect(evaluateScene(scene, 0, { mode: 'play' })).toHaveLength(0);

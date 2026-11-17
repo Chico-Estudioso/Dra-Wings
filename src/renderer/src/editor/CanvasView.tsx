@@ -1,20 +1,20 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createShape, createStroke } from '@core/model/factory';
 import { eraseItems } from '@core/edit/erase';
-import { locateItem, selectableItems, translateItems } from '@core/edit/ops';
+import { celAt, locateItem, selectableItems } from '@core/edit/ops';
 import { hitItem, rectsIntersect, unionRects, worldBounds, type Rect } from '@core/geometry/items';
 import { resizeGroup, resizeSingle, rotateGroup, snapAngle, type Handle } from '@core/geometry/manipulate';
-import { matrixFrom, type Point, type StaticTransform } from '@core/geometry/matrix';
+import { matrixFrom, resolveTransform, type Point, type StaticTransform } from '@core/geometry/matrix';
 import { drawRenderList, outlineToPath, PathCache, type Ctx2D } from '@core/render/draw';
-import { evaluateScene } from '@core/render/evaluate';
+import { cameraMatrix, evaluateScene, hasCamera } from '@core/render/evaluate';
 import { strokeOutline } from '@core/render/stroke-outline';
 import type { Item, Project, Scene } from '@core/model/types';
 import {
   addToActiveLayer,
+  commitCamera,
   commitErase,
   commitTransforms,
   currentScene,
-  editScene,
   writableActiveLayer,
 } from './actions';
 import { SHAPE_TOOLS, useEditor, type Tool } from './editor-store';
@@ -49,7 +49,8 @@ type Gesture =
     }
   | { kind: 'resize'; handle: Handle; ids: string[]; t0: Map<string, StaticTransform> }
   | { kind: 'rotate'; center: Point; startAngle: number; ids: string[]; t0: Map<string, StaticTransform> }
-  | { kind: 'marquee'; start: Point; current: Point; base: string[] };
+  | { kind: 'marquee'; start: Point; current: Point; base: string[] }
+  | { kind: 'camera'; start: Point; mode: 'move' | 'zoom'; cam0: { x: number; y: number; zoom: number } };
 
 function isEditableTarget(t: EventTarget | null) {
   return t instanceof HTMLElement && (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName));
@@ -91,6 +92,11 @@ export function CanvasView({ project }: { project: Project }) {
   const showGrid = useEditor((s) => s.showGrid);
   const options = useEditor((s) => s.options);
   const editingTextId = useEditor((s) => s.editingTextId);
+  const playhead = useEditor((s) => s.playhead);
+  const playMode = useEditor((s) => s.preview || s.playing);
+  const onion = useEditor((s) => s.onion);
+  const activeLayerId = useEditor((s) => s.activeLayerId);
+  const [cameraOverride, setCameraOverride] = useState<{ x: number; y: number; zoom: number } | null>(null);
   const scene = project.scenes.find((s) => s.id === sceneId) ?? project.scenes[0]!;
   const { width: docW, height: docH, background } = project.settings;
 
@@ -134,7 +140,21 @@ export function CanvasView({ project }: { project: Project }) {
     const g = gesture.current;
     const shown = g?.kind === 'erase' ? withReplacements(scene, g.working) : scene;
     const hidden = editingTextId ? new Set([editingTextId]) : undefined;
-    const list = evaluateScene(shown, 0, { mode: 'edit', overrides: overrides.current, hidden });
+
+    if (playMode) {
+      // Vista previa: lo que saldrá en el vídeo en el instante del cabezal, a través de la cámara.
+      const list = evaluateScene(scene, playhead, { mode: 'play' });
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, docW, docH);
+      ctx.clip();
+      ctx.transform(...cameraMatrix(scene, playhead));
+      drawRenderList(ctx, list, cache.current);
+      ctx.restore();
+      return;
+    }
+
+    const list = evaluateScene(shown, playhead, { mode: 'edit', overrides: overrides.current, hidden });
 
     // Fuera de la hoja se ve atenuado (no saldrá en el vídeo).
     ctx.save();
@@ -147,6 +167,28 @@ export function CanvasView({ project }: { project: Project }) {
     ctx.clip();
     ctx.fillStyle = background;
     ctx.fillRect(0, 0, docW, docH);
+    // Papel cebolla: fotogramas anterior y siguiente de la capa de fotogramas activa.
+    const active = scene.layers.find((l) => l.id === activeLayerId);
+    if (onion && active?.kind === 'frames') {
+      const cels = active.cels ?? [];
+      const cel = celAt(active, playhead);
+      const prev = [...cels].reverse().find((c) => c.start + c.duration <= (cel?.start ?? playhead));
+      const next = cels.find((c) => c.start >= (cel ? cel.start + cel.duration : playhead + 1));
+      for (const [neighbour, alpha] of [
+        [prev, 0.28],
+        [next, 0.14],
+      ] as const) {
+        if (!neighbour) continue;
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        const ghost: Scene = {
+          ...scene,
+          layers: [{ ...active, kind: 'vector', items: neighbour.items, cels: undefined }],
+        };
+        drawRenderList(ctx, evaluateScene(ghost, playhead, { mode: 'edit' }), cache.current);
+        ctx.restore();
+      }
+    }
     drawRenderList(ctx, list, cache.current);
     if (showGrid) {
       const step = 60;
@@ -164,7 +206,22 @@ export function CanvasView({ project }: { project: Project }) {
       ctx.stroke();
     }
     ctx.restore();
-  }, [scene, view, size, background, docW, docH, showGrid, editingTextId, tick, fontsLoaded]);
+  }, [
+    scene,
+    view,
+    size,
+    background,
+    docW,
+    docH,
+    showGrid,
+    editingTextId,
+    tick,
+    fontsLoaded,
+    playMode,
+    playhead,
+    onion,
+    activeLayerId,
+  ]);
 
   // Capa superpuesta: trazo en curso, selección, marco y cursor de goma.
   useEffect(() => {
@@ -225,13 +282,33 @@ export function CanvasView({ project }: { project: Project }) {
       ctx.stroke();
       ctx.setLineDash([]);
     }
-    const geo = editingTextId ? null : selectionGeometry(scene, selection, overrides.current);
+    if (!playMode && (tool === 'camera' || hasCamera(scene))) {
+      const ct = resolveTransform(scene.camera, playhead);
+      const c = cameraOverride ?? { x: ct.x, y: ct.y, zoom: ct.scaleX || 1 };
+      ctx.save();
+      ctx.strokeStyle = tool === 'camera' ? '#d9622b' : 'rgba(217,98,43,0.55)';
+      ctx.lineWidth = (tool === 'camera' ? 2.5 : 1.5) * px;
+      ctx.setLineDash([10 * px, 6 * px]);
+      ctx.strokeRect(c.x, c.y, docW / c.zoom, docH / c.zoom);
+      ctx.setLineDash([]);
+      if (tool === 'camera') {
+        const hs = HANDLE_PX * px;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(c.x + docW / c.zoom - hs / 2, c.y + docH / c.zoom - hs / 2, hs, hs);
+        ctx.strokeRect(c.x + docW / c.zoom - hs / 2, c.y + docH / c.zoom - hs / 2, hs, hs);
+        ctx.fillStyle = '#d9622b';
+        ctx.font = `${13 * px}px sans-serif`;
+        ctx.fillText(`Cámara · ${Math.round(c.zoom * 100)} %`, c.x + 6 * px, c.y + 18 * px);
+      }
+      ctx.restore();
+    }
+    const geo = editingTextId || playMode ? null : selectionGeometry(scene, selection, overrides.current, playhead);
     if (geo) {
       ctx.strokeStyle = SELECTION_COLOR;
       ctx.lineWidth = px;
       if (!geo.single)
         for (const it of geo.items) {
-          const b = worldBounds(it, 0, matrixFrom(transformOf(it, overrides.current)));
+          const b = worldBounds(it, playhead, matrixFrom(transformOf(it, overrides.current, playhead)));
           ctx.strokeRect(b.x, b.y, b.w, b.h);
         }
       ctx.lineWidth = 1.5 * px;
@@ -266,7 +343,21 @@ export function CanvasView({ project }: { project: Project }) {
       ctx.arc(pointer.current.x, pointer.current.y, options.eraserSize / 2 / view.zoom, 0, Math.PI * 2);
       ctx.stroke();
     }
-  }, [scene, selection, view, size, tool, options, editingTextId, tick, docW, docH]);
+  }, [
+    scene,
+    selection,
+    view,
+    size,
+    tool,
+    options,
+    editingTextId,
+    tick,
+    docW,
+    docH,
+    playMode,
+    playhead,
+    cameraOverride,
+  ]);
 
   const scenePoint = (e: { clientX: number; clientY: number }): Point => {
     const r = overlayRef.current!.getBoundingClientRect();
@@ -276,7 +367,7 @@ export function CanvasView({ project }: { project: Project }) {
   const hitHandle = (p: Point): Handle | 'rotate' | null => {
     const { selection: sel, tool: t, view: v } = useEditor.getState();
     if (t !== 'select' || !sel.length) return null;
-    const geo = selectionGeometry(scene, sel);
+    const geo = selectionGeometry(scene, sel, undefined, useEditor.getState().playhead);
     if (!geo) return null;
     const tol = (HANDLE_PX / 2 + 3) / v.zoom;
     const rot = rotateHandlePoint(geo.corners, ROTATE_OFFSET_PX / v.zoom);
@@ -289,9 +380,10 @@ export function CanvasView({ project }: { project: Project }) {
   };
 
   const topItemAt = (p: Point): Item | null => {
-    const items = selectableItems(scene);
+    const t = useEditor.getState().playhead;
+    const items = selectableItems(scene, t);
     const tol = HIT_TOLERANCE_PX / useEditor.getState().view.zoom;
-    for (let i = items.length - 1; i >= 0; i--) if (hitItem(items[i]!, p, tol)) return items[i]!;
+    for (let i = items.length - 1; i >= 0; i--) if (hitItem(items[i]!, p, tol, t)) return items[i]!;
     return null;
   };
 
@@ -300,13 +392,15 @@ export function CanvasView({ project }: { project: Project }) {
     const sc = currentScene();
     for (const id of ids) {
       const it = sc && locateItem(sc, id)?.item;
-      if (it) t0.set(id, transformOf(it));
+      if (it) t0.set(id, transformOf(it, undefined, useEditor.getState().playhead));
     }
     return t0;
   };
 
   const onPointerDown = (e: React.PointerEvent) => {
     if (gesture.current || textTarget) return;
+    // Interactuar con el lienzo vuelve al modo edición.
+    if (useEditor.getState().preview || useEditor.getState().playing) useEditor.getState().setPreview(false);
     const p = scenePoint(e);
     const ed = useEditor.getState();
     const panning = e.button === 1 || ed.tool === 'hand' || spaceHeld.current;
@@ -318,6 +412,15 @@ export function CanvasView({ project }: { project: Project }) {
       return;
     }
     switch (ed.tool) {
+      case 'camera': {
+        const ct = resolveTransform(scene.camera, ed.playhead);
+        const cam0 = { x: ct.x, y: ct.y, zoom: ct.scaleX || 1 };
+        const corner = { x: cam0.x + docW / cam0.zoom, y: cam0.y + docH / cam0.zoom };
+        const near = Math.hypot(p.x - corner.x, p.y - corner.y) <= (HANDLE_PX + 6) / ed.view.zoom;
+        gesture.current = { kind: 'camera', start: p, mode: near ? 'zoom' : 'move', cam0 };
+        setCameraOverride(cam0);
+        break;
+      }
       case 'pencil': {
         if (!writableActiveLayer()) return;
         const pen = e.pointerType === 'pen';
@@ -351,7 +454,7 @@ export function CanvasView({ project }: { project: Project }) {
       case 'select': {
         const handle = hitHandle(p);
         if (handle === 'rotate') {
-          const geo = selectionGeometry(scene, ed.selection)!;
+          const geo = selectionGeometry(scene, ed.selection, undefined, ed.playhead)!;
           gesture.current = {
             kind: 'rotate',
             center: geo.center,
@@ -381,11 +484,11 @@ export function CanvasView({ project }: { project: Project }) {
             sel
               .map((id) => locateItem(sc, id)?.item)
               .filter((i): i is Item => !!i)
-              .map((i) => worldBounds(i, 0, matrixFrom(t0.get(i.id)!))),
+              .map((i) => worldBounds(i, ed.playhead, matrixFrom(t0.get(i.id)!))),
           );
-          const others = selectableItems(sc)
+          const others = selectableItems(sc, ed.playhead)
             .filter((i) => !sel.includes(i.id))
-            .map((i) => worldBounds(i));
+            .map((i) => worldBounds(i, ed.playhead));
           gesture.current = {
             kind: 'move',
             start: p,
@@ -412,7 +515,7 @@ export function CanvasView({ project }: { project: Project }) {
     const radius = useEditor.getState().options.eraserSize / 2 / useEditor.getState().view.zoom;
     const sc = currentScene();
     if (!sc) return;
-    const current = selectableItems(withReplacements(sc, g.working));
+    const current = selectableItems(withReplacements(sc, g.working), useEditor.getState().playhead);
     const { replacements } = eraseItems(current, [a, b], radius);
     if (replacements.size === 0) return;
     // Traduce los reemplazos de piezas intermedias a su elemento original.
@@ -433,12 +536,12 @@ export function CanvasView({ project }: { project: Project }) {
     if (!g) {
       if (ed.tool === 'select') {
         const h = hitHandle(p);
-        const geo = h && selectionGeometry(scene, ed.selection);
+        const geo = h && selectionGeometry(scene, ed.selection, undefined, ed.playhead);
         setCursor(
           h === 'rotate'
             ? 'grab'
             : h && geo
-              ? cursorForHandle(h, geo.single ? transformOf(geo.items[0]!).rotation : 0)
+              ? cursorForHandle(h, geo.single ? transformOf(geo.items[0]!, undefined, ed.playhead).rotation : 0)
               : topItemAt(p)
                 ? 'move'
                 : 'default',
@@ -519,7 +622,7 @@ export function CanvasView({ project }: { project: Project }) {
           const it = locateItem(sc, g.ids[0]!)?.item;
           if (it) overrides.current = new Map([[it.id, resizeSingle(it, g.t0.get(it.id)!, g.handle, p, e.shiftKey)]]);
         } else {
-          const box = selectionGeometry(sc, g.ids)!.box;
+          const box = selectionGeometry(sc, g.ids, undefined, ed.playhead)!.box;
           const next = resizeGroup([...g.t0.values()], box, g.handle, p);
           overrides.current = new Map([...g.t0.keys()].map((id, i) => [id, next[i]!]));
         }
@@ -532,6 +635,15 @@ export function CanvasView({ project }: { project: Project }) {
         overrides.current = new Map([...g.t0.keys()].map((id, i) => [id, next[i]!]));
         break;
       }
+      case 'camera': {
+        if (g.mode === 'move')
+          setCameraOverride({ ...g.cam0, x: g.cam0.x + p.x - g.start.x, y: g.cam0.y + p.y - g.start.y });
+        else {
+          const width = Math.max(docW * 0.1, p.x - g.cam0.x);
+          setCameraOverride({ ...g.cam0, zoom: Math.min(10, Math.max(0.5, docW / width)) });
+        }
+        break;
+      }
       case 'marquee': {
         g.current = p;
         const r = {
@@ -540,8 +652,8 @@ export function CanvasView({ project }: { project: Project }) {
           w: Math.abs(p.x - g.start.x),
           h: Math.abs(p.y - g.start.y),
         };
-        const inside = selectableItems(scene)
-          .filter((it) => rectsIntersect(worldBounds(it), r))
+        const inside = selectableItems(scene, ed.playhead)
+          .filter((it) => rectsIntersect(worldBounds(it, ed.playhead), r))
           .map((it) => it.id);
         ed.select([...new Set([...g.base, ...inside])]);
         break;
@@ -591,15 +703,7 @@ export function CanvasView({ project }: { project: Project }) {
         break;
       }
       case 'move':
-        if (g.moved) {
-          const any = overrides.current.values().next().value;
-          const first = g.t0.values().next().value;
-          if (any && first) {
-            const dx = any.x - first.x;
-            const dy = any.y - first.y;
-            editScene('Mover', (scene) => translateItems(scene, g.ids, dx, dy));
-          }
-        }
+        if (g.moved) commitTransforms('Mover', overrides.current);
         break;
       case 'resize':
         commitTransforms('Redimensionar', overrides.current);
@@ -608,6 +712,10 @@ export function CanvasView({ project }: { project: Project }) {
         commitTransforms('Rotar', overrides.current);
         break;
       case 'marquee':
+        break;
+      case 'camera':
+        if (cameraOverride) commitCamera(cameraOverride);
+        setCameraOverride(null);
         break;
     }
     overrides.current = new Map();
@@ -667,6 +775,7 @@ export function CanvasView({ project }: { project: Project }) {
     arrow: 'crosshair',
     text: 'text',
     hand: 'grab',
+    camera: 'move',
   };
   const effectiveCursor = panning ? 'grabbing' : spaceDown ? 'grab' : toolCursor[tool];
 

@@ -2,6 +2,7 @@
 // (previsualización y exportación usan este mismo código; ver ADR-002).
 import type { FontId, Shape, TextItem } from '../model/types';
 import { arrowHeadSize } from '../geometry/items';
+import { shapePerimeterOf } from '../anim/perimeter';
 import type { RenderItem } from './evaluate';
 import { strokeOutline } from './stroke-outline';
 
@@ -67,11 +68,17 @@ function polygonPath(ctx: Ctx2D, pts: number[], smooth: boolean) {
   ctx.closePath();
 }
 
-function drawShape(ctx: Ctx2D, s: Shape) {
+function drawShape(ctx: Ctx2D, s: Shape, progress = 1, fillProgress = 1) {
   const { stroke, strokeWidth, fill } = s.style;
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
   ctx.lineWidth = strokeWidth;
+  if (progress < 1) {
+    // Contorno parcial con un guion que avanza; si aún no ha empezado, nada.
+    if (progress <= 0) return;
+    const len = shapePerimeterOf(s);
+    ctx.setLineDash([len * progress, len + strokeWidth * 4]);
+  }
   if (s.shape === 'line' || s.shape === 'arrow') {
     if (!stroke || strokeWidth <= 0) return;
     ctx.strokeStyle = stroke;
@@ -79,7 +86,7 @@ function drawShape(ctx: Ctx2D, s: Shape) {
     ctx.moveTo(0, 0);
     ctx.lineTo(s.w, s.h);
     ctx.stroke();
-    if (s.shape === 'arrow' && (s.w !== 0 || s.h !== 0)) {
+    if (s.shape === 'arrow' && progress >= 1 && (s.w !== 0 || s.h !== 0)) {
       const head = arrowHeadSize(strokeWidth);
       const ang = Math.atan2(s.h, s.w);
       ctx.fillStyle = stroke;
@@ -101,23 +108,35 @@ function drawShape(ctx: Ctx2D, s: Shape) {
   if (s.shape === 'polygon') polygonPath(ctx, s.points ?? [], !!s.smooth);
   else if (s.shape === 'rect') ctx.rect(x, y, w, h);
   else ctx.ellipse(x + w / 2, y + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2);
-  if (fill) {
+  if (fill && fillProgress > 0) {
+    const alpha = ctx.globalAlpha;
+    ctx.globalAlpha = alpha * fillProgress;
     ctx.fillStyle = fill;
     ctx.fill();
+    ctx.globalAlpha = alpha;
   }
   if (stroke && strokeWidth > 0) {
     ctx.strokeStyle = stroke;
     ctx.stroke();
   }
+  ctx.setLineDash([]);
 }
 
-export function drawText(ctx: Ctx2D, t: TextItem) {
+/** Dibuja un texto; con `progress` < 1 se escribe letra a letra. */
+export function drawText(ctx: Ctx2D, t: TextItem, progress = 1) {
   ctx.font = fontString(t.font, t.size);
   ctx.fillStyle = t.color;
   ctx.textBaseline = 'top';
   ctx.textAlign = t.align;
   const x = t.align === 'left' ? 0 : t.align === 'center' ? t.w / 2 : t.w;
-  t.text.split('\n').forEach((line, i) => ctx.fillText(line, x, i * t.size * t.lineHeight));
+  let remaining = progress >= 1 ? Infinity : Math.floor([...t.text.replace(/\n/g, '')].length * progress);
+  t.text.split('\n').forEach((line, i) => {
+    if (remaining <= 0) return;
+    const chars = [...line];
+    const visible = chars.length <= remaining ? line : chars.slice(0, remaining).join('');
+    remaining -= chars.length;
+    ctx.fillText(visible, x, i * t.size * t.lineHeight);
+  });
 }
 
 /** Mide la caja de un texto con el contexto dado (las fuentes deben estar cargadas). */
@@ -150,10 +169,13 @@ export function drawRenderList(ctx: Ctx2D, list: RenderItem[], cache: PathCache)
       }
       case 'shape':
         ctx.globalAlpha = r.opacity * item.style.opacity;
-        drawShape(ctx, item);
+        drawShape(ctx, item, r.progress, r.fill ?? 1);
         break;
       case 'text':
-        drawText(ctx, item);
+        drawText(ctx, item, r.progress);
+        break;
+      case 'group':
+        // Los grupos llegan aplanados desde evaluateScene.
         break;
     }
     ctx.restore();

@@ -112,7 +112,6 @@ export function createStroke(points: number[], style: StrokeStyleInput): Stroke 
       smoothing: style.smoothing ?? 0.5,
       streamline: style.streamline ?? 0.45,
     },
-    reveal: null,
   };
 }
 

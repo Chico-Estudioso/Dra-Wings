@@ -14,20 +14,21 @@ export interface SelectionGeometry {
   center: Point;
 }
 
-export function transformOf(item: Item, overrides?: ReadonlyMap<string, StaticTransform>): StaticTransform {
-  return overrides?.get(item.id) ?? resolveTransform(item.transform, 0);
+export function transformOf(item: Item, overrides?: ReadonlyMap<string, StaticTransform>, tick = 0): StaticTransform {
+  return overrides?.get(item.id) ?? resolveTransform(item.transform, tick);
 }
 
 export function selectionGeometry(
   scene: Scene,
   ids: string[],
   overrides?: ReadonlyMap<string, StaticTransform>,
+  tick = 0,
 ): SelectionGeometry | null {
   const items = ids.map((id) => locateItem(scene, id)?.item).filter((i): i is Item => !!i);
   if (items.length === 0) return null;
   if (items.length === 1) {
     const item = items[0]!;
-    const t = transformOf(item, overrides);
+    const t = transformOf(item, overrides, tick);
     const m = matrixFrom(t);
     const b = localBounds(item);
     const corners = [
@@ -39,12 +40,12 @@ export function selectionGeometry(
     return {
       items,
       corners,
-      box: worldBounds(item, 0, m),
+      box: worldBounds(item, tick, m),
       single: true,
       center: { x: t.x + t.anchorX, y: t.y + t.anchorY },
     };
   }
-  const box = unionRects(items.map((i) => worldBounds(i, 0, matrixFrom(transformOf(i, overrides)))))!;
+  const box = unionRects(items.map((i) => worldBounds(i, tick, matrixFrom(transformOf(i, overrides, tick)))))!;
   return {
     items,
     corners: [

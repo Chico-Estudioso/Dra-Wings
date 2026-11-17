@@ -14,7 +14,6 @@ import {
   Save,
   Undo2,
 } from 'lucide-react';
-import { formatTimecode } from '@core/time/ticks';
 import type { Mode } from '@core/model/types';
 import { useApp, type SaveStatus } from '../state/app-store';
 import { saveCurrent } from '../state/doc-actions';
@@ -27,6 +26,8 @@ import { ToolOptions } from '../editor/ToolOptions';
 import { LayersPanel } from '../editor/LayersPanel';
 import { LibraryPanel } from '../editor/LibraryPanel';
 import { GuidedTips } from '../editor/GuidedTips';
+import { Timeline } from '../editor/Timeline';
+import { usePlayback } from '../editor/playback';
 import { PropertiesPanel } from '../editor/PropertiesPanel';
 import { useEditorShortcuts } from '../editor/shortcuts';
 import { zoomAt } from '../editor/view';
@@ -150,11 +151,15 @@ export function Editor() {
 
   const scene = project.scenes.find((s) => s.id === sceneId) ?? project.scenes[0]!;
 
-  // Si la capa activa desaparece (deshacer, eliminar), se elige la superior.
+  // Si la escena o la capa activa desaparecen (deshacer, eliminar), se elige otra.
   useEffect(() => {
-    if (!scene.layers.some((l) => l.id === activeLayerId))
+    if (sceneId && scene.id !== sceneId)
+      useEditor.getState().setScene(scene.id, scene.layers[scene.layers.length - 1]!.id);
+    else if (!scene.layers.some((l) => l.id === activeLayerId))
       useEditor.getState().setActiveLayer(scene.layers[scene.layers.length - 1]!.id);
-  }, [scene, activeLayerId]);
+  }, [scene, sceneId, activeLayerId]);
+
+  usePlayback();
 
   const viewport = useCallback(() => {
     const r = document.querySelector('[data-testid="canvas-host"]')?.getBoundingClientRect();
@@ -229,10 +234,16 @@ export function Editor() {
               Capas
             </button>
           </div>
-          <PropertiesPanel scene={scene} docSize={{ w: project.settings.width, h: project.settings.height }} />
+          <PropertiesPanel
+            scene={scene}
+            docSize={{ w: project.settings.width, h: project.settings.height }}
+            fps={project.settings.fps}
+          />
           {sideTab === 'library' ? <LibraryPanel project={project} /> : <LayersPanel scene={scene} />}
         </aside>
       </div>
+
+      <Timeline project={project} scene={scene} />
 
       <footer className="statusbar">
         <span>{scene.name}</span>
@@ -242,7 +253,6 @@ export function Editor() {
             return `${n} ${n === 1 ? 'elemento' : 'elementos'}`;
           })()}
         </span>
-        <span>Duración {formatTimecode(scene.duration, project.settings.fps)}</span>
         <span>
           {project.settings.width} × {project.settings.height} · {project.settings.fps} fps
         </span>

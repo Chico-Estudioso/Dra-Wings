@@ -2,8 +2,9 @@
 // herramienta, opciones, selección, capa activa y vista.
 import { create } from 'zustand';
 import type { FontId, Mode, Shape } from '@core/model/types';
+import type { Ticks } from '@core/time/ticks';
 
-export type Tool = 'select' | 'pencil' | 'eraser' | 'rect' | 'ellipse' | 'line' | 'arrow' | 'text' | 'hand';
+export type Tool = 'select' | 'pencil' | 'eraser' | 'rect' | 'ellipse' | 'line' | 'arrow' | 'text' | 'hand' | 'camera';
 
 export const SHAPE_TOOLS: Record<string, Shape['shape']> = {
   rect: 'rect',
@@ -56,6 +57,17 @@ interface EditorState {
   snap: boolean;
   sideTab: 'library' | 'layers';
   editingTextId: string | null;
+  /** Cabezal: instante dentro de la escena actual. */
+  playhead: Ticks;
+  playing: boolean;
+  /** Vista previa: el lienzo muestra el vídeo en el cabezal (apariciones y cámara). */
+  preview: boolean;
+  /** Grabar movimiento: los cambios en un instante posterior a la aparición crean keyframes. */
+  autoKey: boolean;
+  /** Papel cebolla en capas de fotogramas. */
+  onion: boolean;
+  /** Píxeles por segundo en la línea de tiempo. */
+  timelineZoom: number;
 
   setTool(tool: Tool): void;
   setOptions(patch: Partial<ToolOptions>): void;
@@ -67,6 +79,13 @@ interface EditorState {
   setSideTab(tab: 'library' | 'layers'): void;
   applyModeDefaults(mode: Mode): void;
   setEditingText(id: string | null): void;
+  setPlayhead(t: Ticks): void;
+  setPlaying(playing: boolean): void;
+  setPreview(preview: boolean): void;
+  toggleAutoKey(): void;
+  toggleOnion(): void;
+  setTimelineZoom(z: number): void;
+  setScene(sceneId: string, layerId: string): void;
   reset(sceneId: string, layerId: string, mode: Mode): void;
 }
 
@@ -90,6 +109,12 @@ export const useEditor = create<EditorState>()((set) => ({
   snap: true,
   sideTab: 'library',
   editingTextId: null,
+  playhead: 0,
+  playing: false,
+  preview: false,
+  autoKey: false,
+  onion: true,
+  timelineZoom: 80,
 
   setTool: (tool) => set((s) => ({ tool, selection: tool === 'select' ? s.selection : [], editingTextId: null })),
   setOptions: (patch) => set((s) => ({ options: { ...s.options, ...patch } })),
@@ -101,6 +126,14 @@ export const useEditor = create<EditorState>()((set) => ({
   setSideTab: (sideTab) => set({ sideTab }),
   applyModeDefaults: (mode) => set({ snap: mode !== 'free', sideTab: mode === 'free' ? 'layers' : 'library' }),
   setEditingText: (id) => set({ editingTextId: id }),
+  setPlayhead: (t) => set({ playhead: Math.max(0, Math.round(t)) }),
+  setPlaying: (playing) => set((s) => ({ playing, preview: playing ? true : s.preview })),
+  setPreview: (preview) => set((s) => ({ preview, playing: preview ? s.playing : false })),
+  toggleAutoKey: () => set((s) => ({ autoKey: !s.autoKey })),
+  toggleOnion: () => set((s) => ({ onion: !s.onion })),
+  setTimelineZoom: (z) => set({ timelineZoom: Math.min(800, Math.max(10, z)) }),
+  setScene: (sceneId, layerId) =>
+    set({ sceneId, activeLayerId: layerId, selection: [], playhead: 0, editingTextId: null }),
   reset: (sceneId, layerId, mode) =>
     set({
       sceneId,
@@ -111,5 +144,8 @@ export const useEditor = create<EditorState>()((set) => ({
       view: { zoom: 1, panX: 0, panY: 0, fit: true },
       snap: mode !== 'free',
       sideTab: mode === 'free' ? 'layers' : 'library',
+      playhead: 0,
+      playing: false,
+      preview: false,
     }),
 }));

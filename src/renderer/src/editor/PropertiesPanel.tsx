@@ -10,20 +10,24 @@ import {
   Trash2,
   Ungroup,
 } from 'lucide-react';
-import { fixed } from '@core/anim/animated';
+import { resolveTransform, type StaticTransform } from '@core/geometry/matrix';
 import { locateItem } from '@core/edit/ops';
 import { worldBounds } from '@core/geometry/items';
 import type { FontId, Item, Scene, TextItem } from '@core/model/types';
+import type { Fps } from '@core/time/ticks';
 import { measureText } from '@core/render/draw';
 import {
+  commitTransforms,
   deleteSelection,
   duplicateSelection,
   groupSelection,
   recolorSelected,
   reorderSelection,
+  setSelectedOpacity,
   ungroupSelection,
   updateSelected,
 } from './actions';
+import { AnimationSection } from './AnimationSection';
 import { ColorPicker, ValueSlider } from './controls';
 import { useEditor } from './editor-store';
 import { FONT_LABELS, fontsReady } from './fonts';
@@ -48,7 +52,15 @@ function useDraft(initial: number) {
   return { value: draft ?? initial, set: setDraft, clear: () => setDraft(null) };
 }
 
-export function PropertiesPanel({ scene, docSize }: { scene: Scene; docSize: { w: number; h: number } }) {
+export function PropertiesPanel({
+  scene,
+  docSize,
+  fps,
+}: {
+  scene: Scene;
+  docSize: { w: number; h: number };
+  fps: Fps;
+}) {
   const selection = useEditor((s) => s.selection);
   const items = selection.map((id) => locateItem(scene, id)?.item).filter((i): i is Item => !!i);
   const first = items[0];
@@ -96,14 +108,16 @@ export function PropertiesPanel({ scene, docSize }: { scene: Scene; docSize: { w
       });
   };
 
-  const center = () =>
-    updateSelected('Centrar en el lienzo', (it) => {
-      const b = worldBounds(it);
-      const dx = docSize.w / 2 - (b.x + b.w / 2);
-      const dy = docSize.h / 2 - (b.y + b.h / 2);
-      if ('value' in it.transform.x) it.transform.x = fixed(it.transform.x.value + dx);
-      if ('value' in it.transform.y) it.transform.y = fixed(it.transform.y.value + dy);
-    });
+  const center = () => {
+    const t = useEditor.getState().playhead;
+    const next = new Map<string, StaticTransform>();
+    for (const it of items) {
+      const b = worldBounds(it, t);
+      const st = resolveTransform(it.transform, t);
+      next.set(it.id, { ...st, x: st.x + docSize.w / 2 - (b.x + b.w / 2), y: st.y + docSize.h / 2 - (b.y + b.h / 2) });
+    }
+    commitTransforms('Centrar en el lienzo', next);
+  };
 
   const kind = allStrokes
     ? 'Trazo'
@@ -197,7 +211,7 @@ export function PropertiesPanel({ scene, docSize }: { scene: Scene; docSize: { w
           onChange={opacity.set}
           onCommit={(v) => {
             opacity.clear();
-            updateSelected('Cambiar opacidad', (it) => void (it.opacity = fixed(v)));
+            setSelectedOpacity(v);
           }}
         />
         <div className="button-grid" role="group" aria-label="Organizar">
@@ -248,6 +262,7 @@ export function PropertiesPanel({ scene, docSize }: { scene: Scene; docSize: { w
             <Trash2 size={17} />
           </button>
         </div>
+        <AnimationSection items={items} fps={fps} />
       </div>
     </section>
   );

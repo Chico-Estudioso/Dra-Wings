@@ -66,7 +66,6 @@ describe('validateProject', () => {
       in: 0,
       points: [1, 2, 0.5],
       style: { color: '#000000', size: 8, thinning: 0.5, smoothing: 0.5, streamline: 0.5, opacity: 1 },
-      reveal: null,
     });
     const r = validateProject(p);
     expect(r.ok).toBe(false);

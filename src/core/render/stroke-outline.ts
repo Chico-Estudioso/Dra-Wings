@@ -21,7 +21,7 @@ export function partialInput(stroke: Stroke, progress: number): number[][] {
   const n = pts.length / POINT_STRIDE;
   if (progress >= 1 || n <= 1) return toInput(pts, n);
   if (progress <= 0) return [];
-  const mode = stroke.reveal?.mode ?? 'length';
+  const mode = stroke.enter?.mode ?? 'length';
   // Parámetro acumulado: longitud de arco o tiempo grabado.
   const acc = [0];
   for (let i = 1; i < n; i++) {

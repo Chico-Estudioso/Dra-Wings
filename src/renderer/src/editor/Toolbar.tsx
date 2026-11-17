@@ -3,6 +3,7 @@ import {
   Circle,
   Eraser,
   Hand,
+  Video,
   MousePointer2,
   Pencil,
   Slash,
@@ -22,6 +23,7 @@ export const TOOLS: { id: Tool; label: string; key: string; icon: LucideIcon }[]
   { id: 'arrow', label: 'Flecha', key: 'A', icon: ArrowUpRight },
   { id: 'text', label: 'Texto', key: 'T', icon: Type },
   { id: 'hand', label: 'Mano (o mantén Espacio)', key: 'H', icon: Hand },
+  { id: 'camera', label: 'Encuadre de cámara', key: 'C', icon: Video },
 ];
 
 export function Toolbar() {

@@ -36,20 +36,19 @@ export function makeGroup(children: Item[], extra: Partial<Pick<Group, 'name' | 
   };
 }
 
-/** Agrupa elementos de una misma capa en la posición del más alto. Devuelve el id del grupo. */
+/** Agrupa elementos de una misma lista (capa o fotograma) en la posición del más alto. */
 export function groupItems(scene: Scene, ids: string[]): string | null {
   const locs = ids.map((id) => locateItem(scene, id)).filter((l): l is NonNullable<typeof l> => !!l);
   if (locs.length < 2) return null;
-  const layer = locs[0]!.layer;
-  if (!layer.items || locs.some((l) => l.layer !== layer)) return null;
+  const list = locs[0]!.list;
+  if (locs.some((l) => l.list !== list)) return null;
   const set = new Set(ids);
-  const ordered = layer.items.filter((i) => set.has(i.id));
+  const ordered = list.filter((i) => set.has(i.id));
   const topIndex = Math.max(...locs.map((l) => l.index));
   const group = makeGroup(ordered.map((i) => deepClone(i)));
-  const remaining = layer.items.filter((i) => !set.has(i.id));
-  const insertAt = topIndex - (ordered.length - 1);
-  remaining.splice(insertAt, 0, group);
-  layer.items = remaining;
+  const remaining = list.filter((i) => !set.has(i.id));
+  remaining.splice(topIndex - (ordered.length - 1), 0, group);
+  list.splice(0, list.length, ...remaining);
   return group.id;
 }
 
@@ -113,7 +112,7 @@ function bake(child: Item, groupMatrix: Mat): Item {
 /** Sustituye un grupo por sus elementos, conservando su aspecto. Devuelve los ids resultantes. */
 export function ungroupItem(scene: Scene, id: string): string[] {
   const loc = locateItem(scene, id);
-  if (!loc || loc.item.type !== 'group' || !loc.layer.items) return [];
+  if (!loc || loc.item.type !== 'group') return [];
   const g = loc.item;
   const gm = matrixFrom(resolveTransform(g.transform, 0));
   const groupOpacity = 'value' in g.opacity ? g.opacity.value : 1;
@@ -122,7 +121,7 @@ export function ungroupItem(scene: Scene, id: string): string[] {
     if (groupOpacity !== 1 && 'value' in baked.opacity) baked.opacity = fixed(baked.opacity.value * groupOpacity);
     return baked;
   });
-  loc.layer.items.splice(loc.index, 1, ...children);
+  loc.list.splice(loc.index, 1, ...children);
   return children.map((c) => c.id);
 }
 

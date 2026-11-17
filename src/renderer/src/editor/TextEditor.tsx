@@ -7,6 +7,7 @@ import { addToActiveLayer, currentScene, editScene } from './actions';
 import { useEditor } from './editor-store';
 import { fontsReady } from './fonts';
 import { toScreen } from './view';
+import { resolveTransform } from '@core/geometry/matrix';
 
 export type TextEditTarget = { kind: 'new'; x: number; y: number } | { kind: 'edit'; id: string };
 
@@ -30,14 +31,10 @@ export function TextEditor({ target, onDone }: { target: TextEditTarget; onDone:
   const font = existing?.font ?? options.font;
   const size = existing?.size ?? options.fontSize;
   const color = existing?.color ?? options.color;
-  const scale = existing ? ('value' in existing.transform.scaleX && existing.transform.scaleX.value) || 1 : 1;
-  const origin =
-    target.kind === 'new'
-      ? { x: target.x, y: target.y - size / 2 }
-      : {
-          x: 'value' in existing!.transform.x ? existing!.transform.x.value : 0,
-          y: 'value' in existing!.transform.y ? existing!.transform.y.value : 0,
-        };
+  const playhead = useEditor((s) => s.playhead);
+  const st = existing ? resolveTransform(existing.transform, playhead) : null;
+  const scale = st?.scaleX ?? 1;
+  const origin = target.kind === 'new' ? { x: target.x, y: target.y - size / 2 } : { x: st!.x, y: st!.y };
   const screen = toScreen(view, origin);
 
   // Foco inmediato (antes de pintar) para no perder las primeras teclas.

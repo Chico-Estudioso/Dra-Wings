@@ -36,6 +36,15 @@ export const transformSchema = z.object({
   anchorY: z.number(),
 });
 
+/** Animación de entrada: dibujarse (trazos, contornos, texto letra a letra), fundido o «pop». */
+export const enterSchema = z.object({
+  kind: z.enum(['none', 'draw', 'fade', 'pop']),
+  duration: ticks,
+  /** Solo trazos: revelar por longitud (velocidad constante) o con los tiempos grabados al dibujar. */
+  mode: z.enum(['length', 'recorded']).optional(),
+});
+export const exitSchema = z.object({ kind: z.enum(['none', 'fade', 'pop']), duration: ticks });
+
 const itemBase = {
   id,
   name: z.string().max(200).optional(),
@@ -43,8 +52,12 @@ const itemBase = {
   slot: z.string().max(40).optional(),
   transform: transformSchema,
   opacity: animatedNumberSchema,
+  /** Instante (relativo a la escena) en que empieza a aparecer. */
   in: ticks,
+  /** Instante en que termina de desaparecer (sin valor: hasta el final de la escena). */
   out: ticks.optional(),
+  enter: enterSchema.optional(),
+  exit: exitSchema.optional(),
 };
 
 export const strokeSchema = z.object({
@@ -63,7 +76,6 @@ export const strokeSchema = z.object({
     streamline: unit,
     opacity: unit,
   }),
-  reveal: z.object({ start: ticks, duration: ticks, mode: z.enum(['length', 'recorded']) }).nullable(),
 });
 
 export const shapeSchema = z.object({

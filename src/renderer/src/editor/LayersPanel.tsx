@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { ArrowDown, ArrowUp, Eye, EyeOff, Lock, LockOpen, Plus, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, Eye, EyeOff, Film, Lock, LockOpen, Plus, Trash2 } from 'lucide-react';
 import type { Scene } from '@core/model/types';
-import { addLayerAboveActive, deleteLayer, shiftLayer, updateLayer } from './actions';
+import { addFramesLayer, addLayerAboveActive, deleteLayer, layerItemCount, shiftLayer, updateLayer } from './actions';
 import { useEditor } from './editor-store';
 
 function LayerName({ id, name }: { id: string; name: string }) {
@@ -75,6 +75,14 @@ export function LayersPanel({ scene }: { scene: Scene }) {
           </button>
           <button
             className="icon-btn icon-btn-sm"
+            aria-label="Nueva capa de fotogramas"
+            title="Nueva capa de fotogramas (animación dibujo a dibujo)"
+            onClick={addFramesLayer}
+          >
+            <Film size={16} />
+          </button>
+          <button
+            className="icon-btn icon-btn-sm"
             aria-label="Nueva capa"
             title="Nueva capa"
             onClick={addLayerAboveActive}
@@ -104,7 +112,8 @@ export function LayersPanel({ scene }: { scene: Scene }) {
               {l.visible ? <Eye size={16} /> : <EyeOff size={16} />}
             </button>
             <LayerName id={l.id} name={l.name} />
-            <span className="layer-count">{l.items?.length ?? 0}</span>
+            {l.kind === 'frames' && <Film size={13} aria-label="Capa de fotogramas" />}
+            <span className="layer-count">{layerItemCount(l)}</span>
             <button
               className={`icon-btn icon-btn-sm ${l.locked ? 'is-on' : ''}`}
               aria-label={l.locked ? `Desbloquear ${l.name}` : `Bloquear ${l.name}`}
