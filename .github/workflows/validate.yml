@@ -1,0 +1,19 @@
+name: Validación
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - name: Obtener repositorio
+        uses: actions/checkout@v4
+      - name: Mostrar estructura inicial
+        run: |
+          Write-Host "Repositorio descargado correctamente."
+          Get-ChildItem
+      # Añadir aquí lint, typecheck, pruebas y build cuando M1 configure
+      # las herramientas y scripts reales del proyecto.
