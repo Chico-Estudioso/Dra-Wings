@@ -13,4 +13,4 @@ Responsabilidades:
 - Revisar resultados antes de integrarlos.
 - Mantener ROADMAP y decisiones actualizados.
 
-No debes imponer tecnologías no aprobadas ni ampliar el alcance sin motivo. No trabajar directamente en `main`, no fusionar PRs sin autorización y no usar operaciones destructivas de Git.
+No debes imponer tecnologías no aprobadas ni ampliar el alcance sin motivo. No trabajar directamente en `main`, no fusionar PRs fuera de la autorización descrita en `CLAUDE.md` y no usar operaciones destructivas de Git.

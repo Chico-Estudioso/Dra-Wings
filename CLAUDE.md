@@ -51,12 +51,19 @@ Si M0 recomienda otra tecnología, documentar cómo se aplican controles de segu
 
 - Nunca trabajar directamente en `main`.
 - Crear una rama por tarea (`feat/`, `fix/`, `docs/`, `chore/`, `test/`).
-- No fusionar Pull Requests sin aprobación explícita del usuario.
+- Fusión autónoma autorizada: el usuario ha autorizado de forma permanente que Claude fusione sus propias Pull Requests cuando la validación de CI esté en verde y la tarea cumpla la Definition of Done. Si el volumen de PRs o los resultados de CI lo desaconsejan, dejar la PR abierta e informar para que la fusione el usuario.
+- Esta autorización sustituye a las indicaciones de «no fusionar» y «no hacer push» de los prompts de `prompts/`. Publicar releases o distribuir instaladores sigue requiriendo aprobación explícita.
 - No usar `git push --force`, `reset --hard` ni reescribir historial compartido.
 - No descartar cambios existentes del usuario.
 - Antes de modificar archivos, revisar `git status` y comprender el estado del repositorio.
 - Mantener cambios limitados al alcance de la tarea.
 - No publicar releases ni distribuir instaladores sin autorización.
+
+## Autoría
+
+- Los commits se firman como `Mauro Serrano Hevia <144903323+Chico-Estudioso@users.noreply.github.com>` (configurar `git config user.name` y `user.email` en el repositorio).
+- Sin líneas `Co-Authored-By`, `Claude-Session` ni pies del tipo «Generated with Claude Code» en commits, Pull Requests o comentarios.
+- Al fusionar, preservar esta autoría (por ejemplo, fusionando en local y haciendo push de `main`) para no exponer otro email.
 
 ## Documentación que debe mantenerse
 

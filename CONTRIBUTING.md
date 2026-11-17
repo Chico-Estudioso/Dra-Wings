@@ -7,7 +7,7 @@
 3. Mantener los cambios acotados y documentar decisiones relevantes.
 4. Ejecutar las pruebas y comprobaciones apropiadas.
 5. Abrir una Pull Request hacia `main` con descripción, pruebas y capturas si corresponde.
-6. Esperar revisión y aprobación antes de fusionar.
+6. Fusionar cuando la validación de CI esté en verde y se cumpla la Definition of Done (ver la autorización de fusión en `CLAUDE.md`).
 
 ## Reglas
 

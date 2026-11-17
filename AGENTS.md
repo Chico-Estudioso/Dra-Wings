@@ -39,4 +39,4 @@ No declarar una tarea terminada si las pruebas fallan o si el comportamiento pri
 - El Lead Developer es responsable de arquitectura e integración.
 - Los agentes especializados no deben modificar simultáneamente las mismas áreas compartidas.
 - Si se detecta una dependencia con otro trabajo, comunicarlo antes de realizar cambios incompatibles.
-- No fusionar ramas ni Pull Requests sin autorización del usuario.
+- Fusionar ramas o Pull Requests solo dentro de la autorización permanente descrita en `CLAUDE.md` (CI en verde y Definition of Done cumplida).
