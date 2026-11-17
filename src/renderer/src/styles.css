@@ -490,7 +490,11 @@ select {
 .workspace {
   display: grid;
   grid-template-columns: auto 1fr 272px;
+  /* Una sola fila que no crece con el contenido: en ventanas bajas, cada columna se desplaza
+     por dentro en lugar de invadir la línea de tiempo. */
+  grid-template-rows: minmax(0, 1fr);
   min-height: 0;
+  overflow: hidden;
 }
 .toolbar {
   display: flex;
@@ -499,6 +503,12 @@ select {
   padding: 8px 6px;
   background: var(--surface);
   border-right: 1px solid var(--border);
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.tool-btn {
+  flex: none;
 }
 .tool-btn {
   display: grid;
