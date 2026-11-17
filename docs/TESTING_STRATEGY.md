@@ -1,33 +1,24 @@
 # Estrategia de pruebas
 
-## Pruebas unitarias
+| Nivel | Herramienta | Qué cubre |
+|---|---|---|
+| Unitarias (Node) | Vitest | Modelo, esquemas zod, migraciones, ticks/timecode, `evaluate`, comandos y undo/redo, empaquetado ZIP |
+| Renderizado (navegador real) | Vitest en modo navegador + Playwright Chromium | `renderFrame` con hashes de píxeles de referencia, trazos progresivos y determinismo |
+| Integración (proceso principal) | Vitest (Node) | Guardado atómico, `.bak`, recuperación, validación de archivos corruptos o malformados y límites de ZIP |
+| E2E | Playwright `_electron` | Arrancar la app, crear, guardar, cerrar y reabrir, cambiar de modo y exportar un vídeo corto |
+| Exportación | Prueba E2E + mediabunny (y ffprobe en CI) | Duración, FPS, resolución, pistas y desfase A/V con marcas de imagen y sonido (método del prototipo M0) |
+| Rendimiento | Escenas de estrés generadas | Tiempo por fotograma con N trazos, apertura de proyectos grandes y exportación de 10 min |
+| Manual | Lista en cada PR | Tableta con presión, reproductores de Windows, monitores HiDPI |
 
-- Modelo de proyecto y validación.
-- Operaciones de edición y undo/redo.
-- Evaluación temporal de animaciones.
-- Interpolación y cálculo de trazos progresivos.
-- Migraciones del formato.
-- Gestión de clips y tiempos de audio.
+## CI
 
-## Pruebas de integración
+- `validate.yml` (Windows): instalar, lint, typecheck, pruebas unitarias y de renderizado, build y E2E.
+- Ubuntu ejecuta las mismas pruebas para detectar diferencias de plataforma (el renderizado con Xvfb).
+- Workflow de prototipos o capacidades bajo demanda cuando cambie la versión de Electron.
 
-- Crear, guardar, cerrar y reabrir proyectos.
-- Importar y localizar medios.
-- Renderizar secuencias de prueba.
-- Mezclar pistas de audio.
-- Exportar vídeos y verificar propiedades básicas.
+## Reglas
 
-## Pruebas de interfaz
-
-- Flujos principales de creación.
-- Cambio entre modos Guiado, Mixto y Libre.
-- Selección, edición de capas y línea de tiempo.
-- Accesibilidad básica y navegación por teclado.
-
-## Pruebas de rendimiento
-
-Definir proyectos de referencia con diferentes cantidades de trazos, objetos, capas, escenas y duración. Medir respuesta del lienzo, reproducción, memoria y tiempo de exportación.
-
-## Reporte
-
-Separar claramente pruebas automatizadas, pruebas manuales realizadas y validaciones pendientes. No afirmar que la exportación funciona solo porque el renderizado interno se vea bien.
+- Cada error corregido añade una prueba de regresión.
+- No se desactivan pruebas para conseguir verde. Si una prueba es inestable, se arregla o se documenta con una incidencia.
+- Las imágenes de referencia de renderizado se regeneran solo con un cambio visual intencionado y explicado en la PR.
+- El informe de cada PR separa lo automatizado de lo comprobado a mano.

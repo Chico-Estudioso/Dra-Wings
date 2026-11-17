@@ -24,9 +24,17 @@ Deben poder cambiarse sin convertir el proyecto ni perder objetos.
 
 ## Alcance del MVP
 
-Gestión local de proyectos, edición de escenas, dibujo, capas, biblioteca inicial, animación de trazos y objetos, línea de tiempo, audio narrado y exportación de vídeo.
+Confirmado tras M0:
 
-El alcance exacto se confirma tras M0.
+- Proyectos locales `.dwings` con autoguardado y recuperación.
+- Escenas secuenciales con duración, cámara animable (desplazamiento y zoom) y fondo.
+- Dibujo libre con presión, goma, formas, texto, imágenes importadas, selección y transformación, capas y undo/redo.
+- Biblioteca inicial original (personajes modulares sencillos, objetos y fondos) y plantillas de escena.
+- Animación: revelado progresivo de trazos, keyframes de transformación y opacidad, entrada y salida de elementos, y fotograma a fotograma básico con onion skin.
+- Línea de tiempo con escenas, capas, pistas de audio y marcadores.
+- Audio: narración, música y efectos con recorte, volumen y fundidos.
+- Exportación MP4 (H.264 + AAC, u Opus si no hay AAC) en 720p, 1080p, cuadrado y vertical a 24, 25, 30 o 60 fps.
+- Interfaz en español, Windows primero.
 
 ## Fuera de alcance inicial
 

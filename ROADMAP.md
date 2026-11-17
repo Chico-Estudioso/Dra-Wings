@@ -1,19 +1,18 @@
 # Roadmap — Dra-Wings
 
-Estado inicial: planificación. Las fases se ajustarán tras la investigación M0.
+Estado: M0 completado. Siguiente: M1.
 
-## M0 — Investigación y diseño
-- Investigar tecnologías de escritorio, canvas, dibujo, animación, audio y exportación.
-- Comparar opciones y validar licencias, rendimiento y mantenimiento.
-- Definir flujos de usuario y alcance del MVP.
-- Preparar un prototipo técnico de lienzo y renderizado si aporta evidencia.
-- **Salida:** arquitectura aprobada, decisiones documentadas y riesgos conocidos.
+## M0 — Investigación y diseño ✅
+- Stack decidido: Electron + React/TS, renderizador Canvas 2D propio, ZIP `.dwings`, exportación WebCodecs (ADR-001 a ADR-006).
+- Prototipo `prototypes/m0` ejecutado en Linux y Windows (y macOS en CI): render determinista, trazos progresivos, exportación MP4 con audio sincronizado.
+- **Salida:** arquitectura y decisiones documentadas en `docs/`.
 
 ## M1 — Fundación de la aplicación
 - Crear proyecto de escritorio y estructura base.
 - Navegación principal y gestión de proyectos.
 - Guardado, apertura, autosave y recuperación básica.
-- Modelo de proyecto versionado.
+- Modelo de proyecto versionado (`.dwings` v1, esquemas zod, migraciones).
+- CI en Windows con lint, typecheck, pruebas y build.
 - **Salida:** crear, guardar, cerrar y reabrir un proyecto sin pérdida de datos.
 
 ## M2 — Lienzo y dibujo libre

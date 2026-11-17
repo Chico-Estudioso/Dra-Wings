@@ -4,3 +4,4 @@ Los cambios relevantes se registran aquí. Se seguirá una estructura inspirada 
 
 ## [Unreleased]
 - Preparación inicial del proyecto y del kit de desarrollo.
+- M0: decisiones de arquitectura (ADR-001 a ADR-006), documentación técnica y prototipo de render y exportación (`prototypes/m0`).

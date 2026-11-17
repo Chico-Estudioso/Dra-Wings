@@ -1,19 +1,20 @@
 # Decisiones técnicas
 
-Las decisiones importantes se registran con fecha, contexto, opciones y consecuencias. Para decisiones de arquitectura relevantes se puede crear un ADR independiente.
+Registro breve. El detalle de cada una está en su ADR (`docs/decisions/`).
 
-## Pendientes de M0
+| # | Decisión | Estado | ADR |
+|---|---|---|---|
+| 1 | Electron (Chromium empaquetado) como plataforma de escritorio | Aprobada | ADR-001 |
+| 2 | Renderizador propio Canvas 2D + perfect-freehand; sin Konva/Fabric | Aprobada | ADR-002 |
+| 3 | Proyecto como ZIP `.dwings` con medios por hash y guardado atómico | Aprobada | ADR-003 |
+| 4 | Exportación con WebCodecs + mediabunny; FFmpeg no se empaqueta | Aprobada | ADR-004 |
+| 5 | Stack: TS, electron-vite, React 19, Radix, Zustand+Immer, Zod, fflate, Vitest, Playwright, electron-builder | Aprobada | ADR-005 |
+| 6 | Tiempo entero en ticks (1 s = 705 600 000) | Aprobada | ADR-006 |
 
-- Framework de escritorio: Electron frente a Tauri u otra opción.
-- Framework de interfaz y sistema de construcción.
-- Tecnología de lienzo: Konva, Fabric.js, SVG, Canvas 2D u otra.
-- Representación de trazos y soporte de presión.
-- Modelo de capas y objetos.
-- Modelo de fotogramas y animación por tiempo.
-- Motor de renderizado y exportación.
-- Estrategia de empaquetado/distribución de FFmpeg y codecs.
-- Formato y extensión del proyecto.
+## Pendientes (se deciden en su fase)
 
-## Regla
-
-No registrar como decisión aprobada una tecnología que solo se haya mencionado como posibilidad. Incluir referencias a documentación oficial, pruebas realizadas y limitaciones.
+- Fuentes tipográficas empaquetadas para el texto (deben ser OFL y cargarse igual en el worker de exportación) → M2.
+- Estrategia de caché de capas rasterizadas → M2, con mediciones en hardware real.
+- Formato de los recursos de biblioteca (personajes modulares) → M3.
+- Conversión de rango de color en la exportación → M6.
+- Firma de código del instalador Windows → M8.

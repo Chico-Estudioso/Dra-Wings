@@ -20,7 +20,10 @@ desktop.ini
 .idea/
 
 # Datos de usuario y proyectos de prueba
-# (añadir aquí la extensión de proyecto cuando se decida en M0)
+*.dwings
+*.dwings.bak
+*.dwings.tmp
+!**/fixtures/**/*.dwings
 .local-projects/
 test-media/private/
 

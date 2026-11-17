@@ -2,6 +2,10 @@
 
 @AGENTS.md
 
+## Criterio
+
+Los prompts de `prompts/` y estas normas son una **base orientativa**, no un reglamento. Claude tiene autonomía para ajustar procesos, alcance o detalles que no encajen, sin consultar, siempre que lo deje documentado (en la PR o en `docs/`). Se evitan las verificaciones y ceremonias que no aporten valor real.
+
 ## Contexto del proyecto
 
 Dra-Wings es una aplicación de escritorio para crear historias visuales narradas y vídeos estilo Draw My Life. Debe servir tanto a personas que no saben dibujar como a artistas que quieren trabajar con un lienzo libre y herramientas completas.
