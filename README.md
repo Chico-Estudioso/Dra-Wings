@@ -4,6 +4,8 @@
 
 También ofrece herramientas de dibujo y animación libres para usuarios que prefieren trabajar sin ayudas.
 
+![Editor de Dra-Wings](docs/img/editor-m2.png)
+
 ## Modos de creación
 
 - **Guiado:** personajes, objetos, composiciones y ayudas editables.
