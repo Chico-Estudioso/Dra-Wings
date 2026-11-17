@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { createProject, launch, stubMessageBox, stubOpenDialog, stubSaveDialog, tempDir } from './helpers';
+import { createProject, killHard, launch, stubMessageBox, stubOpenDialog, stubSaveDialog, tempDir } from './helpers';
 
 test('crear, guardar, cerrar y reabrir un proyecto sin pérdida', async () => {
   const userData = await tempDir();
@@ -70,7 +70,7 @@ test('recupera el trabajo sin guardar tras un cierre inesperado', async () => {
     })
     .toBe('Borrador importante');
 
-  app.process().kill('SIGKILL');
+  await killHard(app);
   ({ app, page } = await launch(userData));
   await expect(page.getByText('Trabajo sin guardar')).toBeVisible();
   await page.getByRole('button', { name: 'Restaurar' }).click();

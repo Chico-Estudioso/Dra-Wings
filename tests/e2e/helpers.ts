@@ -1,4 +1,5 @@
 import { _electron as electron, type ElectronApplication, type Page } from '@playwright/test';
+import { spawnSync } from 'node:child_process';
 import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -48,4 +49,13 @@ export async function createProject(page: Page, name: string) {
   await input.fill(name);
   await page.getByRole('button', { name: 'Crear proyecto' }).click();
   await page.getByLabel('Nombre del proyecto').waitFor();
+}
+
+/** Simula un cierre inesperado. En Windows hay que matar el árbol entero o quedan procesos huérfanos. */
+export async function killHard(app: ElectronApplication) {
+  const proc = app.process();
+  const closed = app.waitForEvent('close').catch(() => {});
+  if (process.platform === 'win32') spawnSync('taskkill', ['/pid', String(proc.pid), '/T', '/F']);
+  else proc.kill('SIGKILL');
+  await closed;
 }
