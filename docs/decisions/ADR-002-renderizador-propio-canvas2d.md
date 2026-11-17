@@ -24,9 +24,16 @@ El lienzo debe dibujar trazos con presión, revelarlos progresivamente, componer
 - Negativas: hay que implementar la selección, el *hit testing* y los tiradores de transformación.
 - Rendimiento: hay que cachear `Path2D` por trazo y, en M2, rasterizar las capas estáticas a mapas de bits.
 
-## Evidencia (prototipo ejecutado en Linux, Electron 45, CPU de 4 núcleos sin GPU)
+## Regla derivada: raster por software para exportar
+
+En macOS, el lienzo acelerado por GPU y el lienzo por software producen antialiasing distinto en los bordes: 2179 de 921 600 píxeles, con diferencia máxima de 91 en un canal. En Linux y Windows sin GPU no hubo diferencias.
+
+- La exportación y las pruebas de referencia usan siempre contextos con `willReadFrequently: true` (raster por software). Así son reproducibles.
+- La previsualización en pantalla puede usar GPU. Entre preview y vídeo solo puede haber diferencias de antialiasing en los bordes, nunca de posición, tiempo o color.
+
+## Evidencia (prototipo ejecutado en Linux, Windows y macOS con Electron 45)
 
 - Mismo fotograma renderizado en distinto orden y con o sin caché: hashes SHA-256 idénticos.
-- Lienzo acelerado frente a lienzo con `willReadFrequently`: 0 píxeles distintos.
-- Worker (`OffscreenCanvas`) frente a previsualización (`HTMLCanvasElement`): **150 de 150 fotogramas idénticos** píxel a píxel.
+- Lienzo acelerado frente a lienzo con `willReadFrequently`: 0 píxeles distintos en Linux y Windows; 2179 en macOS (solo bordes).
+- Worker (`OffscreenCanvas`) frente a previsualización (`HTMLCanvasElement`), ambos por software: **150 de 150 fotogramas idénticos** en las tres plataformas.
 - 2000 trazos de 60 puntos: contornos calculados en 45 ms, dibujo con `Path2D` cacheados en 57 ms por fotograma (raster por software). Recalcular el trazo parcial en curso cuesta 0,025 ms.

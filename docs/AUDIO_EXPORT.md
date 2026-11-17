@@ -27,7 +27,7 @@ Decisión de base: ADR-004 (WebCodecs + mediabunny, sin FFmpeg empaquetado).
 | Plataforma | Vídeo (H.264) | Audio AAC | Opus | VP9 / AV1 | HEVC | Resultado de exportación |
 |---|---|---|---|---|---|---|
 | Windows (GitHub Actions, sin GPU) | Sí (software) | **Sí** | Sí | Sí / Sí | No | H.264 + AAC, 0,53 s para 5 s de 720p, desfase A/V 0,0 ms |
-| macOS (GitHub Actions) | ver resultados del workflow `Prototipo M0` | | | | | |
+| macOS arm64 (GitHub Actions) | Sí (software) | **Sí** | Sí | Sí / Sí | Solo decodificación | H.264 + AAC, 1,3 s para 5 s de 720p, desfase A/V 0,0 ms |
 | Linux (contenedor, sin GPU) | Sí (OpenH264) | **No** | Sí | Sí / Sí | No | H.264 + Opus en MP4, 0,7 s, desfase A/V 0,0 ms |
 
 Preferencia: H.264 + AAC. Si no hay codificador AAC (Linux, Windows N), se exporta H.264 + Opus en MP4 y se avisa de que algunos reproductores antiguos podrían no reproducir el audio.
