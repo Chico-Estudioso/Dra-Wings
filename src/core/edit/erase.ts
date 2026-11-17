@@ -1,6 +1,7 @@
 // Goma de borrar no destructiva: divide los trazos en los tramos que no toca y elimina formas o
 // textos completos. Los trazos resultantes conservan estilo y transformación.
 import { newId } from '../model/factory';
+import { deepClone } from './clone';
 import type { Item, Stroke } from '../model/types';
 import { distToSegment, hitItem, itemMatrix, POINT_STRIDE } from '../geometry/items';
 import { apply, invert, meanScale, type Point } from '../geometry/matrix';
@@ -51,7 +52,7 @@ export function eraseStroke(stroke: Stroke, path: Point[], radius: number): Stro
   const pieces: Stroke[] = [];
   let run: number[] = [];
   const flush = () => {
-    if (run.length >= 2 * POINT_STRIDE) pieces.push({ ...structuredClone(stroke), id: newId(), points: run });
+    if (run.length >= 2 * POINT_STRIDE) pieces.push({ ...deepClone(stroke), id: newId(), points: run });
     run = [];
   };
   keep.forEach((k, idx) => {
@@ -74,6 +75,7 @@ export function eraseItems(items: Item[], path: Point[], radius: number): EraseR
       const r = eraseStroke(item, path, radius);
       if (r) replacements.set(item.id, r);
     } else if (path.some((p) => hitItem(item, p, radius))) {
+      // Formas, textos y grupos (recursos de biblioteca) se eliminan completos.
       replacements.set(item.id, []);
     }
   }

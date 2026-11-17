@@ -6,6 +6,7 @@ import {
   Grid3x3,
   Home as HomeIcon,
   Loader2,
+  Magnet,
   Maximize,
   Minus,
   Plus,
@@ -24,6 +25,8 @@ import { CanvasView } from '../editor/CanvasView';
 import { Toolbar } from '../editor/Toolbar';
 import { ToolOptions } from '../editor/ToolOptions';
 import { LayersPanel } from '../editor/LayersPanel';
+import { LibraryPanel } from '../editor/LibraryPanel';
+import { GuidedTips } from '../editor/GuidedTips';
 import { PropertiesPanel } from '../editor/PropertiesPanel';
 import { useEditorShortcuts } from '../editor/shortcuts';
 import { zoomAt } from '../editor/view';
@@ -133,6 +136,10 @@ export function Editor() {
   const activeLayerId = useEditor((s) => s.activeLayerId);
   const showGrid = useEditor((s) => s.showGrid);
   const toggleGrid = useEditor((s) => s.toggleGrid);
+  const snap = useEditor((s) => s.snap);
+  const toggleSnap = useEditor((s) => s.toggleSnap);
+  const sideTab = useEditor((s) => s.sideTab);
+  const setSideTab = useEditor((s) => s.setSideTab);
 
   // Al abrir otro proyecto, se reinicia el estado del editor.
   useEffect(() => {
@@ -169,7 +176,11 @@ export function Editor() {
           className="mode-switch"
           aria-label="Modo de trabajo"
           value={project.settings.mode}
-          onValueChange={(v) => v && apply('Cambiar modo', (p) => void (p.settings.mode = v as Mode))}
+          onValueChange={(v) => {
+            if (!v) return;
+            apply('Cambiar modo', (p) => void (p.settings.mode = v as Mode));
+            useEditor.getState().applyModeDefaults(v as Mode);
+          }}
         >
           {MODES.map((m) => (
             <ToggleGroup.Item key={m.id} value={m.id} className="mode-item" title={m.description}>
@@ -194,21 +205,57 @@ export function Editor() {
         <Toolbar />
         <div className="canvas-column">
           <ToolOptions />
-          <CanvasView project={project} />
+          <div className="canvas-area">
+            <CanvasView project={project} />
+            {project.settings.mode === 'guided' && <GuidedTips />}
+          </div>
         </div>
         <aside className="sidepanel" aria-label="Paneles">
-          <LayersPanel scene={scene} />
+          <div className="side-tabs" role="tablist" aria-label="Paneles laterales">
+            <button
+              role="tab"
+              aria-selected={sideTab === 'library'}
+              className={`side-tab ${sideTab === 'library' ? 'is-active' : ''}`}
+              onClick={() => setSideTab('library')}
+            >
+              Biblioteca
+            </button>
+            <button
+              role="tab"
+              aria-selected={sideTab === 'layers'}
+              className={`side-tab ${sideTab === 'layers' ? 'is-active' : ''}`}
+              onClick={() => setSideTab('layers')}
+            >
+              Capas
+            </button>
+          </div>
           <PropertiesPanel scene={scene} docSize={{ w: project.settings.width, h: project.settings.height }} />
+          {sideTab === 'library' ? <LibraryPanel project={project} /> : <LayersPanel scene={scene} />}
         </aside>
       </div>
 
       <footer className="statusbar">
         <span>{scene.name}</span>
+        <span data-testid="item-count">
+          {(() => {
+            const n = scene.layers.reduce((acc, l) => acc + (l.items?.length ?? 0), 0);
+            return `${n} ${n === 1 ? 'elemento' : 'elementos'}`;
+          })()}
+        </span>
         <span>Duración {formatTimecode(scene.duration, project.settings.fps)}</span>
         <span>
           {project.settings.width} × {project.settings.height} · {project.settings.fps} fps
         </span>
         <span className="statusbar-spacer" />
+        <button
+          className={`icon-btn icon-btn-sm ${snap ? 'is-on' : ''}`}
+          aria-pressed={snap}
+          aria-label="Guías magnéticas"
+          title="Guías magnéticas al mover (Alt para desactivarlas al arrastrar)"
+          onClick={toggleSnap}
+        >
+          <Magnet size={14} />
+        </button>
         <button
           className={`icon-btn icon-btn-sm ${showGrid ? 'is-on' : ''}`}
           aria-pressed={showGrid}

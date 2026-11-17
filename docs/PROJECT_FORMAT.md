@@ -34,7 +34,7 @@ Layer {
   cels?: Cel[]                          // kind = 'frames' (fotograma a fotograma)
 }
 
-Item = Stroke | Shape | Text            // Image, LibraryInstance y Group llegan en M3
+Item = Stroke | Shape | Text | Group    // Image llega en M5
 ItemBase { id; transform: AnimatedTransform; opacity: Animated<number>; in: Ticks; out?: Ticks }
 
 Stroke extends ItemBase {
@@ -45,8 +45,9 @@ Stroke extends ItemBase {
 }
 
 Shape extends ItemBase {
-  type: 'shape'; shape: 'rect' | 'ellipse' | 'line' | 'arrow'
-  w: number; h: number                  // rect/elipse: caja local (0,0)-(w,h); línea/flecha: de (0,0) a (w,h)
+  type: 'shape'; shape: 'rect' | 'ellipse' | 'line' | 'arrow' | 'polygon'
+  w: number; h: number                  // rect/elipse/polígono: caja local (0,0)-(w,h); línea/flecha: de (0,0) a (w,h)
+  points?: number[]; smooth?: boolean   // solo polígono: vértices locales [x0, y0, x1, y1, ...]
   style: { stroke: Color | null; strokeWidth: number; fill: Color | null; opacity: number }
 }
 
@@ -55,6 +56,14 @@ Text extends ItemBase {
   align: 'left' | 'center' | 'right'; lineHeight: number
   w: number; h: number                  // caja medida al editar
 }
+
+Group extends ItemBase {
+  type: 'group'; children: Item[]       // hijos en coordenadas locales (origen en la esquina de la caja)
+  w: number; h: number
+  source?: { kind: 'library' | 'character'; id: string }   // informativo
+  slots?: { id: string; label: string; color: Color }[]    // ranuras de color recoloreables
+}
+// ItemBase.slot?: string → ranura a la que pertenece una pieza dentro de un grupo
 
 Cel { id; start: Ticks; duration: Ticks; items: Item[] }   // alineado a la rejilla de fotogramas
 

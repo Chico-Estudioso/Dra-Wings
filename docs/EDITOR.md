@@ -29,6 +29,7 @@ Al crear una forma se activa Seleccionar con la forma ya seleccionada, lista par
 | Deshacer / Rehacer | Ctrl+Z / Ctrl+Y o Ctrl+Mayús+Z |
 | Guardar / Guardar como | Ctrl+S / Ctrl+Mayús+S |
 | Duplicar | Ctrl+D |
+| Agrupar / Desagrupar | Ctrl+G / Ctrl+Mayús+G |
 | Seleccionar todo (capas visibles y desbloqueadas) | Ctrl+A |
 | Eliminar | Supr o Retroceso |
 | Deseleccionar | Esc |
@@ -50,6 +51,10 @@ Al crear una forma se activa Seleccionar con la forma ya seleccionada, lista par
 - Con ratón o táctil se guarda presión `-1` (desconocida) y el grosor es constante. **No se simula presión.**
 - En Windows, Chromium recibe la presión a través de Windows Ink. Las tabletas configuradas solo en modo WinTab no la reportan: en los controladores de Wacom, Huion o XP-Pen hay que activar Windows Ink. Pendiente de validación manual con tableta real.
 
+## Biblioteca y guías
+
+Ver `docs/LIBRARY.md`: recursos, constructor de personajes, escenas de partida, grupos con ranuras de color, guías magnéticas (Alt para desactivarlas al arrastrar) y comportamiento por modo. Los recursos se insertan con un clic en el centro de la hoja o arrastrándolos al lienzo.
+
 ## Capas
 
 - La lista muestra arriba la capa que se dibuja encima. Siempre queda al menos una.
@@ -59,5 +64,4 @@ Al crear una forma se activa Seleccionar con la forma ya seleccionada, lista par
 ## Pendiente (siguientes fases)
 
 - Caché rasterizada por capa, si las mediciones en hardware real lo justifican (con 2000 trazos, 32–57 ms por fotograma con raster por software en CI).
-- Guías y ajuste a guías (M3, modo Guiado).
 - Edición de keyframes desde el lienzo (M4).

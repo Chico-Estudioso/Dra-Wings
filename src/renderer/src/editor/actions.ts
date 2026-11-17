@@ -17,6 +17,7 @@ import {
   type ZMove,
 } from '@core/edit/ops';
 import type { StaticTransform } from '@core/geometry/matrix';
+import { groupItems, recolorSlot, ungroupItem } from '@core/edit/group';
 import type { Item, Layer, Project, Scene } from '@core/model/types';
 import { useApp } from '../state/app-store';
 import { useEditor } from './editor-store';
@@ -158,4 +159,45 @@ export function updateLayer(layerId: string, label: string, fn: (layer: Layer) =
 
 export function shiftLayer(layerId: string, direction: 'up' | 'down'): void {
   editScene('Ordenar capas', (scene) => moveLayer(scene, layerId, direction));
+}
+
+// Biblioteca y grupos
+
+/** Inserta elementos en la capa activa y los selecciona. */
+export function insertItems(items: Item[], label: string): boolean {
+  const layer = writableActiveLayer();
+  if (!layer || items.length === 0) return false;
+  editScene(label, (scene) => {
+    for (const it of items) addItem(scene, layer.id, it);
+  });
+  useEditor.getState().select(items.map((i) => i.id));
+  useEditor.getState().setTool('select');
+  useEditor.getState().select(items.map((i) => i.id));
+  return true;
+}
+
+export function groupSelection(): void {
+  const ids = useEditor.getState().selection;
+  let id: string | null = null;
+  editScene('Agrupar', (scene) => {
+    id = groupItems(scene, ids);
+  });
+  if (id) useEditor.getState().select([id]);
+  else
+    useApp.getState().notify({ kind: 'info', text: 'Para agrupar, selecciona dos o más elementos de la misma capa.' });
+}
+
+export function ungroupSelection(): void {
+  const ids = useEditor.getState().selection;
+  const created: string[] = [];
+  editScene('Desagrupar', (scene) => {
+    for (const id of ids) created.push(...ungroupItem(scene, id));
+  });
+  if (created.length) useEditor.getState().select(created);
+}
+
+export function recolorSelected(slotId: string, color: string): void {
+  updateSelected('Cambiar color', (it) => {
+    if (it.type === 'group') recolorSlot(it, slotId, color);
+  });
 }

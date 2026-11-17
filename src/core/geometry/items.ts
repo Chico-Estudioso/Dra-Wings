@@ -45,6 +45,7 @@ export function localBounds(item: Item): Rect {
       return { x: x0 - m, y: y0 - m, w: Math.abs(item.w) + 2 * m, h: Math.abs(item.h) + 2 * m };
     }
     case 'text':
+    case 'group':
       return { x: 0, y: 0, w: item.w, h: item.h };
   }
 }
@@ -114,9 +115,30 @@ function hitStroke(s: Stroke, p: Point, tol: number): boolean {
   return false;
 }
 
+export function pointInPolygon(p: Point, pts: number[]): boolean {
+  let inside = false;
+  for (let i = 0, j = pts.length - 2; i < pts.length; j = i, i += 2) {
+    const xi = pts[i]!;
+    const yi = pts[i + 1]!;
+    const xj = pts[j]!;
+    const yj = pts[j + 1]!;
+    if (yi > p.y !== yj > p.y && p.x < ((xj - xi) * (p.y - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
 function hitShape(s: Shape, p: Point, tol: number): boolean {
   const half = (s.style.stroke ? s.style.strokeWidth / 2 : 0) + tol;
   if (s.shape === 'line' || s.shape === 'arrow') return distToSegment(p, { x: 0, y: 0 }, { x: s.w, y: s.h }) <= half;
+  if (s.shape === 'polygon') {
+    const pts = s.points ?? [];
+    if (s.style.fill && pointInPolygon(p, pts)) return true;
+    for (let i = 0; i < pts.length; i += 2) {
+      const j = (i + 2) % pts.length;
+      if (distToSegment(p, { x: pts[i]!, y: pts[i + 1]! }, { x: pts[j]!, y: pts[j + 1]! }) <= half) return true;
+    }
+    return false;
+  }
   const x0 = Math.min(0, s.w);
   const y0 = Math.min(0, s.h);
   const w = Math.abs(s.w);
@@ -158,5 +180,13 @@ export function hitItem(item: Item, p: Point, tol: number, tick = 0): boolean {
         local.y <= b.y + b.h + localTol
       );
     }
+    case 'group':
+      // Un grupo se toca si se toca alguno de sus elementos (no su caja vacía).
+      return item.children.some((child) => hitItem(child, local, localTol, tick));
   }
+}
+
+/** Caja de un conjunto de elementos en el espacio de su contenedor. */
+export function itemsBounds(items: Item[], tick = 0): Rect | null {
+  return unionRects(items.map((i) => worldBounds(i, tick)));
 }

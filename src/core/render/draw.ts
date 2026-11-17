@@ -43,6 +43,30 @@ export function outlineToPath(outline: number[][]): Path2D {
   return path;
 }
 
+/** Polígono cerrado; con `smooth`, curvas por los puntos medios (contornos orgánicos). */
+function polygonPath(ctx: Ctx2D, pts: number[], smooth: boolean) {
+  const n = pts.length / 2;
+  if (n < 2) return;
+  if (!smooth || n < 3) {
+    ctx.moveTo(pts[0]!, pts[1]!);
+    for (let i = 2; i < pts.length; i += 2) ctx.lineTo(pts[i]!, pts[i + 1]!);
+    ctx.closePath();
+    return;
+  }
+  const mid = (i: number) => {
+    const a = (i % n) * 2;
+    const b = ((i + 1) % n) * 2;
+    return [(pts[a]! + pts[b]!) / 2, (pts[a + 1]! + pts[b + 1]!) / 2] as const;
+  };
+  const [sx, sy] = mid(n - 1);
+  ctx.moveTo(sx, sy);
+  for (let i = 0; i < n; i++) {
+    const [mx, my] = mid(i);
+    ctx.quadraticCurveTo(pts[i * 2]!, pts[i * 2 + 1]!, mx, my);
+  }
+  ctx.closePath();
+}
+
 function drawShape(ctx: Ctx2D, s: Shape) {
   const { stroke, strokeWidth, fill } = s.style;
   ctx.lineJoin = 'round';
@@ -74,7 +98,8 @@ function drawShape(ctx: Ctx2D, s: Shape) {
   const w = Math.abs(s.w);
   const h = Math.abs(s.h);
   ctx.beginPath();
-  if (s.shape === 'rect') ctx.rect(x, y, w, h);
+  if (s.shape === 'polygon') polygonPath(ctx, s.points ?? [], !!s.smooth);
+  else if (s.shape === 'rect') ctx.rect(x, y, w, h);
   else ctx.ellipse(x + w / 2, y + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2);
   if (fill) {
     ctx.fillStyle = fill;

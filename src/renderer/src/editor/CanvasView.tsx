@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { createShape, createStroke } from '@core/model/factory';
 import { eraseItems } from '@core/edit/erase';
 import { locateItem, selectableItems, translateItems } from '@core/edit/ops';
-import { hitItem, rectsIntersect, worldBounds } from '@core/geometry/items';
+import { hitItem, rectsIntersect, unionRects, worldBounds, type Rect } from '@core/geometry/items';
 import { resizeGroup, resizeSingle, rotateGroup, snapAngle, type Handle } from '@core/geometry/manipulate';
 import { matrixFrom, type Point, type StaticTransform } from '@core/geometry/matrix';
 import { drawRenderList, outlineToPath, PathCache, type Ctx2D } from '@core/render/draw';
@@ -22,18 +22,31 @@ import { fontsReady } from './fonts';
 import { cursorForHandle, handlePoint, HANDLES, rotateHandlePoint, selectionGeometry, transformOf } from './selection';
 import { fitView, toScene, zoomAt } from './view';
 import { TextEditor, type TextEditTarget } from './TextEditor';
+import { LIBRARY } from '@core/library/catalog';
+import { ASSET_MIME, insertAsset } from './LibraryPanel';
 
 const HANDLE_PX = 9;
 const ROTATE_OFFSET_PX = 28;
 const HIT_TOLERANCE_PX = 6;
 const SELECTION_COLOR = '#2f6fd6';
+const GUIDE_COLOR = '#e0408a';
+const SNAP_PX = 7;
 
 type Gesture =
   | { kind: 'pan'; start: Point; panX: number; panY: number }
   | { kind: 'draw'; points: number[]; t0: number; pen: boolean }
   | { kind: 'erase'; last: Point; working: Map<string, Item[]> }
   | { kind: 'shape'; start: Point; current: Point }
-  | { kind: 'move'; start: Point; ids: string[]; t0: Map<string, StaticTransform>; moved: boolean }
+  | {
+      kind: 'move';
+      start: Point;
+      ids: string[];
+      t0: Map<string, StaticTransform>;
+      moved: boolean;
+      box0: Rect | null;
+      targetsX: number[];
+      targetsY: number[];
+    }
   | { kind: 'resize'; handle: Handle; ids: string[]; t0: Map<string, StaticTransform> }
   | { kind: 'rotate'; center: Point; startAngle: number; ids: string[]; t0: Map<string, StaticTransform> }
   | { kind: 'marquee'; start: Point; current: Point; base: string[] };
@@ -67,6 +80,7 @@ export function CanvasView({ project }: { project: Project }) {
   const cache = useRef(new PathCache());
   const gesture = useRef<Gesture | null>(null);
   const overrides = useRef(new Map<string, StaticTransform>());
+  const guides = useRef<{ x: number[]; y: number[] }>({ x: [], y: [] });
   const spaceHeld = useRef(false);
   const pointer = useRef<Point | null>(null);
 
@@ -195,6 +209,22 @@ export function CanvasView({ project }: { project: Project }) {
       ctx.strokeRect(x, y, Math.abs(g.current.x - g.start.x), Math.abs(g.current.y - g.start.y));
     }
 
+    if (g?.kind === 'move' && (guides.current.x.length || guides.current.y.length)) {
+      ctx.strokeStyle = GUIDE_COLOR;
+      ctx.lineWidth = px;
+      ctx.setLineDash([6 * px, 4 * px]);
+      ctx.beginPath();
+      for (const x of guides.current.x) {
+        ctx.moveTo(x, -docH);
+        ctx.lineTo(x, docH * 2);
+      }
+      for (const y of guides.current.y) {
+        ctx.moveTo(-docW, y);
+        ctx.lineTo(docW * 2, y);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
     const geo = editingTextId ? null : selectionGeometry(scene, selection, overrides.current);
     if (geo) {
       ctx.strokeStyle = SELECTION_COLOR;
@@ -236,7 +266,7 @@ export function CanvasView({ project }: { project: Project }) {
       ctx.arc(pointer.current.x, pointer.current.y, options.eraserSize / 2 / view.zoom, 0, Math.PI * 2);
       ctx.stroke();
     }
-  }, [scene, selection, view, size, tool, options, editingTextId, tick]);
+  }, [scene, selection, view, size, tool, options, editingTextId, tick, docW, docH]);
 
   const scenePoint = (e: { clientX: number; clientY: number }): Point => {
     const r = overlayRef.current!.getBoundingClientRect();
@@ -345,7 +375,27 @@ export function CanvasView({ project }: { project: Project }) {
             setTextTarget({ kind: 'edit', id: hit.id });
             return;
           }
-          gesture.current = { kind: 'move', start: p, ids: sel, t0: startTransformGesture(sel), moved: false };
+          const t0 = startTransformGesture(sel);
+          const sc = currentScene()!;
+          const box0 = unionRects(
+            sel
+              .map((id) => locateItem(sc, id)?.item)
+              .filter((i): i is Item => !!i)
+              .map((i) => worldBounds(i, 0, matrixFrom(t0.get(i.id)!))),
+          );
+          const others = selectableItems(sc)
+            .filter((i) => !sel.includes(i.id))
+            .map((i) => worldBounds(i));
+          gesture.current = {
+            kind: 'move',
+            start: p,
+            ids: sel,
+            t0,
+            moved: false,
+            box0,
+            targetsX: [0, docW / 2, docW, ...others.flatMap((b) => [b.x, b.x + b.w / 2, b.x + b.w])],
+            targetsY: [0, docH / 2, docH, ...others.flatMap((b) => [b.y, b.y + b.h / 2, b.y + b.h])],
+          };
         } else {
           gesture.current = { kind: 'marquee', start: p, current: p, base: e.shiftKey ? ed.selection : [] };
           if (!e.shiftKey) ed.select([]);
@@ -430,10 +480,36 @@ export function CanvasView({ project }: { project: Project }) {
         break;
       }
       case 'move': {
-        const dx = p.x - g.start.x;
-        const dy = p.y - g.start.y;
+        let dx = p.x - g.start.x;
+        let dy = p.y - g.start.y;
         if (!g.moved && Math.hypot(dx, dy) * ed.view.zoom < 3) return;
         g.moved = true;
+        guides.current = { x: [], y: [] };
+        if (ed.snap && !e.altKey && g.box0) {
+          // Ajuste magnético de bordes y centros a la hoja y a otros elementos.
+          const tol = SNAP_PX / ed.view.zoom;
+          const snapAxis = (start: number, size: number, d: number, targets: number[]) => {
+            let best: { delta: number; line: number } | null = null;
+            for (const edge of [start, start + size / 2, start + size]) {
+              for (const t of targets) {
+                const delta = t - (edge + d);
+                if (Math.abs(delta) <= tol && (!best || Math.abs(delta) < Math.abs(best.delta)))
+                  best = { delta, line: t };
+              }
+            }
+            return best;
+          };
+          const sx = snapAxis(g.box0.x, g.box0.w, dx, g.targetsX);
+          const sy = snapAxis(g.box0.y, g.box0.h, dy, g.targetsY);
+          if (sx) {
+            dx += sx.delta;
+            guides.current.x.push(sx.line);
+          }
+          if (sy) {
+            dy += sy.delta;
+            guides.current.y.push(sy.line);
+          }
+        }
         overrides.current = new Map([...g.t0].map(([id, t]) => [id, { ...t, x: t.x + dx, y: t.y + dy }]));
         break;
       }
@@ -535,6 +611,7 @@ export function CanvasView({ project }: { project: Project }) {
         break;
     }
     overrides.current = new Map();
+    guides.current = { x: [], y: [] };
     redraw();
   };
 
@@ -610,6 +687,18 @@ export function CanvasView({ project }: { project: Project }) {
         onPointerMove={onPointerMove}
         onPointerUp={finishGesture}
         onPointerCancel={finishGesture}
+        onDragOver={(e) => {
+          if (e.dataTransfer.types.includes(ASSET_MIME)) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+          }
+        }}
+        onDrop={(e) => {
+          const asset = LIBRARY.find((a) => a.id === e.dataTransfer.getData(ASSET_MIME));
+          if (!asset) return;
+          e.preventDefault();
+          insertAsset(asset, project, scenePoint(e));
+        }}
         onPointerLeave={() => {
           pointer.current = null;
           if (useEditor.getState().tool === 'eraser') redraw();

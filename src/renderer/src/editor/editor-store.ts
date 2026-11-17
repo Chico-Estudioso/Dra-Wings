@@ -52,6 +52,9 @@ interface EditorState {
   activeLayerId: string | null;
   view: View;
   showGrid: boolean;
+  /** Guías y ajuste magnético al mover (activo por defecto en Guiado y Mixto). */
+  snap: boolean;
+  sideTab: 'library' | 'layers';
   editingTextId: string | null;
 
   setTool(tool: Tool): void;
@@ -60,6 +63,9 @@ interface EditorState {
   setActiveLayer(id: string): void;
   setView(view: Partial<View>): void;
   toggleGrid(): void;
+  toggleSnap(): void;
+  setSideTab(tab: 'library' | 'layers'): void;
+  applyModeDefaults(mode: Mode): void;
   setEditingText(id: string | null): void;
   reset(sceneId: string, layerId: string, mode: Mode): void;
 }
@@ -81,6 +87,8 @@ export const useEditor = create<EditorState>()((set) => ({
   activeLayerId: null,
   view: { zoom: 1, panX: 0, panY: 0, fit: true },
   showGrid: false,
+  snap: true,
+  sideTab: 'library',
   editingTextId: null,
 
   setTool: (tool) => set((s) => ({ tool, selection: tool === 'select' ? s.selection : [], editingTextId: null })),
@@ -89,6 +97,9 @@ export const useEditor = create<EditorState>()((set) => ({
   setActiveLayer: (id) => set({ activeLayerId: id }),
   setView: (view) => set((s) => ({ view: { ...s.view, ...view } })),
   toggleGrid: () => set((s) => ({ showGrid: !s.showGrid })),
+  toggleSnap: () => set((s) => ({ snap: !s.snap })),
+  setSideTab: (sideTab) => set({ sideTab }),
+  applyModeDefaults: (mode) => set({ snap: mode !== 'free', sideTab: mode === 'free' ? 'layers' : 'library' }),
   setEditingText: (id) => set({ editingTextId: id }),
   reset: (sceneId, layerId, mode) =>
     set({
@@ -98,5 +109,7 @@ export const useEditor = create<EditorState>()((set) => ({
       editingTextId: null,
       tool: mode === 'guided' ? 'select' : 'pencil',
       view: { zoom: 1, panX: 0, panY: 0, fit: true },
+      snap: mode !== 'free',
+      sideTab: mode === 'free' ? 'layers' : 'library',
     }),
 }));

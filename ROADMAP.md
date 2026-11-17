@@ -1,6 +1,6 @@
 # Roadmap — Dra-Wings
 
-Estado: M0, M1 y M2 completados. Siguiente: M3.
+Estado: M0 a M3 completados. Siguiente: M4.
 
 ## M0 — Investigación y diseño ✅
 - Stack decidido: Electron + React/TS, renderizador Canvas 2D propio, ZIP `.dwings`, exportación WebCodecs (ADR-001 a ADR-006).
@@ -22,7 +22,7 @@ Estado: M0, M1 y M2 completados. Siguiente: M3.
 - Deshacer/rehacer.
 - **Salida:** crear y editar una escena dibujada manteniendo sus elementos editables.
 
-## M3 — Modo guiado y biblioteca
+## M3 — Modo guiado y biblioteca ✅
 - Biblioteca de personajes, objetos y recursos originales.
 - Insertar, editar, recolorear, redimensionar y reutilizar elementos.
 - Ayudas opcionales y plantillas de composición.
@@ -37,6 +37,8 @@ Estado: M0, M1 y M2 completados. Siguiente: M3.
 - **Salida:** previsualizar una secuencia animada con tiempos controlables.
 
 ## M5 — Audio y narración
+- Canal de medios del proyecto (caché por hash, guardado en el `.dwings`, protocolo `media://`).
+- Importar imágenes (movido desde M3: comparte canal con el audio).
 - Importar audio local.
 - Pistas de narración, música y efectos.
 - Forma de onda, recorte, volumen y fundidos básicos.

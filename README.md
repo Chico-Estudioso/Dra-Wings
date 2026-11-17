@@ -4,7 +4,7 @@
 
 También ofrece herramientas de dibujo y animación libres para usuarios que prefieren trabajar sin ayudas.
 
-![Editor de Dra-Wings](docs/img/editor-m2.png)
+![Editor de Dra-Wings en modo Guiado](docs/img/editor-m3.png)
 
 ## Modos de creación
 
@@ -16,7 +16,7 @@ Los modos comparten el mismo formato de proyecto.
 
 ## Estado
 
-M0 (arquitectura), M1 (proyectos, guardado y recuperación) y M2 (lienzo y dibujo) completados. Siguiente: M3, modo guiado y biblioteca. Ver `ROADMAP.md` y `docs/EDITOR.md`.
+M0 a M3 completados: arquitectura, proyectos con guardado y recuperación, lienzo y dibujo, y biblioteca con modo guiado. Siguiente: M4, animación y línea de tiempo. Ver `ROADMAP.md`, `docs/EDITOR.md` y `docs/LIBRARY.md`.
 
 ## Principios
 

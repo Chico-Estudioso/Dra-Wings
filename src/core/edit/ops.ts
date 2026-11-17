@@ -1,5 +1,6 @@
 // Operaciones puras sobre escenas (se usan dentro de recetas Immer; mutan el borrador recibido).
 import { offset } from '../anim/animated';
+import { deepClone } from './clone';
 import { createLayer, newId } from '../model/factory';
 import type { Item, Layer, Project, Scene } from '../model/types';
 
@@ -66,7 +67,7 @@ export function duplicateItems(scene: Scene, ids: string[], dx = 24, dy = 24): s
   for (const id of ids) {
     const loc = locateItem(scene, id);
     if (!loc || !loc.layer.items) continue;
-    const copy = structuredClone(loc.item) as Item;
+    const copy = deepClone(loc.item);
     copy.id = newId();
     copy.transform.x = offset(copy.transform.x, dx);
     copy.transform.y = offset(copy.transform.y, dy);

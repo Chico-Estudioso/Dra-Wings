@@ -1,6 +1,6 @@
 // Evaluación de una escena en un instante: lista plana de lo que hay que dibujar (ver ANIMATION_ENGINE.md).
 import { valueAt } from '../anim/animated';
-import { matrixFrom, resolveTransform, type Mat, type StaticTransform } from '../geometry/matrix';
+import { matrixFrom, multiply, resolveTransform, type Mat, type StaticTransform } from '../geometry/matrix';
 import type { Item, Scene } from '../model/types';
 import type { Ticks } from '../time/ticks';
 
@@ -37,8 +37,21 @@ export function evaluateScene(scene: Scene, tick: Ticks, opts: EvaluateOptions):
       const opacity = valueAt(item.opacity, tick) * layer.opacity;
       if (opacity <= 0) continue;
       const t = opts.overrides?.get(item.id) ?? resolveTransform(item.transform, tick);
-      out.push({ item, matrix: matrixFrom(t), opacity, progress });
+      pushItem(out, item, matrixFrom(t), opacity, progress, tick);
     }
   }
   return out;
+}
+
+/** Añade un elemento; los grupos se aplanan componiendo matriz y opacidad. */
+function pushItem(out: RenderItem[], item: Item, matrix: Mat, opacity: number, progress: number, tick: Ticks) {
+  if (item.type !== 'group') {
+    out.push({ item, matrix, opacity, progress });
+    return;
+  }
+  for (const child of item.children) {
+    const o = opacity * valueAt(child.opacity, tick);
+    if (o <= 0) continue;
+    pushItem(out, child, multiply(matrix, matrixFrom(resolveTransform(child.transform, tick))), o, progress, tick);
+  }
 }

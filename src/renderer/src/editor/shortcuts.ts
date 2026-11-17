@@ -1,7 +1,14 @@
 // Atajos de teclado del editor (no actúan mientras se escribe en un campo de texto).
 import { useEffect } from 'react';
 import { useApp } from '../state/app-store';
-import { deleteSelection, duplicateSelection, nudgeSelection, selectAll } from './actions';
+import {
+  deleteSelection,
+  duplicateSelection,
+  groupSelection,
+  nudgeSelection,
+  selectAll,
+  ungroupSelection,
+} from './actions';
 import { useEditor, type Tool } from './editor-store';
 import { zoomAt } from './view';
 
@@ -35,6 +42,7 @@ export function useEditorShortcuts(viewport: () => { w: number; h: number }) {
         if (k === 'z' && !e.shiftKey) app.undo();
         else if (k === 'y' || (k === 'z' && e.shiftKey)) app.redo();
         else if (k === 'd') duplicateSelection();
+        else if (k === 'g') (e.shiftKey ? ungroupSelection : groupSelection)();
         else if (k === 'a') selectAll();
         else if (k === '0') ed.setView({ fit: true });
         else if (k === '=' || k === '+' || k === '-') {

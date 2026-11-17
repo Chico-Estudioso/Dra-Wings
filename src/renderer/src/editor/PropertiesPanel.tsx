@@ -1,11 +1,29 @@
 import { useState } from 'react';
-import { BringToFront, Copy, Crosshair, MoveDown, MoveUp, SendToBack, Trash2 } from 'lucide-react';
+import {
+  BringToFront,
+  Copy,
+  Crosshair,
+  Group as GroupIcon,
+  MoveDown,
+  MoveUp,
+  SendToBack,
+  Trash2,
+  Ungroup,
+} from 'lucide-react';
 import { fixed } from '@core/anim/animated';
 import { locateItem } from '@core/edit/ops';
 import { worldBounds } from '@core/geometry/items';
 import type { FontId, Item, Scene, TextItem } from '@core/model/types';
 import { measureText } from '@core/render/draw';
-import { deleteSelection, duplicateSelection, reorderSelection, updateSelected } from './actions';
+import {
+  deleteSelection,
+  duplicateSelection,
+  groupSelection,
+  recolorSelected,
+  reorderSelection,
+  ungroupSelection,
+  updateSelected,
+} from './actions';
 import { ColorPicker, ValueSlider } from './controls';
 import { useEditor } from './editor-store';
 import { FONT_LABELS, fontsReady } from './fonts';
@@ -20,7 +38,8 @@ async function remeasure(t: TextItem) {
 function colorOf(item: Item): string | null {
   if (item.type === 'stroke') return item.style.color;
   if (item.type === 'shape') return item.style.stroke;
-  return item.color;
+  if (item.type === 'text') return item.color;
+  return null;
 }
 
 /** Valor que se está arrastrando en un deslizador: se aplica al soltar, en un solo paso de deshacer. */
@@ -36,6 +55,7 @@ export function PropertiesPanel({ scene, docSize }: { scene: Scene; docSize: { w
   const allStrokes = items.length > 0 && items.every((i) => i.type === 'stroke');
   const allShapes = items.length > 0 && items.every((i) => i.type === 'shape');
   const allTexts = items.length > 0 && items.every((i) => i.type === 'text');
+  const singleGroup = items.length === 1 && first?.type === 'group' ? first : null;
 
   const size = useDraft(
     first?.type === 'stroke'
@@ -85,7 +105,15 @@ export function PropertiesPanel({ scene, docSize }: { scene: Scene; docSize: { w
       if ('value' in it.transform.y) it.transform.y = fixed(it.transform.y.value + dy);
     });
 
-  const kind = allStrokes ? 'Trazo' : allShapes ? 'Forma' : allTexts ? 'Texto' : 'Elementos';
+  const kind = allStrokes
+    ? 'Trazo'
+    : allShapes
+      ? 'Forma'
+      : allTexts
+        ? 'Texto'
+        : singleGroup
+          ? (singleGroup.name ?? 'Grupo')
+          : 'Elementos';
 
   return (
     <section className="panel" aria-labelledby="props-title">
@@ -95,12 +123,23 @@ export function PropertiesPanel({ scene, docSize }: { scene: Scene; docSize: { w
         </h2>
       </header>
       <div className="panel-body">
-        <ColorPicker
-          label={allShapes ? 'Borde' : 'Color'}
-          value={colorOf(first)}
-          allowNone={allShapes}
-          onChange={setColor}
-        />
+        {singleGroup
+          ? singleGroup.slots?.map((slot) => (
+              <ColorPicker
+                key={slot.id}
+                label={slot.label}
+                value={slot.color}
+                onChange={(c) => c && recolorSelected(slot.id, c)}
+              />
+            ))
+          : (allStrokes || allShapes || allTexts) && (
+              <ColorPicker
+                label={allShapes ? 'Borde' : 'Color'}
+                value={colorOf(first)}
+                allowNone={allShapes}
+                onChange={setColor}
+              />
+            )}
         {allShapes && first.type === 'shape' && (first.shape === 'rect' || first.shape === 'ellipse') && (
           <ColorPicker
             label="Relleno"
@@ -187,6 +226,21 @@ export function PropertiesPanel({ scene, docSize }: { scene: Scene; docSize: { w
           <button className="icon-btn" title="Centrar en el lienzo" aria-label="Centrar en el lienzo" onClick={center}>
             <Crosshair size={17} />
           </button>
+          {items.length > 1 && (
+            <button className="icon-btn" title="Agrupar (Ctrl+G)" aria-label="Agrupar" onClick={groupSelection}>
+              <GroupIcon size={17} />
+            </button>
+          )}
+          {items.some((i) => i.type === 'group') && (
+            <button
+              className="icon-btn"
+              title="Desagrupar (Ctrl+Mayús+G)"
+              aria-label="Desagrupar"
+              onClick={ungroupSelection}
+            >
+              <Ungroup size={17} />
+            </button>
+          )}
           <button className="icon-btn" title="Duplicar (Ctrl+D)" aria-label="Duplicar" onClick={duplicateSelection}>
             <Copy size={17} />
           </button>

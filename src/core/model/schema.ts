@@ -39,6 +39,8 @@ export const transformSchema = z.object({
 const itemBase = {
   id,
   name: z.string().max(200).optional(),
+  // Ranura de color dentro de un recurso de biblioteca (piel, pelo, ropa…) para recolorearlo en bloque.
+  slot: z.string().max(40).optional(),
   transform: transformSchema,
   opacity: animatedNumberSchema,
   in: ticks,
@@ -67,10 +69,17 @@ export const strokeSchema = z.object({
 export const shapeSchema = z.object({
   ...itemBase,
   type: z.literal('shape'),
-  shape: z.enum(['rect', 'ellipse', 'line', 'arrow']),
-  // rect/ellipse: caja local (0,0)-(w,h). line/arrow: segmento de (0,0) a (w,h); w y h pueden ser negativos.
+  shape: z.enum(['rect', 'ellipse', 'line', 'arrow', 'polygon']),
+  // rect/ellipse/polygon: caja local (0,0)-(w,h). line/arrow: segmento de (0,0) a (w,h); w y h pueden ser negativos.
   w: z.number().finite().min(-100_000).max(100_000),
   h: z.number().finite().min(-100_000).max(100_000),
+  // Solo polygon: vértices locales [x0, y0, x1, y1, ...], cerrado y con esquinas suavizadas opcionalmente.
+  points: z
+    .array(z.number().finite())
+    .max(2 * 2000)
+    .refine((p) => p.length % 2 === 0, 'Los vértices deben ir en pares')
+    .optional(),
+  smooth: z.boolean().optional(),
   style: z.object({
     stroke: color.nullable(),
     strokeWidth: z.number().min(0).max(200),
@@ -95,8 +104,43 @@ export const textSchema = z.object({
   h: z.number().nonnegative().max(100_000),
 });
 
-// Imagen, recurso de biblioteca y grupo se añaden en M3.
-export const itemSchema = z.discriminatedUnion('type', [strokeSchema, shapeSchema, textSchema]);
+export const colorSlotSchema = z.object({ id: z.string().min(1).max(40), label: z.string().max(80), color });
+
+type ItemBase = z.infer<z.ZodObject<typeof itemBase>>;
+
+/** Grupo de elementos (por ejemplo, un recurso de la biblioteca). Los hijos están en coordenadas locales. */
+export interface GroupItem extends ItemBase {
+  type: 'group';
+  children: AnyItem[];
+  w: number;
+  h: number;
+  /** Origen en la biblioteca (informativo: el grupo es autosuficiente). */
+  source?: { kind: 'library' | 'character'; id: string };
+  slots?: z.infer<typeof colorSlotSchema>[];
+}
+
+export type AnyItem =
+  z.infer<typeof strokeSchema> | z.infer<typeof shapeSchema> | z.infer<typeof textSchema> | GroupItem;
+
+export const groupSchema = z.object({
+  ...itemBase,
+  type: z.literal('group'),
+  get children(): z.ZodArray<z.ZodType<AnyItem>> {
+    return z.array(itemSchema).max(5000);
+  },
+  w: z.number().nonnegative().max(100_000),
+  h: z.number().nonnegative().max(100_000),
+  source: z.object({ kind: z.enum(['library', 'character']), id: z.string().max(80) }).optional(),
+  slots: z.array(colorSlotSchema).max(20).optional(),
+});
+
+// La imagen importada se añade junto con el resto de medios (M5).
+export const itemSchema: z.ZodType<AnyItem> = z.discriminatedUnion('type', [
+  strokeSchema,
+  shapeSchema,
+  textSchema,
+  groupSchema,
+]);
 
 export const celSchema = z.object({ id, start: ticks, duration: ticks.positive(), items: z.array(itemSchema) });
 
