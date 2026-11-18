@@ -8,7 +8,8 @@ import { drawRenderList, type Ctx2D, type ImageSources, type PathCache } from '.
 import { cameraMatrix, evaluateScene } from './evaluate';
 import { boilAt } from './boil';
 import { elasticAmount } from '../anim/elastic';
-import { sceneBeats } from '../audio/rhythm';
+import { sceneBeats, type Beat } from '../audio/rhythm';
+import { barPulse, beatsOrPulse } from '../edit/beat-sync';
 import { transitionAt } from './transition';
 
 /**
@@ -23,7 +24,7 @@ export function drawSceneFrame(
   cache: PathCache,
   images?: ImageSources,
   overrides?: ReadonlyMap<string, StaticTransform>,
-  beats?: readonly Ticks[],
+  beats?: readonly Beat[],
 ): void {
   ctx.save();
   ctx.beginPath();
@@ -31,12 +32,19 @@ export function drawSceneFrame(
   ctx.clip();
   ctx.fillStyle = settings.background;
   ctx.fillRect(0, 0, settings.width, settings.height);
+  if (scene.beatPulse) {
+    // Cámara que late: zoom breve hacia el centro al empezar cada compás.
+    const z = barPulse(beatsOrPulse(beats ?? [], scene.duration), local);
+    ctx.translate(settings.width / 2, settings.height / 2);
+    ctx.scale(z, z);
+    ctx.translate(-settings.width / 2, -settings.height / 2);
+  }
   ctx.transform(...cameraMatrix(scene, local));
   const boil = boilAt(settings.boil, local, settings.fps);
   const list = evaluateScene(scene, local, {
     mode: 'play',
     overrides,
-    beats,
+    beats: beats?.map((b) => b.t),
     elastic: elasticAmount(settings.elastic),
     unit: settings.width / 1920,
   });
@@ -58,16 +66,7 @@ export function drawSceneInProject(
   overrides?: ReadonlyMap<string, StaticTransform>,
 ): void {
   const draw = (s: Scene, t: Ticks, ov?: ReadonlyMap<string, StaticTransform>) =>
-    drawSceneFrame(
-      ctx,
-      project.settings,
-      s,
-      t,
-      cache,
-      images,
-      ov,
-      sceneBeats(project, s.id, s.duration).map((b) => b.t),
-    );
+    drawSceneFrame(ctx, project.settings, s, t, cache, images, ov, sceneBeats(project, s.id, s.duration));
   const tr = transitionAt(project, scene, local);
   if (!tr) return draw(scene, local, overrides);
   const { width: w, height: h, background } = project.settings;

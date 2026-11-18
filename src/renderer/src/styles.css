@@ -1039,11 +1039,17 @@ select {
   align-items: center;
   gap: 2px;
   margin-left: 8px;
+  /* Con muchas escenas, las pestañas se desplazan dentro de su zona (no la barra entera). */
+  flex: 0 1 auto;
+  min-width: 0;
 }
 .tl-scene-tabs {
   display: flex;
   align-items: center;
   gap: 2px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
 .tl-scene {
   border: 1px solid var(--border);
@@ -1899,4 +1905,12 @@ kbd {
   height: 10px;
   border-left-width: 2px;
   border-left-color: rgb(123 75 183 / 0.8);
+}
+
+/* Ventanas estrechas: la barra de la línea de tiempo cabe sin desplazarse. */
+@media (max-width: 1180px) {
+  .tl-duration-label,
+  .tl-audio-text {
+    display: none;
+  }
 }

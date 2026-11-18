@@ -222,6 +222,8 @@ export const sceneSchema = z.object({
   duration: ticks.positive(),
   layers: z.array(layerSchema),
   camera: transformSchema,
+  /** La cámara hace un pequeño zoom al empezar cada compás de la música. */
+  beatPulse: z.boolean().optional(),
   /** Cómo entra esta escena desde la anterior (sin valor: corte). */
   transition: z
     .object({

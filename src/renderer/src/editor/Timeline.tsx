@@ -58,6 +58,7 @@ import { Waveform } from './Waveform';
 import { BoilControl } from './BoilControl';
 import { ElasticControl } from './ElasticControl';
 import { TransitionControl } from './TransitionControl';
+import { RhythmControl } from './RhythmControl';
 
 const NAME_W = 150;
 const RULER_H = 24;
@@ -199,7 +200,7 @@ function DurationInput({ scene }: { scene: Scene }) {
   const [draft, setDraft] = useState<string | null>(null);
   return (
     <label className="inline-field tl-duration">
-      <span className="control-label">Duración</span>
+      <span className="control-label tl-duration-label">Duración</span>
       <input
         className="input input-sm"
         type="number"
@@ -630,6 +631,7 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
         </button>
         <BoilControl project={project} />
         <ElasticControl project={project} />
+        <RhythmControl project={project} scene={scene} />
         {hasFrames && (
           <button
             className={`icon-btn icon-btn-sm ${onion ? 'is-on' : ''}`}
@@ -653,8 +655,8 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
         )}
         <Popover.Root>
           <Popover.Trigger asChild>
-            <button className="btn btn-ghost btn-sm" title="Grabar o importar audio en el cabezal">
-              <Music size={14} aria-hidden /> Audio
+            <button className="btn btn-ghost btn-sm" title="Grabar o importar audio en el cabezal" aria-label="Audio">
+              <Music size={14} aria-hidden /> <span className="tl-audio-text">Audio</span>
             </button>
           </Popover.Trigger>
           <Popover.Portal>

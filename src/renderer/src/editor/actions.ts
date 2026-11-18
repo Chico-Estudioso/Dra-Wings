@@ -27,6 +27,9 @@ import { setCharacterLook, type CharacterOptions } from '@core/library/character
 import type { BoilLevel } from '@core/render/boil';
 import type { LifeKind } from '@core/anim/life';
 import type { ElasticLevel } from '@core/anim/elastic';
+import { sceneBeats, type Beat } from '@core/audio/rhythm';
+import { barAlignedDuration, beatsOrPulse, staggerTimes } from '@core/edit/beat-sync';
+import { worldBounds } from '@core/geometry/items';
 import { deepClone } from '@core/edit/clone';
 import { newId } from '@core/model/factory';
 import type { Ease, Enter, Exit, Item, Layer, Project, Scene } from '@core/model/types';
@@ -211,6 +214,58 @@ export function commitMotion(sceneId: string, id: string, samples: MotionSample[
 export function setSelectionLife(kind: LifeKind | null, amount = 1): void {
   updateSelected('Vida automática', (it) => {
     it.life = kind ? { kind, amount } : undefined;
+  });
+}
+
+/** Golpes de la escena actual (o el pulso de 120 BPM). */
+function currentBeats(scene: Scene): Beat[] {
+  const project = useApp.getState().doc!.project;
+  return beatsOrPulse(sceneBeats(project, scene.id, scene.duration), scene.duration);
+}
+
+/**
+ * Los elementos seleccionados aparecen uno en cada golpe (o compás) desde el cabezal, en orden de
+ * lectura (de izquierda a derecha y de arriba abajo). Sus keyframes se desplazan con ellos.
+ */
+export function appearOnBeats(bars: boolean): void {
+  const ids = useEditor.getState().selection;
+  const scene = currentScene();
+  if (!ids.length || !scene) return;
+  const t = playhead();
+  const items = ids
+    .map((id) => locateItem(scene, id)?.item)
+    .filter((i): i is Item => !!i)
+    .map((i) => ({ id: i.id, b: worldBounds(i, t) }))
+    .sort((a, b) => a.b.x + a.b.w / 2 - (b.b.x + b.b.w / 2) || a.b.y - b.b.y);
+  const times = staggerTimes(currentBeats(scene), t, items.length, bars);
+  const gap = times.length >= 2 ? times[1]! - times[0]! : ticksPerFrame(fps()) * 15;
+  editScene(bars ? 'Aparecer en cada compás' : 'Aparecer en cada golpe', (draft) => {
+    items.forEach(({ id }, i) => {
+      const loc = locateItem(draft, id);
+      if (!loc) return;
+      shiftItemTime(loc.item, times[i]! - loc.item.in);
+      // Que cada aparición termine antes de la siguiente.
+      if (loc.item.enter && loc.item.enter.duration > gap) loc.item.enter = { ...loc.item.enter, duration: gap };
+    });
+    fitSceneDuration(draft);
+  });
+}
+
+/** El final de la escena cae en el inicio de compás más cercano. */
+export function alignSceneToBars(): void {
+  const scene = currentScene();
+  if (!scene) return;
+  const next = barAlignedDuration(currentBeats(scene), scene.duration);
+  if (next !== scene.duration)
+    editScene('Ajustar la escena al compás', (draft) => {
+      draft.duration = next;
+    });
+}
+
+/** Cámara que late con el compás en la escena actual. */
+export function setBeatPulse(on: boolean): void {
+  editScene('Cámara al ritmo', (draft) => {
+    draft.beatPulse = on || undefined;
   });
 }
 

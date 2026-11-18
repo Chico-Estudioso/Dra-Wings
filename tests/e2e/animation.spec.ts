@@ -319,3 +319,33 @@ test('transición de fundido entre escenas en la vista previa', async () => {
   await stubMessageBox(app, 1);
   await app.close();
 });
+
+test('ritmo: aparecer uno en cada golpe, ajustar al compás y cámara que late', async () => {
+  const file = path.join(await tempDir(), 'sincronia.dwings');
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Sincronía');
+  const c = await center(page);
+  // Tres formas, de derecha a izquierda (aparecerán de izquierda a derecha).
+  for (const dx of [150, 0, -150]) {
+    await page.keyboard.press('r');
+    await drag(page, { x: c.x + dx - 30, y: c.y - 30 }, { x: c.x + dx + 30, y: c.y + 30 }, 4);
+  }
+  await page.keyboard.press('Control+a');
+  await page.getByRole('button', { name: 'Ritmo', exact: true }).click();
+  await page.getByRole('button', { name: 'Uno en cada golpe' }).click();
+  await page.getByRole('button', { name: 'Ritmo', exact: true }).click();
+  await page.getByRole('checkbox', { name: 'Cámara que late con el compás' }).check();
+  await page.getByRole('button', { name: 'Ajustar el final al compás' }).click();
+
+  const p = await saveAndRead(app, page, file);
+  const shapes = items(p).sort((a, b) => a.in - b.in);
+  // Sin música: 120 BPM, un golpe cada medio segundo desde el cabezal (0 s).
+  expect(shapes.map((s) => s.in / 705_600_000)).toEqual([0, 0.5, 1]);
+  const xs = shapes.map((s) => ('value' in s.transform.x ? s.transform.x.value : 0));
+  expect(xs[0]).toBeLessThan(xs[1]!);
+  expect(xs[1]).toBeLessThan(xs[2]!);
+  expect(p.scenes[0]!.beatPulse).toBe(true);
+  expect((p.scenes[0]!.duration / 705_600_000) % 2).toBe(0);
+  await stubMessageBox(app, 1);
+  await app.close();
+});

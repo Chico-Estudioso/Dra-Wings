@@ -45,6 +45,10 @@ Para animar y cortar al compás (por ejemplo, un videoclip), Dra-Wings detecta l
 - Se ejecuta en un worker (`beat-worker.ts`): una canción de 3 minutos tarda alrededor de un segundo y la interfaz no se bloquea.
 - Se lanza solo al importar o soltar un audio en la pista de música, y a mano con «Detectar ritmo» en el panel del clip (muestra los BPM y cuántos golpes hay).
 - Los golpes se guardan en el medio (`asset.beats`, en ticks desde el inicio del archivo), así que siguen a la canción aunque se mueva o recorte su clip. Solo cuentan las pistas de música no silenciadas (`src/core/audio/rhythm.ts`).
+- Herramientas del botón «Ritmo» de la línea de tiempo (`src/core/edit/beat-sync.ts`; sin música, un pulso de 120 BPM con compases de 4):
+  - **Aparecer uno en cada golpe / compás:** los elementos seleccionados aparecen escalonados desde el cabezal, en orden de lectura (de izquierda a derecha, y de arriba abajo si coinciden). Sus keyframes se desplazan con ellos y cada aparición se acorta si dura más que el intervalo. Si hay más elementos que golpes, se sigue con el mismo intervalo y la escena se alarga.
+  - **Ajustar el final al compás:** la escena termina en el inicio de compás más cercano (más allá del último compás conocido, se cuentan compases del mismo largo).
+  - **Cámara que late con el compás** (`scene.beatPulse`): un zoom del 4 % hacia el centro al empezar cada compás, que se calma en unas décimas de segundo. Va en el render común, antes de la cámara de la escena.
 - Uso: golpes en la regla (los de compás, más marcados), ajuste magnético a los golpes al mover barras, clips y marcas, y vida «al ritmo» (ver `docs/ANIMATION_ENGINE.md`).
 - Probado con pistas sintéticas (92, 110, 120, 128 y 150 BPM, a 44,1 y 48 kHz, con bombo, caja, charles y ruido). Con música real hay que verificarlo a mano: en canciones sin percusión clara puede elegir el doble o la mitad del tempo.
 

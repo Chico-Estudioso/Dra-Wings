@@ -85,6 +85,8 @@ Ver `docs/LIBRARY.md`: recursos, constructor de personajes, escenas de partida, 
 - **Expresión y postura:** en el panel de un personaje; se aplican desde el cabezal y cada cambio se ve como un círculo en su barra (clic para ir a él). Ver `docs/LIBRARY.md`.
 - **Transición** (icono de mezcla junto a la duración, en las escenas que no son la primera): cómo entra la escena desde la anterior y a qué velocidad. Ver `docs/ANIMATION_ENGINE.md`.
 - **Elasticidad** (icono de curva junto al trazo vivo): cuánto se estira lo que se mueve deprisa. **Estela al moverse**, en el panel «Animación» de cada elemento. Ver `docs/ANIMATION_ENGINE.md`.
+- **Botón «Ritmo»** (tambor, en la barra de la línea de tiempo): aparecer uno en cada golpe o compás, ajustar el final de la escena al compás y cámara que late. Ver `docs/AUDIO_EXPORT.md`.
+- En ventanas estrechas (menos de 1180 px) la barra oculta los textos «Duración» y «Audio» (quedan sus nombres accesibles) y las pestañas de escena se desplazan dentro de su zona.
 - **Ritmo:** al importar música se detectan sus golpes; se ven en la regla (los de compás, más marcados) y las barras, clips y marcas se pegan a ellos. Ver `docs/AUDIO_EXPORT.md`.
 - **Vida automática:** selector «Vida» del panel «Animación» (Quieto, Respirar, Balancearse, Flotar o Latir) con su intensidad. Se ve al reproducir y en el vídeo, sin keyframes. Ver `docs/ANIMATION_ENGINE.md`.
 - **Animar arrastrando:** botón del panel «Animación». Con él activo, arrastrar un elemento reproduce la escena y graba su recorrido como keyframes; Esc cancela. La barra de opciones lo recuerda y tiene «Dejar de animar». Con un elemento animado seleccionado se ve su trayectoria (línea discontinua con un punto por keyframe).
