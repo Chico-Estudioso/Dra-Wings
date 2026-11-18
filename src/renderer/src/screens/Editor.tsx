@@ -30,6 +30,7 @@ import { LibraryPanel } from '../editor/LibraryPanel';
 import { GuidedTips } from '../editor/GuidedTips';
 import { Timeline } from '../editor/Timeline';
 import { usePlayback } from '../editor/playback';
+import { useLiveMarkerNotice } from '../editor/marker-actions';
 import { PropertiesPanel } from '../editor/PropertiesPanel';
 import { AudioClipPanel, MarkerPanel } from '../editor/AudioPanel';
 import { ExportDialog, openExportDialog } from '../export/ExportDialog';
@@ -169,6 +170,7 @@ export function Editor() {
   }, [scene, sceneId, activeLayerId]);
 
   usePlayback();
+  useLiveMarkerNotice();
 
   const viewport = useCallback(() => {
     const r = document.querySelector('[data-testid="canvas-host"]')?.getBoundingClientRect();

@@ -706,7 +706,7 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
         <button
           className="icon-btn icon-btn-sm"
           aria-label="Añadir marca"
-          title="Añadir marca en el cabezal (M)"
+          title="Añadir marca en el cabezal (M; también mientras suena, para marcar al oído)"
           onClick={addMarkerAtPlayhead}
         >
           <Flag size={14} />

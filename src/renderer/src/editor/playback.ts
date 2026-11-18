@@ -91,10 +91,29 @@ class PlaybackClock {
     this.lastCtxWall = performance.now() + START_DELAY * 1000;
   }
 
+  /**
+   * Instante que se está oyendo: el reloj del audio menos lo que tarda el sonido en salir por los
+   * altavoces. Sirve para marcar al oído con precisión.
+   */
+  heard(): Ticks {
+    const t = this.now();
+    if (!this.audioClock || !this.ctx) return t;
+    const latency = Math.min(0.5, Math.max(0, (this.ctx.baseLatency || 0) + (this.ctx.outputLatency || 0)));
+    return Math.max(0, t - latency * TICKS_PER_SECOND);
+  }
+
   stop(): void {
     this.scheduled?.stop();
     this.scheduled = null;
   }
+}
+
+/** Reloj de la reproducción en curso, si la hay. */
+let live: PlaybackClock | null = null;
+
+/** Instante global que se oye ahora mismo, o null si no se está reproduciendo. */
+export function livePlayhead(): Ticks | null {
+  return live ? live.heard() : null;
 }
 
 export function usePlayback(): void {
@@ -108,6 +127,7 @@ export function usePlayback(): void {
     let origin = sceneStart(project0, ed0.sceneId) + ed0.playhead;
     if (origin >= total0 - 1) origin = 0; // al final: vuelve a empezar
     const clock = new PlaybackClock(origin);
+    live = clock;
     let raf = 0;
     const step = () => {
       const project = useApp.getState().doc?.project;
@@ -129,6 +149,7 @@ export function usePlayback(): void {
     return () => {
       cancelAnimationFrame(raf);
       clock.stop();
+      if (live === clock) live = null;
     };
   }, [playing]);
 }

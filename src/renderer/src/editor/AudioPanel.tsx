@@ -1,6 +1,6 @@
 // Propiedades del clip de audio o de la marca seleccionados en la línea de tiempo.
 import { useState } from 'react';
-import { Drum, MessageCircle, Scissors, Trash2 } from 'lucide-react';
+import { Clapperboard, Drum, Flag, MessageCircle, Scissors, Trash2 } from 'lucide-react';
 import { TRACK_NAMES } from '@core/audio/edit';
 import type { Asset, Project } from '@core/model/types';
 import { analyzeVoice, detectRhythm, useRhythm } from './rhythm-actions';
@@ -15,6 +15,7 @@ import {
   splitClipAtPlayhead,
   updateTrack,
 } from './media-actions';
+import { clearMarkers, syncScenesToMarkers } from './marker-actions';
 
 const pct = (v: number) => `${Math.round(v * 100)} %`;
 const secs = (v: number) => `${v.toFixed(1)} s`;
@@ -212,6 +213,21 @@ export function MarkerPanel({ project, markerId }: { project: Project; markerId:
             <Trash2 size={17} />
           </button>
         </div>
+        <h3 className="panel-subtitle">Escenas a las marcas</h3>
+        <p className="panel-note">
+          Para un videoclip: reproduce la canción y pulsa <kbd>M</kbd> cada vez que cambie la frase. Luego ajusta las
+          escenas: la primera termina en la primera marca, la segunda en la siguiente…
+        </p>
+        <button
+          className="btn btn-secondary btn-sm"
+          onClick={syncScenesToMarkers}
+          title="Cada marca es un corte: ahí empieza la escena siguiente"
+        >
+          <Clapperboard size={16} aria-hidden /> Ajustar las escenas a las marcas
+        </button>
+        <button className="btn btn-ghost btn-sm" onClick={clearMarkers} title="Para volver a marcar desde cero">
+          <Flag size={16} aria-hidden /> Borrar todas las marcas ({project.markers.length})
+        </button>
       </div>
     </section>
   );

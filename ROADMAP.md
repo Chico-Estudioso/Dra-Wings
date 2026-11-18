@@ -78,7 +78,7 @@ Herramientas para que dibujar y animar sea rápido y todo se vea vivo (también 
 - **Narración y audio:** grabar con el micrófono, también viendo el vídeo; arrastrar imágenes y audio desde el explorador; ritmo de la música detectado solo (golpes en la regla, ajuste magnético, aparecer al ritmo, ajustar la escena al compás, cámara que late); voz de la narración analizada para que los personajes hablen.
 - **Dibujo:** estabilizador, trazo de tinta y formas rápidas; trazo vivo (las líneas tiemblan como en la animación a mano); mano que dibuja; tipo de hoja (papel, cuaderno o cuadrícula).
 - **Animación:** animaciones rápidas de un clic y suavizado; animar arrastrando con trayectorias visibles; vida automática (respirar, balancearse, flotar, latir y al ritmo); elasticidad y estela; repetir movimiento; expresión y postura de los personajes en el tiempo; personajes que hablan; textos que se escriben palabra a palabra, con saltos o al ritmo; transiciones entre escenas.
-- **Cámara y escenas:** cámara que sigue a un personaje; guion rápido (una escena por párrafo o por línea de una letra, con el texto escribiéndose solo).
+- **Cámara y escenas:** cámara que sigue a un personaje; guion rápido (una escena por párrafo o por línea de una letra, con el texto escribiéndose solo); escenas a las marcas (marcar al oído mientras suena y cortar ahí).
 - **Audio y salida:** efectos de sonido sintetizados por la app; guardar el fotograma del cabezal como imagen PNG.
 - **Aprendizaje:** proyecto de ejemplo que enseña las herramientas; los recursos de la naturaleza nacen con vida.
 - Pendiente (manual): probar el ritmo y el habla con canciones y voces reales, y ajustar el estabilizador y la tinta con ratón y tableta reales.

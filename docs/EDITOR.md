@@ -109,6 +109,7 @@ Ver `docs/LIBRARY.md`: recursos, constructor de personajes, escenas de partida, 
 - **Pistas de audio:** debajo de las capas, con su forma de onda. El altavoz de cada pista la silencia.
 - **Clips:** arrastrar para moverlos; arrastrar sus bordes para recortarlos. Al seleccionar uno, el panel lateral muestra su volumen, la entrada y salida suaves (fundidos), el volumen de la pista, «Dividir en el cabezal» y «Eliminar».
 - **Marcas:** con M o con el botón de la bandera se añade una en el cabezal. En la regla, un clic lleva el cabezal a la marca y la selecciona (su nombre se edita en el panel lateral); arrastrarla la mueve.
+- **Escenas a las marcas (videoclips):** reproduce la canción y pulsa M cada vez que cambie la frase. Al parar, «Ajustar las escenas a las marcas» hace que en cada marca empiece la escena siguiente (también desde el panel de una marca). Con «Crear escenas desde un guion» por líneas, la letra queda sincronizada en un par de pasadas.
 - **Ajuste magnético en el tiempo:** al arrastrar barras de elementos, clips o marcas, se pegan a las marcas y al cabezal. Alt lo desactiva.
 - Detalles del motor de audio y de los medios: `docs/AUDIO_EXPORT.md`.
 

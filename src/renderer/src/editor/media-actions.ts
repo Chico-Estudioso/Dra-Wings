@@ -28,6 +28,8 @@ import { useEditor } from './editor-store';
 import { audioContext, loadAudio, loadImage } from './media';
 import { SFX_LABELS, SFX_RATE, synthSfx, type SfxId } from '@core/audio/sfx';
 import { encodeWav } from '@core/audio/wav';
+import { livePlayhead } from './playback';
+import { noteLiveMarker } from './marker-actions';
 
 /** Parte de la hoja que ocupa como máximo una imagen recién importada. */
 const IMAGE_FIT = 0.6;
@@ -186,13 +188,18 @@ export function updateTrack(trackId: string, label: string, fn: (t: AudioTrack) 
 
 // Marcas
 
+/** Marca en el cabezal o, mientras suena, en el instante que se está oyendo. */
 export function addMarkerAtPlayhead(): void {
-  const at = globalPlayhead();
+  const p = project();
+  const live = livePlayhead();
+  const at = live !== null && p ? Math.min(live, projectDuration(p)) : globalPlayhead();
   let id: string | null = null;
-  editAudio('Añadir marca', (p) => {
-    id = addMarker(p, at).id;
+  editAudio('Añadir marca', (draft) => {
+    id = addMarker(draft, at).id;
   });
-  if (id) useEditor.getState().selectMarker(id);
+  if (!id) return;
+  if (live !== null) noteLiveMarker();
+  else useEditor.getState().selectMarker(id);
 }
 
 export function renameMarkerTo(id: string, label: string): void {

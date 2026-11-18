@@ -115,3 +115,48 @@ test('efectos de sonido sintetizados en el cabezal', async () => {
   await stubMessageBox(app, 1);
   await app.close();
 });
+
+test('marcar al oído mientras suena y ajustar las escenas a las marcas', async () => {
+  const file = path.join(await tempDir(), 'videoclip.dwings');
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Videoclip');
+  await page.getByRole('button', { name: 'Nueva escena' }).click();
+  await page.getByRole('button', { name: 'Nueva escena' }).click();
+  await page.getByRole('tab', { name: 'Escena 1' }).click();
+
+  // Mientras suena se marca con M sin interrumpir la reproducción.
+  await page.getByRole('button', { name: 'Reproducir' }).click();
+  await page.waitForTimeout(900);
+  await page.keyboard.press('m');
+  await page.waitForTimeout(900);
+  await page.keyboard.press('m');
+  await expect(page.getByRole('button', { name: 'Pausa' })).toBeVisible();
+  await page.getByRole('button', { name: 'Pausa' }).click();
+
+  // Al parar, el aviso ofrece ajustar las escenas.
+  await expect(page.getByText('Has puesto 2 marcas mientras sonaba.')).toBeVisible();
+  await page.getByRole('button', { name: 'Ajustar las escenas a las marcas' }).click();
+  await expect(page.getByText('2 escenas ajustadas a las marcas.')).toBeVisible();
+
+  const p = await saveAndRead(app, page, file);
+  const [m1, m2] = p.markers.map((m) => m.t);
+  expect(m1! / TICKS_PER_SECOND).toBeGreaterThan(0.5);
+  expect(m2! - m1!).toBeGreaterThan(0.5 * TICKS_PER_SECOND);
+  // Cada marca es un corte (alineado al fotograma); la última escena se queda como estaba.
+  expect(p.scenes[0]!.duration).toBe(m1);
+  expect(p.scenes[0]!.duration + p.scenes[1]!.duration).toBe(m2);
+  expect(p.scenes[2]!.duration).toBe(5 * TICKS_PER_SECOND);
+
+  // La escena 2 va de marca a marca. El panel de una marca también ofrece ajustar, y borrar todas las
+  // marcas se deshace de una vez.
+  await page.getByRole('tab', { name: 'Escena 2' }).click();
+  await expect(page.getByTestId('marker')).toHaveCount(2);
+  await page.getByTestId('marker').first().click();
+  await expect(page.getByRole('button', { name: 'Ajustar las escenas a las marcas' })).toBeVisible();
+  await page.getByRole('button', { name: /Borrar todas las marcas \(2\)/ }).click();
+  await expect(page.getByTestId('marker')).toHaveCount(0);
+  await page.keyboard.press('Control+z');
+  await expect(page.getByTestId('marker')).not.toHaveCount(0);
+  await stubMessageBox(app, 1);
+  await app.close();
+});

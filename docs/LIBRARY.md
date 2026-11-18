@@ -70,6 +70,7 @@ En la pestaña «Escenas», «Crear escenas desde un guion…» abre un cuadro d
 - Cada escena lleva su texto centrado con la letra a mano, ajustado al 80 % del ancho por palabras y con el tamaño más grande que quepa en el 62 % del alto (de 110 a 36), medido con la fuente real. El nombre de la escena es el principio del texto.
 - Se escribe solo con la escritura elegida (palabra a palabra por defecto). La escena dura lo que tarda en escribirse (0,3 s por palabra, entre 0,8 y 6 s; o un golpe por palabra con «Una palabra en cada golpe», al tempo de la música si se ha detectado) más un rato para leerla.
 - Las escenas se crean después de la actual, en un solo paso de deshacer; si la escena actual está vacía, el primer bloque va en ella.
+- Para clavar cada frase en la canción: reproducirla pulsando M en cada cambio de frase y «Ajustar las escenas a las marcas» (ver `docs/EDITOR.md`). Si la canción tiene intro, conviene dejar la primera escena para el título.
 
 ## Modos
 

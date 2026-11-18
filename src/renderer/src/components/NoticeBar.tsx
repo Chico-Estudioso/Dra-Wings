@@ -23,8 +23,9 @@ export function NoticeBar() {
         <button
           className="btn btn-ghost btn-sm"
           onClick={() => {
-            notice.action!.run();
-            notify(null);
+            const { run } = notice.action!;
+            notify(null); // antes: la acción puede dejar su propio aviso
+            run();
           }}
         >
           {notice.action.label}
