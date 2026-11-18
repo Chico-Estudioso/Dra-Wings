@@ -195,3 +195,34 @@ test('animar arrastrando graba el recorrido mientras avanza el vídeo', async ()
   await stubMessageBox(app, 1);
   await app.close();
 });
+
+test('trazo vivo: en la vista previa las líneas tiemblan aunque nada se mueva', async () => {
+  const file = path.join(await tempDir(), 'trazo-vivo.dwings');
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Trazo vivo');
+  const c = await center(page);
+  await drag(page, { x: c.x - 200, y: c.y }, { x: c.x + 200, y: c.y + 40 }, 20);
+
+  // Activado por defecto: entre dos instantes (ya dibujado y quieto) cambia el dibujo.
+  await expect(page.getByRole('button', { name: 'Trazo vivo: Normal' })).toBeVisible();
+  await scrubTo(page, 4);
+  const a = await sceneHash(page);
+  await scrubTo(page, 4.2);
+  await expect.poll(() => sceneHash(page)).not.toBe(a);
+
+  // Quieto: el mismo dibujo en ambos instantes.
+  await page.getByRole('button', { name: 'Trazo vivo: Normal' }).click();
+  await page.getByRole('radio', { name: 'Quieto' }).check();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: 'Trazo vivo: Quieto' })).toBeVisible();
+  await scrubTo(page, 4);
+  const b = await sceneHash(page);
+  await scrubTo(page, 4.2);
+  await page.waitForTimeout(100);
+  expect(await sceneHash(page)).toBe(b);
+
+  const p = await saveAndRead(app, page, file);
+  expect(p.settings.boil).toBe('off');
+  await stubMessageBox(app, 1);
+  await app.close();
+});

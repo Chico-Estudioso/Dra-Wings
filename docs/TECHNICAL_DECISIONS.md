@@ -34,6 +34,7 @@ Registro breve. El detalle de cada una está en su ADR (`docs/decisions/`).
 | 29 | El tipo de cada medio se decide por su firma; el renderer puede enviar bytes (nunca rutas) por un canal validado | Aprobada | `docs/AUDIO_EXPORT.md` |
 | 30 | «Animar arrastrando» guarda keyframes lineales simplificados (RDP en x, y, tiempo), no una curva nueva: el formato no cambia y el resultado se edita como cualquier animación | Aprobada | `docs/ANIMATION_ENGINE.md` |
 | 31 | Los cambios de expresión o postura son cambios de dibujo dentro del mismo grupo (`swaps`), no elementos separados: el personaje se sigue moviendo y animando como uno solo | Aprobada | `docs/PROJECT_FORMAT.md`, `docs/LIBRARY.md` |
+| 32 | «Trazo vivo» en el renderizador común: 3 variantes por elemento con semilla de su id, alternadas cada número entero de fotogramas (~8 por segundo); no se aplica al editar | Aprobada | `docs/ANIMATION_ENGINE.md` |
 | 24 | Aviso de `npm audit` en `picomatch` (ReDoS) aceptado: solo lo usan Vite y Vitest al compilar y probar, con patrones propios; no se empaqueta y no hay versión corregida | Aceptada (revisar en M8) | — |
 
 ## Pendientes (se deciden en su fase)

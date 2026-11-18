@@ -255,6 +255,8 @@ export const projectSchema = z.object({
     fps: fpsSchema,
     background: color,
     mode: modeSchema,
+    /** «Trazo vivo»: temblor de las líneas al reproducir y en el vídeo (sin valor: quieto). */
+    boil: z.enum(['off', 'soft', 'medium', 'strong']).optional(),
   }),
   scenes: z.array(sceneSchema).min(1, 'El proyecto necesita al menos una escena'),
   assets: z.array(assetSchema),

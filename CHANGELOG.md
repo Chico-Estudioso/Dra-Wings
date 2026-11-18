@@ -6,6 +6,7 @@ Los cambios relevantes se registran aquí. Se seguirá una estructura inspirada 
 - Preparación inicial del proyecto y del kit de desarrollo.
 - «Ver un ejemplo» en el inicio: proyecto de tres escenas hecho con la biblioteca, con textos, una salida con fundido y un zoom de cámara, para aprender viéndolo.
 - Arrastrar imágenes (al lienzo) y audio (a la línea de tiempo) desde el explorador; el audio pregunta su pista si no se suelta sobre una.
+- «Trazo vivo»: las líneas tiemblan un poco todo el rato al reproducir y en el vídeo, como en la animación dibujada a mano (Quieto, Suave, Normal o Marcado desde la línea de tiempo; Normal en los proyectos nuevos). Es determinista: el vídeo exportado coincide con la vista previa.
 - Los personajes cambian de expresión y de postura durante el vídeo: se elige en su panel con el cabezal en el momento del cambio; siguen siendo un solo elemento (se mueven, animan y recolorean enteros) y los cambios se ven en la línea de tiempo.
 - «Animar arrastrando»: con el botón activo, arrastra un personaje u objeto mientras el vídeo avanza (con su audio) y su recorrido se guarda como keyframes editables; se puede encadenar desde donde se soltó y Esc cancela. Los elementos animados muestran su trayectoria en el lienzo.
 - Animaciones rápidas de un clic para cualquier elemento o personaje (entrar o salir por un lado, saltar, balancearse, latir, flotar, girar, temblar y crecer) que crean keyframes editables, y suavizado del movimiento elegible: suave, constante, acelerar, frenar, con impulso, rebote o a saltos.

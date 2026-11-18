@@ -18,7 +18,8 @@ Los picos de la forma de onda no se guardan: se recalculan al abrir.
 ```ts
 Project {
   id: string; name: string; createdAt: string; updatedAt: string   // ISO 8601
-  settings: { width: number; height: number; fps: Fps; background: Color; mode: 'guided' | 'mixed' | 'free' }
+  settings: { width: number; height: number; fps: Fps; background: Color; mode: 'guided' | 'mixed' | 'free'
+              boil?: 'off' | 'soft' | 'medium' | 'strong' }   // «trazo vivo»; sin valor = 'off' (archivos anteriores)
   scenes: Scene[]                       // se reproducen en orden
   assets: Asset[]                       // medios usados (imágenes y audio)
   audioTracks: AudioTrack[]

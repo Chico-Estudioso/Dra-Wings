@@ -5,6 +5,7 @@ import { arrowHeadSize } from '../geometry/items';
 import { shapePerimeterOf } from '../anim/perimeter';
 import type { RenderItem } from './evaluate';
 import { strokeOutline } from './stroke-outline';
+import { jitterMatrix, seedOf, type Boil } from './boil';
 
 export type Ctx2D = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 
@@ -21,11 +22,23 @@ export function fontString(font: FontId, size: number): string {
 /** Caché de geometría por objeto de elemento: Immer crea objetos nuevos al editar, así que se invalida sola. */
 export class PathCache {
   private paths = new WeakMap<object, Path2D>();
+  private variants = new WeakMap<object, Map<string, Path2D>>();
   get(key: object, build: () => Path2D): Path2D {
     let p = this.paths.get(key);
     if (!p) {
       p = build();
       this.paths.set(key, p);
+    }
+    return p;
+  }
+  /** Variantes de un mismo elemento (por ejemplo, las del trazo vivo). */
+  getVariant(key: object, variant: string, build: () => Path2D): Path2D {
+    let m = this.variants.get(key);
+    if (!m) this.variants.set(key, (m = new Map()));
+    let p = m.get(variant);
+    if (!p) {
+      p = build();
+      m.set(variant, p);
     }
     return p;
   }
@@ -172,19 +185,47 @@ function drawImageItem(ctx: Ctx2D, item: Extract<RenderItem['item'], { type: 'im
   ctx.stroke();
 }
 
-/** Dibuja la lista sobre la transformación actual del contexto (la del lienzo o de la vista). */
-export function drawRenderList(ctx: Ctx2D, list: RenderItem[], cache: PathCache, images?: ImageSources) {
+/** Temblor de formas y textos: en proporción al grosor de su línea o al tamaño de la letra. */
+function jitterFor(item: RenderItem['item'], boil: Boil) {
+  if (item.type === 'shape') {
+    const amp = Math.min(2.5, 0.6 + (item.style.strokeWidth || 4) * 0.12) * boil.amount;
+    return jitterMatrix(seedOf(item.id), boil.variant, item.w, item.h, amp);
+  }
+  if (item.type === 'text') {
+    const amp = Math.min(2, 0.4 + item.size * 0.02) * boil.amount;
+    return jitterMatrix(seedOf(item.id), boil.variant, item.w, item.h, amp);
+  }
+  return null;
+}
+
+/**
+ * Dibuja la lista sobre la transformación actual del contexto (la del lienzo o de la vista). Con
+ * `boil`, cada trazo, forma y texto usa su variante del «trazo vivo» (las imágenes no tiemblan).
+ */
+export function drawRenderList(
+  ctx: Ctx2D,
+  list: RenderItem[],
+  cache: PathCache,
+  images?: ImageSources,
+  boil?: Boil | null,
+) {
   for (const r of list) {
     ctx.save();
     ctx.transform(...r.matrix);
     ctx.globalAlpha = r.opacity;
     const item = r.item;
+    const jitter = boil && jitterFor(item, boil);
+    if (jitter) ctx.transform(...jitter);
     switch (item.type) {
       case 'stroke': {
         const path =
-          r.progress >= 1
-            ? cache.get(item, () => outlineToPath(strokeOutline(item)))
-            : outlineToPath(strokeOutline(item, r.progress));
+          r.progress < 1
+            ? outlineToPath(strokeOutline(item, r.progress, boil))
+            : boil
+              ? cache.getVariant(item, `${boil.variant}:${boil.amount}`, () =>
+                  outlineToPath(strokeOutline(item, 1, boil)),
+                )
+              : cache.get(item, () => outlineToPath(strokeOutline(item)));
         ctx.globalAlpha = r.opacity * item.style.opacity;
         ctx.fillStyle = item.style.color;
         ctx.fill(path);

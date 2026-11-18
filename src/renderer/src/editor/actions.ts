@@ -24,6 +24,7 @@ import { addScene, duplicateScene, moveScene, removeScene } from '@core/edit/sce
 import { ticksPerFrame } from '@core/time/ticks';
 import { groupItems, recolorSlot, removeSwap, ungroupItem } from '@core/edit/group';
 import { setCharacterLook, type CharacterOptions } from '@core/library/character';
+import type { BoilLevel } from '@core/render/boil';
 import { deepClone } from '@core/edit/clone';
 import { newId } from '@core/model/factory';
 import type { Ease, Enter, Exit, Item, Layer, Project, Scene } from '@core/model/types';
@@ -202,6 +203,13 @@ export function commitMotion(sceneId: string, id: string, samples: MotionSample[
     loc.item.transform.y = mergeKeys(loc.item.transform.y, y);
   });
   return true;
+}
+
+/** Intensidad del «trazo vivo» del proyecto. */
+export function setBoil(level: BoilLevel): void {
+  useApp.getState().apply('Trazo vivo', (p) => {
+    p.settings.boil = level;
+  });
 }
 
 /** Cambia la expresión o la postura del personaje seleccionado desde el cabezal. */

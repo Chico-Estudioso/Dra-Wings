@@ -62,7 +62,7 @@ export function createProject({ name, aspect, fps, mode, now = new Date() }: New
     name: name.trim(),
     createdAt: iso,
     updatedAt: iso,
-    settings: { width: preset.width, height: preset.height, fps, background: '#ffffff', mode },
+    settings: { width: preset.width, height: preset.height, fps, background: '#ffffff', mode, boil: 'medium' },
     scenes: [createScene('Escena 1')],
     assets: [],
     audioTracks: [],

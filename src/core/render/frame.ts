@@ -6,6 +6,7 @@ import type { Ticks } from '../time/ticks';
 import type { StaticTransform } from '../geometry/matrix';
 import { drawRenderList, type Ctx2D, type ImageSources, type PathCache } from './draw';
 import { cameraMatrix, evaluateScene } from './evaluate';
+import { boilAt } from './boil';
 
 /**
  * Dibuja la escena en el instante `local` (relativo a la escena) sobre la hoja (0,0)-(width,height)
@@ -27,7 +28,8 @@ export function drawSceneFrame(
   ctx.fillStyle = settings.background;
   ctx.fillRect(0, 0, settings.width, settings.height);
   ctx.transform(...cameraMatrix(scene, local));
-  drawRenderList(ctx, evaluateScene(scene, local, { mode: 'play', overrides }), cache, images);
+  const boil = boilAt(settings.boil, local, settings.fps);
+  drawRenderList(ctx, evaluateScene(scene, local, { mode: 'play', overrides }), cache, images, boil);
   ctx.restore();
 }
 

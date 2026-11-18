@@ -2,6 +2,7 @@
 import { getStroke } from 'perfect-freehand';
 import type { Stroke } from '../model/types';
 import { POINT_STRIDE } from '../geometry/items';
+import { seedOf, strokeBoilAmp, wobblePoints, type Boil } from './boil';
 
 /** Presión usada cuando el dispositivo no la proporciona (grosor constante; no se simula). */
 const NEUTRAL_PRESSURE = 0.5;
@@ -49,9 +50,20 @@ export function partialInput(stroke: Stroke, progress: number): number[][] {
   return out;
 }
 
-export function strokeOutline(stroke: Stroke, progress = 1): number[][] {
-  const input = partialInput(stroke, progress);
+/** Contorno del trazo; con `boil`, la variante temblorosa de ese instante del «trazo vivo». */
+export function strokeOutline(stroke: Stroke, progress = 1, boil?: Boil | null): number[][] {
+  let input = partialInput(stroke, progress);
   if (input.length === 0) return [];
+  if (boil) {
+    const size = stroke.style.size;
+    input = wobblePoints(
+      input,
+      seedOf(stroke.id),
+      boil.variant,
+      strokeBoilAmp(size, boil.amount),
+      Math.max(24, size * 5),
+    );
+  }
   return getStroke(input, {
     size: stroke.style.size,
     thinning: stroke.style.thinning,

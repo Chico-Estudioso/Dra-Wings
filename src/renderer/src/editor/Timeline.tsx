@@ -54,6 +54,7 @@ import { togglePlay } from './playback';
 import { openRecordPanel } from './RecordPanel';
 import { hasFiles, importDroppedFiles } from './drop-files';
 import { Waveform } from './Waveform';
+import { BoilControl } from './BoilControl';
 
 const NAME_W = 150;
 const RULER_H = 24;
@@ -620,6 +621,7 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
         >
           <Circle size={14} fill={autoKey ? 'currentColor' : 'none'} />
         </button>
+        <BoilControl project={project} />
         {hasFrames && (
           <button
             className={`icon-btn icon-btn-sm ${onion ? 'is-on' : ''}`}
