@@ -25,6 +25,10 @@ Ventajas:
 
 Cualquier recurso nuevo debe añadirse a esta tabla con su origen y licencia. No se incorporan packs de terceros sin permiso explícito.
 
+## Vida de los recursos
+
+Algunos recursos nacen con vida automática (`AMBIENT_LIFE` en `catalog.ts`): las nubes flotan, la luna flota un poco, el sol late suave, las estrellas y el corazón laten, y árbol, pino y flor se balancean. Edificios, vehículos y objetos se quedan quietos; los personajes respiran. Se puede cambiar o quitar en el panel «Animación».
+
 ## Grupos y ranuras de color
 
 - Un recurso insertado es un **grupo** (`type: 'group'`) autosuficiente: sus elementos viajan dentro del proyecto. `source` solo indica de dónde salió.
@@ -72,6 +76,8 @@ Cambiar de modo nunca toca el documento: solo ajusta paneles y ayudas.
 ## Proyecto de ejemplo
 
 `src/core/library/example.ts` monta, con las mismas piezas de la biblioteca, un proyecto de tres escenas («Había una vez», «Un día en la ciudad» y «Ahora tú»). Los textos se miden con las fuentes reales al crearlo. Se abre desde «Ver un ejemplo» en el inicio.
+
+Enseña las herramientas viéndolas: textos que se escriben palabra a palabra o con letras que saltan, un zoom de cámara, la segunda escena entrando en círculo y la tercera con un fundido, nubes, sol, árbol y corazón con vida propia, y Lucía que, al terminar de escribirse el texto, se ríe, levanta los brazos y salta (un cambio de aspecto y una animación rápida). Como todo proyecto nuevo, tiene trazo vivo, elasticidad y mano que dibuja.
 
 ## Guías magnéticas
 

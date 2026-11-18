@@ -1215,7 +1215,32 @@ const CHARACTERS: LibraryAsset[] = CHARACTER_PRESETS.map((p) => ({
   build: () => ({ ...buildCharacter(p.options), name: p.name }),
 }));
 
-export const LIBRARY: LibraryAsset[] = [...CHARACTERS, ...BUILDINGS, ...NATURE, ...OBJECTS, ...VEHICLES, ...SYMBOLS];
+/**
+ * Vida automática con la que nacen algunos recursos (lo que en la naturaleza se mueve solo). Los
+ * edificios, vehículos y objetos se quedan quietos; los personajes respiran (ver character.ts).
+ */
+export const AMBIENT_LIFE: Readonly<Record<string, NonNullable<Group['life']>>> = {
+  nube: { kind: 'float', amount: 1 },
+  luna: { kind: 'float', amount: 0.5 },
+  sol: { kind: 'pulse', amount: 0.5 },
+  estrella: { kind: 'pulse', amount: 1 },
+  corazon: { kind: 'pulse', amount: 1 },
+  arbol: { kind: 'sway', amount: 0.5 },
+  pino: { kind: 'sway', amount: 0.5 },
+  flor: { kind: 'sway', amount: 1 },
+};
+
+const withAmbientLife = (a: LibraryAsset): LibraryAsset =>
+  AMBIENT_LIFE[a.id] ? { ...a, build: () => ({ ...a.build(), life: { ...AMBIENT_LIFE[a.id]! } }) } : a;
+
+export const LIBRARY: LibraryAsset[] = [
+  ...CHARACTERS,
+  ...BUILDINGS,
+  ...NATURE,
+  ...OBJECTS,
+  ...VEHICLES,
+  ...SYMBOLS,
+].map(withAmbientLife);
 
 const normalize = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 

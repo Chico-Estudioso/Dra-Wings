@@ -1,12 +1,15 @@
 // Proyecto de ejemplo para aprender viéndolo: tres escenas hechas con la biblioteca, textos que se
-// escriben solos, tiempos automáticos y un zoom de cámara. Todo es editable.
+// escriben solos (palabra a palabra o con letras que saltan), tiempos automáticos, un zoom de
+// cámara, transiciones, un personaje que cambia de expresión y salta, y recursos con vida propia.
+// Todo es editable.
 import { setValueAt } from '../anim/keyframes';
 import { appendTiming, fitSceneDuration } from '../anim/timing';
 import { addScene } from '../edit/scenes';
 import { createProject, createText } from '../model/factory';
-import type { FontId, Item, Project, Scene } from '../model/types';
+import type { FontId, Item, Project, Scene, TextItem } from '../model/types';
+import { applyPreset } from '../anim/presets';
 import { TICKS_PER_SECOND } from '../time/ticks';
-import { buildCharacter, CHARACTER_PRESETS } from './character';
+import { buildCharacter, CHARACTER_PRESETS, setCharacterLook } from './character';
 import { buildAsset, placeGroup, TEMPLATES } from './place';
 
 /** Mide un texto (en el renderer, con las fuentes reales) para darle su caja. */
@@ -27,7 +30,15 @@ export function buildExampleProject(measure: MeasureText, now = new Date()): Pro
       scene.layers[0]!.items!.push(it);
     }
   };
-  const text = (scene: Scene, str: string, cy: number, size: number, font: FontId = 'hand', color = INK) => {
+  const text = (
+    scene: Scene,
+    str: string,
+    cy: number,
+    size: number,
+    font: FontId = 'hand',
+    color = INK,
+    reveal?: TextItem['reveal'],
+  ) => {
     const lineHeight = 1.2;
     const m = measure(str, font, size, lineHeight);
     add(
@@ -42,6 +53,8 @@ export function buildExampleProject(measure: MeasureText, now = new Date()): Pro
         ...m,
       }),
     );
+    const last = scene.layers[0]!.items!.at(-1)!;
+    if (reveal && last.type === 'text') last.reveal = reveal;
   };
   const template = (id: string) => TEMPLATES.find((t) => t.id === id)!.build(W, H);
 
@@ -49,7 +62,7 @@ export function buildExampleProject(measure: MeasureText, now = new Date()): Pro
   const s1 = p.scenes[0]!;
   s1.name = 'Había una vez';
   add(s1, ...template('campo'));
-  text(s1, 'Había una vez una casa en el campo…', 0.91, 70);
+  text(s1, 'Había una vez una casa en el campo…', 0.91, 70, 'hand', INK, 'words');
   // El texto se lee un segundo, se desvanece y entonces la cámara se acerca a la casa.
   const items1 = s1.layers[0]!.items!;
   const drawn = items1.reduce((t, it) => Math.max(t, it.in + (it.enter?.duration ?? 0)), 0);
@@ -71,25 +84,33 @@ export function buildExampleProject(measure: MeasureText, now = new Date()): Pro
   const s2Id = addScene(p, s1.id);
   const s2 = p.scenes.find((s) => s.id === s2Id)!;
   s2.name = 'Un día en la ciudad';
+  // Entra abriéndose en círculo desde el centro.
+  s2.transition = { kind: 'iris', duration: Math.round(0.8 * TICKS_PER_SECOND) };
   add(s2, ...template('ciudad'));
   const lucia = CHARACTER_PRESETS.find((c) => c.id === 'lucia')!;
-  add(
-    s2,
-    placeGroup(
-      { ...buildCharacter(lucia.options), name: lucia.name },
-      { cx: 0.68 * W, bottom: 0.84 * H, height: 0.42 * H },
-    ),
+  const luciaGroup = placeGroup(
+    { ...buildCharacter(lucia.options), name: lucia.name },
+    { cx: 0.68 * W, bottom: 0.84 * H, height: 0.42 * H },
   );
-  text(s2, 'Un día, Lucía se fue a la ciudad.', 0.92, 70);
+  add(s2, luciaGroup);
+  text(s2, 'Un día, Lucía se fue a la ciudad.', 0.92, 70, 'hand', INK, 'words');
+  // Al terminar de escribirse el texto, Lucía se alegra y da un salto.
+  const items2 = s2.layers[0]!.items!;
+  const lastText = items2[items2.length - 1]!;
+  const joy = lastText.in + (lastText.enter?.duration ?? 0) + Math.round(0.4 * TICKS_PER_SECOND);
+  setCharacterLook(luciaGroup, joy, { expression: 'risa', pose: 'brazos-arriba' });
+  const jumpEnd = applyPreset(luciaGroup, 'jump', joy, { page: { width: W, height: H } });
+  s2.duration = Math.max(s2.duration, jumpEnd + TICKS_PER_SECOND);
   fitSceneDuration(s2);
 
   // 3. Ahora tú: qué hacer después.
   const s3Id = addScene(p, s2.id);
   const s3 = p.scenes.find((s) => s.id === s3Id)!;
   s3.name = 'Ahora tú';
+  s3.transition = { kind: 'fade', duration: Math.round(0.8 * TICKS_PER_SECOND) };
   add(s3, placeGroup(buildAsset('corazon'), { cx: 0.5 * W, cy: 0.3 * H, height: 0.26 * H }));
-  text(s3, '¡Ahora te toca a ti!', 0.55, 120, 'script', '#c2521e');
-  text(s3, 'Cambia los textos, graba tu voz en «Audio» y exporta el vídeo.', 0.74, 46, 'rounded');
+  text(s3, '¡Ahora te toca a ti!', 0.55, 120, 'script', '#c2521e', 'bounce');
+  text(s3, 'Cambia los textos, graba tu voz en «Audio» y exporta el vídeo.', 0.74, 46, 'rounded', INK, 'words');
   fitSceneDuration(s3);
 
   for (const s of p.scenes) fitSceneDuration(s);

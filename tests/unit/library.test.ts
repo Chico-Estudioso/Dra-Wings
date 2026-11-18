@@ -209,6 +209,26 @@ describe('proyecto de ejemplo', () => {
     }
   });
 
+  it('enseña las novedades: transiciones, textos que se escriben, vida y un personaje que reacciona', () => {
+    const p = buildExampleProject(measure);
+    const [s1, s2, s3] = p.scenes;
+    expect(s2!.transition?.kind).toBe('iris');
+    expect(s3!.transition?.kind).toBe('fade');
+    const texts = p.scenes.flatMap((s) => s.layers[0]!.items!).filter((i) => i.type === 'text');
+    expect(texts.map((t) => t.type === 'text' && t.reveal)).toEqual(['words', 'words', 'bounce', 'words']);
+    // Las nubes flotan y el corazón late (vida de la biblioteca).
+    const groups = p.scenes.flatMap((s) => s.layers[0]!.items!).filter((i) => i.type === 'group');
+    expect(groups.find((g) => g.type === 'group' && g.source?.id === 'nube')?.life?.kind).toBe('float');
+    expect(groups.find((g) => g.type === 'group' && g.source?.id === 'corazon')?.life?.kind).toBe('pulse');
+    expect(s1!.layers[0]!.items!.some((i) => i.type === 'group' && i.source?.id === 'casa' && !i.life)).toBe(true);
+    // Lucía cambia de expresión y salta al terminar el texto.
+    const lucia = s2!.layers[0]!.items!.find((i) => i.type === 'group' && i.source?.kind === 'character');
+    if (lucia?.type !== 'group') throw new Error('falta Lucía');
+    expect(lucia.swaps?.[0]?.variant).toBe('largo/risa/brazos-arriba');
+    expect('keys' in lucia.transform.y).toBe(true);
+    expect(s2!.duration).toBeGreaterThan(lucia.swaps![0]!.t);
+  });
+
   it('en la primera escena el texto se desvanece y la cámara se acerca a la casa', () => {
     const [s1] = buildExampleProject(measure).scenes;
     const zoom = s1!.camera.scaleX;
