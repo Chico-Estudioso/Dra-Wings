@@ -93,6 +93,17 @@ Movimiento de reposo continuo, sin keyframes (`item.life`, `src/core/anim/life.t
 
 **Al ritmo de la música:** Latir al ritmo (crece de golpe en cada tiempo y vuelve suave), Saltar al ritmo (aterriza en cada golpe aplastándose un poco y sube entre golpes) y Balancearse al ritmo (cambia de lado en cada golpe, desde la base). Siguen los golpes de la música de la escena (`evaluateScene` recibe `beats` en el tiempo de la escena); antes del primer golpe o tras el último se quedan quietos. Sin música con ritmo detectado, siguen un pulso de 120 BPM.
 
+## Textos que se escriben
+
+Con la aparición «Dibujarse», un texto se escribe según su «Escritura» (`text.reveal`, `src/core/render/text-reveal.ts`), pensada también para letras de canciones:
+
+- **Letra a letra** (por defecto): como hasta ahora.
+- **Palabra a palabra:** cada palabra entra en su tramo de la duración, creciendo desde su base y ya en su sitio final (no se desplaza el resto aunque el texto esté centrado).
+- **Letras que saltan:** cada letra crece con un pequeño rebote; se solapan de tres en tres.
+- **Una palabra en cada golpe:** la primera aparece al entrar el texto y cada golpe de la música añade otra (sin música, cada medio segundo). Aquí no cuenta la duración de «Dibujarse».
+
+Las piezas se colocan midiendo el texto con la fuente real; el troceado y el avance de cada pieza son puros y tienen pruebas propias. Elegir una escritura activa «Dibujarse» si el texto no la tenía.
+
 ## Transiciones entre escenas
 
 Cada escena (salvo la primera) puede entrar con una transición (`scene.transition`, `src/core/render/transition.ts` y `drawSceneInProject` en `frame.ts`): Corte, Fundido, Fundido a blanco (pasa por el color de fondo), Deslizar (la nueva empuja a la anterior hacia la izquierda), Zoom (la anterior se acerca y se desvanece mientras la nueva llega desde un poco más pequeña), Barrido (de izquierda a derecha) y Círculo (se abre desde el centro). Velocidad Rápida (0,4 s), Normal (0,8 s) o Lenta (1,5 s), con suavizado.

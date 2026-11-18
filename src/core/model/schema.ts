@@ -122,6 +122,8 @@ export const textSchema = z.object({
   color,
   align: z.enum(['left', 'center', 'right']),
   lineHeight: z.number().min(0.5).max(3),
+  /** Cómo se escribe al aparecer con «Dibujarse» (sin valor: letra a letra). */
+  reveal: z.enum(['letters', 'words', 'bounce', 'beat-words']).optional(),
   // Caja medida al editar el texto: la selección y el ajuste no dependen de medir en cada render.
   w: z.number().nonnegative().max(100_000),
   h: z.number().nonnegative().max(100_000),

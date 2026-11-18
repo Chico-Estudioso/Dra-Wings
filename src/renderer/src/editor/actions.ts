@@ -27,6 +27,7 @@ import { setCharacterLook, type CharacterOptions } from '@core/library/character
 import type { BoilLevel } from '@core/render/boil';
 import type { LifeKind } from '@core/anim/life';
 import type { ElasticLevel } from '@core/anim/elastic';
+import type { TextReveal } from '@core/render/text-reveal';
 import { sceneBeats, type Beat } from '@core/audio/rhythm';
 import { barAlignedDuration, beatsOrPulse, staggerTimes } from '@core/edit/beat-sync';
 import { worldBounds } from '@core/geometry/items';
@@ -266,6 +267,16 @@ export function alignSceneToBars(): void {
 export function setBeatPulse(on: boolean): void {
   editScene('Cámara al ritmo', (draft) => {
     draft.beatPulse = on || undefined;
+  });
+}
+
+/** Forma de escribirse de los textos seleccionados (se dibujan al aparecer para que se note). */
+export function setTextReveal(reveal: TextReveal): void {
+  updateSelected('Forma de escribirse', (it) => {
+    if (it.type !== 'text') return;
+    it.reveal = reveal === 'letters' ? undefined : reveal;
+    if (!it.enter || it.enter.kind !== 'draw')
+      it.enter = { kind: 'draw', duration: it.enter?.duration || ticksPerFrame(fps()) * 30 };
   });
 }
 

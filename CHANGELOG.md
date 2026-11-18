@@ -6,6 +6,7 @@ Los cambios relevantes se registran aquí. Se seguirá una estructura inspirada 
 - Preparación inicial del proyecto y del kit de desarrollo.
 - «Ver un ejemplo» en el inicio: proyecto de tres escenas hecho con la biblioteca, con textos, una salida con fundido y un zoom de cámara, para aprender viéndolo.
 - Arrastrar imágenes (al lienzo) y audio (a la línea de tiempo) desde el explorador; el audio pregunta su pista si no se suelta sobre una.
+- Textos que se escriben palabra a palabra, con letras que saltan o con una palabra en cada golpe de la música (para letras de canciones).
 - Sincronía con el ritmo (botón «Ritmo»): los elementos seleccionados aparecen uno en cada golpe o compás, el final de la escena se ajusta al compás y la cámara puede latir con cada compás. Sin música, 120 BPM.
 - Transiciones entre escenas: fundido, fundido a blanco, deslizar, zoom, barrido o círculo, rápidas, normales o lentas; iguales en la vista previa y en el vídeo.
 - Elasticidad: lo que se mueve deprisa se estira en la dirección del movimiento y recupera su forma al frenar, como en los dibujos animados (Rígido, Suave, Normal o Marcado; Normal en los proyectos nuevos). Estela opcional al moverse por elemento.

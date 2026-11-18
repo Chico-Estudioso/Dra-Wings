@@ -5,6 +5,7 @@ import { arrowHeadSize } from '../geometry/items';
 import { shapePerimeterOf } from '../anim/perimeter';
 import type { RenderItem } from './evaluate';
 import { strokeOutline } from './stroke-outline';
+import { layoutTokens, tokenProgress, type TextReveal } from './text-reveal';
 import { jitterMatrix, seedOf, type Boil } from './boil';
 
 export type Ctx2D = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
@@ -135,11 +136,47 @@ function drawShape(ctx: Ctx2D, s: Shape, progress = 1, fillProgress = 1) {
   ctx.setLineDash([]);
 }
 
-/** Dibuja un texto; con `progress` < 1 se escribe letra a letra. */
+/** Escritura por piezas (palabras o letras), cada una en su sitio final y con su propia entrada. */
+function drawTokens(ctx: Ctx2D, t: TextItem, progress: number, reveal: TextReveal) {
+  ctx.textAlign = 'left';
+  const lines = t.text.split('\n');
+  const lineWidth = lines.map((l) => ctx.measureText(l).width);
+  const tokens = layoutTokens(t.text, reveal === 'bounce' ? 'letters' : 'words', (s) => ctx.measureText(s).width);
+  const alpha = ctx.globalAlpha;
+  for (const tok of tokens) {
+    const u = tokenProgress(reveal, tok.index, tokens.length, progress);
+    if (u <= 0) continue;
+    const w = lineWidth[tok.line]!;
+    const x0 = t.align === 'left' ? 0 : t.align === 'center' ? (t.w - w) / 2 : t.w - w;
+    const x = x0 + tok.x;
+    const y = tok.line * t.size * t.lineHeight;
+    if (u >= 1) {
+      ctx.fillText(tok.text, x, y);
+      continue;
+    }
+    // Entra creciendo desde su base con un pequeño rebote.
+    const k = reveal === 'bounce' ? easeOutBack(u) : 0.6 + 0.4 * u;
+    const cx = x + ctx.measureText(tok.text).width / 2;
+    const base = y + t.size;
+    ctx.save();
+    ctx.globalAlpha = alpha * Math.min(1, u * 2);
+    ctx.translate(cx, base);
+    ctx.scale(k, k);
+    ctx.fillText(tok.text, x - cx, y - base);
+    ctx.restore();
+  }
+}
+
+function easeOutBack(u: number): number {
+  return 1 + 2.70158 * (u - 1) ** 3 + 1.70158 * (u - 1) ** 2;
+}
+
+/** Dibuja un texto; con `progress` < 1 se escribe según su forma de aparecer (letra a letra si no). */
 export function drawText(ctx: Ctx2D, t: TextItem, progress = 1) {
   ctx.font = fontString(t.font, t.size);
   ctx.fillStyle = t.color;
   ctx.textBaseline = 'top';
+  if (progress < 1 && t.reveal && t.reveal !== 'letters') return drawTokens(ctx, t, progress, t.reveal);
   ctx.textAlign = t.align;
   const x = t.align === 'left' ? 0 : t.align === 'center' ? t.w / 2 : t.w;
   let remaining = progress >= 1 ? Infinity : Math.floor([...t.text.replace(/\n/g, '')].length * progress);

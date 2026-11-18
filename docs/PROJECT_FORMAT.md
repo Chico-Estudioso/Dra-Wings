@@ -66,6 +66,7 @@ Shape extends ItemBase {
 Text extends ItemBase {
   type: 'text'; text: string; font: 'hand' | 'script' | 'rounded'; size: number; color: Color
   align: 'left' | 'center' | 'right'; lineHeight: number
+  reveal?: 'letters' | 'words' | 'bounce' | 'beat-words'   // cómo se escribe al dibujarse (sin valor: letra a letra)
   w: number; h: number                  // caja medida al editar
 }
 

@@ -26,12 +26,14 @@ import {
   setSelectedOpacity,
   ungroupSelection,
   updateSelected,
+  setTextReveal,
 } from './actions';
 import { AnimationSection } from './AnimationSection';
 import { CharacterLook } from './CharacterLook';
 import { ColorPicker, ValueSlider } from './controls';
 import { useEditor } from './editor-store';
 import { FONT_LABELS, fontsReady } from './fonts';
+import { REVEAL_LABELS, type TextReveal } from '@core/render/text-reveal';
 
 let measureCtx: CanvasRenderingContext2D | null = null;
 async function remeasure(t: TextItem) {
@@ -202,6 +204,24 @@ export function PropertiesPanel({
               {(Object.keys(FONT_LABELS) as FontId[]).map((f) => (
                 <option key={f} value={f}>
                   {FONT_LABELS[f]}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        {allTexts && first.type === 'text' && (
+          <label className="inline-field">
+            <span className="control-label">Escritura</span>
+            <select
+              className="input input-sm"
+              aria-label="Cómo se escribe el texto"
+              title="Cómo aparece el texto al dibujarse (ideal para letras de canciones)"
+              value={first.reveal ?? 'letters'}
+              onChange={(e) => setTextReveal(e.target.value as TextReveal)}
+            >
+              {(Object.keys(REVEAL_LABELS) as TextReveal[]).map((r) => (
+                <option key={r} value={r}>
+                  {REVEAL_LABELS[r]}
                 </option>
               ))}
             </select>

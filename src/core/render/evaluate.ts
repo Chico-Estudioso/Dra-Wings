@@ -1,6 +1,7 @@
 // Evaluación de una escena en un instante: lista plana de lo que hay que dibujar (ver ANIMATION_ENGINE.md).
 import { childrenAt } from '../anim/swaps';
 import { lifeMatrix } from '../anim/life';
+import { beatWordsProgress } from './text-reveal';
 import { stretchMatrix, TRAIL } from '../anim/elastic';
 import { valueAt } from '../anim/animated';
 import {
@@ -62,7 +63,7 @@ interface Appearance {
 }
 
 /** Estado de aparición de un elemento en el instante `t` (relativo a la escena). */
-export function appearance(item: Item, t: Ticks): Appearance {
+export function appearance(item: Item, t: Ticks, beats?: readonly Ticks[]): Appearance {
   if (t < item.in || (item.out !== undefined && t >= item.out)) return { visible: false, opacity: 0, draw: 0, pop: 0 };
   let opacity = 1;
   let draw = 1;
@@ -70,7 +71,8 @@ export function appearance(item: Item, t: Ticks): Appearance {
   const enter = item.enter;
   if (enter && enter.kind !== 'none') {
     const e = enter.duration > 0 ? clamp01((t - item.in) / enter.duration) : 1;
-    if (enter.kind === 'draw') draw = e;
+    if (enter.kind === 'draw')
+      draw = item.type === 'text' && item.reveal === 'beat-words' ? beatWordsProgress(item, t, beats) : e;
     else if (enter.kind === 'fade') opacity *= e;
     else pop *= easeOutBack(e);
   }
@@ -174,7 +176,7 @@ export function evaluateScene(scene: Scene, tick: Ticks, opts: EvaluateOptions):
       if (opts.hidden?.has(item.id)) continue;
       let a: Appearance = { visible: true, opacity: 1, draw: 1, pop: 1 };
       if (opts.mode === 'play') {
-        a = appearance(item, tick);
+        a = appearance(item, tick, opts.beats);
         if (!a.visible) continue;
       }
       const opacity = valueAt(item.opacity, tick) * layer.opacity * a.opacity;

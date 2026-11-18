@@ -349,3 +349,29 @@ test('ritmo: aparecer uno en cada golpe, ajustar al compás y cámara que late',
   await stubMessageBox(app, 1);
   await app.close();
 });
+
+test('texto para letras de canción: una palabra en cada golpe', async () => {
+  const file = path.join(await tempDir(), 'letra.dwings');
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Letra');
+  const c = await center(page);
+  await page.keyboard.press('t');
+  await page.mouse.click(c.x - 150, c.y);
+  await page.keyboard.type('canta conmigo esta noche');
+  await page.keyboard.press('Escape');
+  await expect.poll(() => itemCount(page)).toBe(1);
+  await page.keyboard.press('v');
+  await page.keyboard.press('Control+a');
+  await page.getByLabel('Cómo se escribe el texto').selectOption({ label: 'Una palabra en cada golpe' });
+
+  // Sin música, 120 BPM: a los 0,6 s se ven dos palabras y a los 2 s, todas.
+  await scrubTo(page, 0.6);
+  const two = await sceneHash(page);
+  await scrubTo(page, 2);
+  await expect.poll(() => sceneHash(page)).not.toBe(two);
+
+  const p = await saveAndRead(app, page, file);
+  expect(items(p)[0]).toMatchObject({ type: 'text', reveal: 'beat-words', enter: { kind: 'draw' } });
+  await stubMessageBox(app, 1);
+  await app.close();
+});
