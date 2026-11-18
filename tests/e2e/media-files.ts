@@ -53,3 +53,33 @@ export function toneWav(seconds: number, rate = 8000): Buffer {
   for (let i = 0; i < n; i++) b.writeInt16LE(Math.round(Math.sin((2 * Math.PI * 440 * i) / rate) * 12000), 44 + i * 2);
   return b;
 }
+
+/** WAV mono de 16 bits con un bombo en cada golpe (más fuerte al empezar compás) a `bpm`. */
+export function beatWav(bpm: number, seconds: number, rate = 22_050): Buffer {
+  const n = Math.round(seconds * rate);
+  const x = new Float32Array(n);
+  let seed = 7;
+  const noise = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296 - 0.5) * 0.02;
+  for (let i = 0; i < n; i++) x[i] = noise();
+  for (let k = 0, t = 0.5; t < seconds - 0.3; k++, t += 60 / bpm) {
+    const s0 = Math.round(t * rate);
+    for (let i = 0; i < rate * 0.25 && s0 + i < n; i++)
+      x[s0 + i] =
+        x[s0 + i]! + (k % 4 === 0 ? 0.9 : 0.6) * Math.exp(-i / (0.08 * rate)) * Math.sin((2 * Math.PI * 60 * i) / rate);
+  }
+  const b = Buffer.alloc(44 + n * 2);
+  b.write('RIFF', 0, 'ascii');
+  b.writeUInt32LE(36 + n * 2, 4);
+  b.write('WAVEfmt ', 8, 'ascii');
+  b.writeUInt32LE(16, 16);
+  b.writeUInt16LE(1, 20);
+  b.writeUInt16LE(1, 22);
+  b.writeUInt32LE(rate, 24);
+  b.writeUInt32LE(rate * 2, 28);
+  b.writeUInt16LE(2, 32);
+  b.writeUInt16LE(16, 34);
+  b.write('data', 36, 'ascii');
+  b.writeUInt32LE(n * 2, 40);
+  for (let i = 0; i < n; i++) b.writeInt16LE(Math.round(Math.max(-1, Math.min(1, x[i]!)) * 30000), 44 + i * 2);
+  return b;
+}

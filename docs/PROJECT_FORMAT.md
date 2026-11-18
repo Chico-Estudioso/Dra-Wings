@@ -42,7 +42,7 @@ ItemBase {
   in: Ticks; out?: Ticks                // relativos a la escena
   enter?: { kind: 'none' | 'draw' | 'fade' | 'pop'; duration: Ticks; mode?: 'length' | 'recorded' }
   exit?: { kind: 'none' | 'fade' | 'pop'; duration: Ticks }
-  life?: { kind: 'breathe' | 'sway' | 'float' | 'pulse'; amount: number }  // vida automática (0–3)
+  life?: { kind: 'breathe' | 'sway' | 'float' | 'pulse' | 'beat-pulse' | 'beat-bounce' | 'beat-sway'; amount: number }  // vida automática (0–3)
 }
 
 Stroke extends ItemBase {
@@ -90,6 +90,7 @@ Asset {
   name: string                          // nombre original del archivo (informativo)
   size: number                          // bytes
   durationTicks?: Ticks                 // solo audio
+  beats?: { bpm: number; ticks: Ticks[]; downbeat: 0 | 1 | 2 | 3 }  // ritmo detectado (música): golpes desde el inicio del archivo
 }
 
 Cel { id; start: Ticks; duration: Ticks; items: Item[] }   // alineado a la rejilla de fotogramas

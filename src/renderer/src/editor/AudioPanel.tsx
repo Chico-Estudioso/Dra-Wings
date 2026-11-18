@@ -1,8 +1,9 @@
 // Propiedades del clip de audio o de la marca seleccionados en la línea de tiempo.
 import { useState } from 'react';
-import { Scissors, Trash2 } from 'lucide-react';
+import { Drum, Scissors, Trash2 } from 'lucide-react';
 import { TRACK_NAMES } from '@core/audio/edit';
-import type { Project } from '@core/model/types';
+import type { Asset, Project } from '@core/model/types';
+import { detectRhythm, useRhythm } from './rhythm-actions';
 import { formatTimecode, secondsFromTicks, ticksFromSeconds } from '@core/time/ticks';
 import { ValueSlider } from './controls';
 import {
@@ -98,6 +99,7 @@ export function AudioClipPanel({ project, clipId }: { project: Project; clipId: 
           format={pct}
           onCommit={(v) => updateTrack(track.id, 'Volumen de la pista', (t) => void (t.volume = v))}
         />
+        {track.kind === 'music' && asset && <RhythmRow asset={asset} />}
         <div className="button-grid" role="group" aria-label="Clip de audio">
           <button
             className="icon-btn"
@@ -118,6 +120,31 @@ export function AudioClipPanel({ project, clipId }: { project: Project; clipId: 
         </div>
       </div>
     </section>
+  );
+}
+
+/** Ritmo detectado de la música (para animar y cortar al compás). */
+function RhythmRow({ asset }: { asset: Asset }) {
+  const busy = useRhythm((s) => s.busy.has(asset.id));
+  return (
+    <div className="rhythm-row" role="group" aria-label="Ritmo">
+      <Drum size={15} aria-hidden />
+      <span data-testid="rhythm-status">
+        {busy
+          ? 'Analizando el ritmo…'
+          : asset.beats
+            ? `${asset.beats.bpm.toFixed(0)} BPM · ${asset.beats.ticks.length} golpes`
+            : 'Sin ritmo detectado'}
+      </span>
+      <button
+        className="btn btn-ghost btn-sm"
+        disabled={busy}
+        title="Busca los golpes de la canción para animar y cortar al ritmo"
+        onClick={() => void detectRhythm(asset.id)}
+      >
+        {asset.beats ? 'Volver a detectar' : 'Detectar ritmo'}
+      </button>
+    </div>
   );
 }
 

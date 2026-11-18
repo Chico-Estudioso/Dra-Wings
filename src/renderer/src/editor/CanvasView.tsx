@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { sceneBeats } from '@core/audio/rhythm';
 import { createShape, createStroke } from '@core/model/factory';
 import { eraseItems } from '@core/edit/erase';
 import { celAt, locateItem, selectableItems } from '@core/edit/ops';
@@ -177,6 +178,10 @@ export function CanvasView({ project }: { project: Project }) {
   const [cameraOverride, setCameraOverride] = useState<{ x: number; y: number; zoom: number } | null>(null);
   const scene = project.scenes.find((s) => s.id === sceneId) ?? project.scenes[0]!;
   const { width: docW, height: docH, background, fps } = project.settings;
+  const beats = useMemo(
+    () => sceneBeats(project, scene.id, scene.duration).map((b) => b.t),
+    [project, scene.id, scene.duration],
+  );
 
   const redraw = useCallback(() => setTick((t) => t + 1), []);
 
@@ -222,7 +227,7 @@ export function CanvasView({ project }: { project: Project }) {
 
     if (playMode) {
       // Vista previa: lo que saldrá en el vídeo en el instante del cabezal, a través de la cámara.
-      drawSceneFrame(ctx, project.settings, scene, playhead, cache.current, images, overrides.current);
+      drawSceneFrame(ctx, project.settings, scene, playhead, cache.current, images, overrides.current, beats);
       return;
     }
 
@@ -295,6 +300,7 @@ export function CanvasView({ project }: { project: Project }) {
     activeLayerId,
     project,
     mediaVersion,
+    beats,
   ]);
 
   // Capa superpuesta: trazo en curso, selección, marco y cursor de goma.

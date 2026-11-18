@@ -13,7 +13,9 @@ import {
 import { ValueSlider } from './controls';
 import { useEditor } from './editor-store';
 import { QuickAnimations } from './QuickAnimations';
-import { LIFE_AMOUNT_LABELS, LIFE_AMOUNTS, LIFE_LABELS, type LifeKind } from '@core/anim/life';
+import { hasBeats } from '@core/audio/rhythm';
+import { useApp } from '../state/app-store';
+import { isBeatLife, LIFE_AMOUNT_LABELS, LIFE_AMOUNTS, LIFE_LABELS, type LifeKind } from '@core/anim/life';
 
 const ENTER_LABELS: Record<Enter['kind'], string> = {
   draw: 'Dibujarse',
@@ -28,6 +30,7 @@ export function AnimationSection({ items, fps }: { items: Item[]; fps: Fps }) {
   const playhead = useEditor((s) => s.playhead);
   const autoKey = useEditor((s) => s.autoKey);
   const puppet = useEditor((s) => s.puppet);
+  const hasMusicBeats = useApp((s) => !!s.doc && hasBeats(s.doc.project));
   const first = items[0];
   if (!first) return null;
   const enter: Enter = first.enter ?? { kind: 'none', duration: 0 };
@@ -181,11 +184,20 @@ export function AnimationSection({ items, fps }: { items: Item[]; fps: Fps }) {
             }
           >
             <option value="">Quieto</option>
-            {(Object.keys(LIFE_LABELS) as LifeKind[]).map((k) => (
-              <option key={k} value={k}>
-                {LIFE_LABELS[k]}
-              </option>
-            ))}
+            {(Object.keys(LIFE_LABELS) as LifeKind[])
+              .filter((k) => !isBeatLife(k))
+              .map((k) => (
+                <option key={k} value={k}>
+                  {LIFE_LABELS[k]}
+                </option>
+              ))}
+            <optgroup label="Al ritmo de la música">
+              {(Object.keys(LIFE_LABELS) as LifeKind[]).filter(isBeatLife).map((k) => (
+                <option key={k} value={k}>
+                  {LIFE_LABELS[k]}
+                </option>
+              ))}
+            </optgroup>
           </select>
         </label>
         {first.life && (
@@ -209,6 +221,9 @@ export function AnimationSection({ items, fps }: { items: Item[]; fps: Fps }) {
           </select>
         )}
       </div>
+      {first.life && isBeatLife(first.life.kind) && !hasMusicBeats && (
+        <p className="hint">Sigue un pulso de 120 BPM. Importa una canción en la pista de música y seguirá su ritmo.</p>
+      )}
       <button
         type="button"
         className={`btn btn-sm puppet-btn ${puppet ? 'btn-primary' : 'btn-ghost'}`}

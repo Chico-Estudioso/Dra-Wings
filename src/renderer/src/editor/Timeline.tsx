@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { snapTo, trimmed, type TrackKind } from '@core/audio/edit';
 import { sceneStart } from '@core/edit/scenes';
+import { sceneBeats } from '@core/audio/rhythm';
 import { keyTimes, transformKeyTimes } from '@core/anim/keyframes';
 import { celAt, layerItemCount } from '@core/edit/ops';
 import type { AudioClip, AudioTrack, Cel, Item, Layer, Project, Scene } from '@core/model/types';
@@ -356,6 +357,7 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
   const viewEnd = width / pxPerTick;
   const assets = useMemo(() => new Map(project.assets.map((a) => [a.id, a])), [project.assets]);
   const markersHere = project.markers.filter((m) => m.t >= offset && m.t <= offset + scene.duration);
+  const beatsHere = useMemo(() => sceneBeats(project, scene.id, scene.duration), [project, scene.id, scene.duration]);
 
   const tickAt = (clientX: number) => {
     const r = scrollRef.current!.getBoundingClientRect();
@@ -383,6 +385,8 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
       // Ajuste magnético a marcas y al cabezal (Alt lo desactiva). Los elementos usan tiempo de escena.
       const local = d.kind === 'shift';
       const targets = project.markers.map((m) => (local ? m.t - offset : m.t));
+      // También se pega a los golpes de la música.
+      for (const b of beatsHere) targets.push(local ? b.t : offset + b.t);
       const playhead = useEditor.getState().playhead;
       if (d.kind !== 'marker') targets.push(local ? playhead : offset + playhead);
       const tol = SNAP_PX / pxPerTick;
@@ -774,6 +778,14 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
                 >
                   {s % labelEvery === 0 ? formatTimecode(ticksFromSeconds(s), fps).slice(0, 5) : ''}
                 </span>
+              ))}
+              {beatsHere.map((b) => (
+                <span
+                  key={b.t}
+                  className={`tl-beat ${b.bar ? 'is-bar' : ''}`}
+                  style={{ left: b.t * pxPerTick }}
+                  aria-hidden
+                />
               ))}
               <span className="tl-end" style={{ left: scene.duration * pxPerTick }} title="Fin de la escena" />
               {markersHere.map((m) => {

@@ -33,6 +33,21 @@ Decisión de base: ADR-004 (WebCodecs + mediabunny, sin FFmpeg empaquetado).
 - **Reproducción:** el reloj maestro es `AudioContext.currentTime`, así que la imagen sigue al sonido. Si el reloj del audio no avanza durante 400 ms (por ejemplo, sin dispositivo de salida), se pasa al reloj de pared para que la vista previa no se congele. Si el audio del documento cambia durante la reproducción, o termina de cargarse un clip, se reprograma desde el instante actual.
 - Nada de audio sale del equipo. Los registros no incluyen nombres de archivo ni contenido.
 
+## Ritmo de la música
+
+Para animar y cortar al compás (por ejemplo, un videoclip), Dra-Wings detecta los golpes de la música (`src/core/audio/beats.ts`, sin dependencias):
+
+1. **Fuerza de ataque:** el audio (mono) se reduce a ~11 kHz; ventanas de 512 muestras cada 128 (~11,6 ms) con FFT. Se suma el aumento del espectro en escala logarítmica, repartido en 12 bandas logarítmicas de 30 Hz a la mitad de la frecuencia de muestreo, con el mismo peso cada una: así el bombo cuenta tanto como los platillos. Se quita la tendencia lenta y se normaliza.
+2. **Tempo:** autocorrelación de la fuerza de ataque (suavizada) entre 50 y 200 BPM, con una preferencia suave (gaussiana en octavas) por ~120 BPM, y afinado parabólico.
+3. **Golpes:** programación dinámica (Ellis, 2007): cada golpe suma su fuerza de ataque y penaliza alejarse del periodo. Se descartan los golpes iniciales y finales sin sonido.
+4. **Compás:** de las 4 fases posibles, la que tiene los graves (30–110 Hz) más fuertes empieza compás.
+
+- Se ejecuta en un worker (`beat-worker.ts`): una canción de 3 minutos tarda alrededor de un segundo y la interfaz no se bloquea.
+- Se lanza solo al importar o soltar un audio en la pista de música, y a mano con «Detectar ritmo» en el panel del clip (muestra los BPM y cuántos golpes hay).
+- Los golpes se guardan en el medio (`asset.beats`, en ticks desde el inicio del archivo), así que siguen a la canción aunque se mueva o recorte su clip. Solo cuentan las pistas de música no silenciadas (`src/core/audio/rhythm.ts`).
+- Uso: golpes en la regla (los de compás, más marcados), ajuste magnético a los golpes al mover barras, clips y marcas, y vida «al ritmo» (ver `docs/ANIMATION_ENGINE.md`).
+- Probado con pistas sintéticas (92, 110, 120, 128 y 150 BPM, a 44,1 y 48 kHz, con bombo, caja, charles y ruido). Con música real hay que verificarlo a mano: en canciones sin percusión clara puede elegir el doble o la mitad del tempo.
+
 ## Exportación (M6)
 
 ![Diálogo de exportación](img/export-m6.png)

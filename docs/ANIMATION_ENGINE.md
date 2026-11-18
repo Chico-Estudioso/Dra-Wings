@@ -91,6 +91,8 @@ Movimiento de reposo continuo, sin keyframes (`item.life`, `src/core/anim/life.t
 - Como el trazo vivo, al editar no se aplica: el elemento se ve en su pose.
 - Los personajes del constructor y de la biblioteca nacen respirando (Normal).
 
+**Al ritmo de la música:** Latir al ritmo (crece de golpe en cada tiempo y vuelve suave), Saltar al ritmo (aterriza en cada golpe aplastándose un poco y sube entre golpes) y Balancearse al ritmo (cambia de lado en cada golpe, desde la base). Siguen los golpes de la música de la escena (`evaluateScene` recibe `beats` en el tiempo de la escena); antes del primer golpe o tras el último se quedan quietos. Sin música con ritmo detectado, siguen un pulso de 120 BPM.
+
 ## Pruebas obligatorias
 
 - Límites: tick 0, último tick de la escena, `in`/`out` exactos y clips solapados.

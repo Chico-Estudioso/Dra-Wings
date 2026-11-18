@@ -34,6 +34,8 @@ export interface EvaluateOptions {
   mode: 'edit' | 'play';
   /** Transformaciones provisionales (por ejemplo, mientras se arrastra). */
   overrides?: ReadonlyMap<string, StaticTransform>;
+  /** Golpes de la música en el tiempo de la escena (vida «al ritmo»). */
+  beats?: readonly Ticks[];
   /** Elementos que no se dibujan (por ejemplo, el texto que se está editando). */
   hidden?: ReadonlySet<string>;
 }
@@ -174,7 +176,7 @@ export function evaluateScene(scene: Scene, tick: Ticks, opts: EvaluateOptions):
       if (opacity <= 0) continue;
       const t = opts.overrides?.get(item.id) ?? resolveTransform(item.transform, tick);
       let m = popMatrix(matrixFrom(t), item, a.pop);
-      if (opts.mode === 'play' && item.life) m = multiply(m, lifeMatrix(item, tick));
+      if (opts.mode === 'play' && item.life) m = multiply(m, lifeMatrix(item, tick, opts.beats));
       pushItem(out, item, m, opacity, a.draw, tick);
     }
   }

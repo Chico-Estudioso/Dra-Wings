@@ -59,7 +59,12 @@ const itemBase = {
   enter: enterSchema.optional(),
   exit: exitSchema.optional(),
   /** Vida automática: movimiento de reposo continuo al reproducir y en el vídeo. */
-  life: z.object({ kind: z.enum(['breathe', 'sway', 'float', 'pulse']), amount: z.number().min(0).max(3) }).optional(),
+  life: z
+    .object({
+      kind: z.enum(['breathe', 'sway', 'float', 'pulse', 'beat-pulse', 'beat-bounce', 'beat-sway']),
+      amount: z.number().min(0).max(3),
+    })
+    .optional(),
 };
 
 export const strokeSchema = z.object({
@@ -224,6 +229,15 @@ export const assetSchema = z.object({
   name: z.string().max(260),
   size: z.number().int().nonnegative(),
   durationTicks: ticks.optional(),
+  /** Ritmo detectado (música): golpes en ticks desde el principio del archivo. */
+  beats: z
+    .object({
+      bpm: z.number().positive().max(400),
+      ticks: z.array(ticks).max(50_000),
+      /** Índice del primer golpe que empieza compás (compases de 4). */
+      downbeat: z.number().int().min(0).max(3),
+    })
+    .optional(),
 });
 
 export const audioClipSchema = z.object({
