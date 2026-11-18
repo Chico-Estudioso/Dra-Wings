@@ -1,5 +1,6 @@
 // Evaluación de una escena en un instante: lista plana de lo que hay que dibujar (ver ANIMATION_ENGINE.md).
 import { childrenAt } from '../anim/swaps';
+import { lifeMatrix } from '../anim/life';
 import { valueAt } from '../anim/animated';
 import {
   matrixFrom,
@@ -172,7 +173,9 @@ export function evaluateScene(scene: Scene, tick: Ticks, opts: EvaluateOptions):
       const opacity = valueAt(item.opacity, tick) * layer.opacity * a.opacity;
       if (opacity <= 0) continue;
       const t = opts.overrides?.get(item.id) ?? resolveTransform(item.transform, tick);
-      pushItem(out, item, popMatrix(matrixFrom(t), item, a.pop), opacity, a.draw, tick);
+      let m = popMatrix(matrixFrom(t), item, a.pop);
+      if (opts.mode === 'play' && item.life) m = multiply(m, lifeMatrix(item, tick));
+      pushItem(out, item, m, opacity, a.draw, tick);
     }
   }
   return out;

@@ -50,6 +50,7 @@ En el panel de propiedades de un personaje, «Expresión y postura» muestra có
 - El personaje sigue siendo un solo elemento: se mueve, se anima (también con «Animar arrastrando») y se recolorea entero, con todos sus cambios. Al moverlo en el tiempo, sus cambios le acompañan.
 - El dibujo nuevo se coloca con el mismo encuadre que el original: todos los trazos del constructor nacen en el origen del dibujo, así que su posición dentro del grupo dice dónde está ese origen (`setCharacterLook` en `src/core/library/character.ts`). La caja del grupo se amplía si una postura sobresale (por ejemplo, brazos arriba) sin mover el personaje en pantalla.
 - Un cambio que deja el mismo aspecto que ya tenía se elimina solo.
+- Los personajes nacen con «Vida automática: Respirar», que se puede cambiar o quitar en su panel.
 - Desagrupar conserva el dibujo original y descarta los cambios (se puede deshacer).
 
 ## Escenas de partida

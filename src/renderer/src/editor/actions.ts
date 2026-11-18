@@ -25,6 +25,7 @@ import { ticksPerFrame } from '@core/time/ticks';
 import { groupItems, recolorSlot, removeSwap, ungroupItem } from '@core/edit/group';
 import { setCharacterLook, type CharacterOptions } from '@core/library/character';
 import type { BoilLevel } from '@core/render/boil';
+import type { LifeKind } from '@core/anim/life';
 import { deepClone } from '@core/edit/clone';
 import { newId } from '@core/model/factory';
 import type { Ease, Enter, Exit, Item, Layer, Project, Scene } from '@core/model/types';
@@ -203,6 +204,13 @@ export function commitMotion(sceneId: string, id: string, samples: MotionSample[
     loc.item.transform.y = mergeKeys(loc.item.transform.y, y);
   });
   return true;
+}
+
+/** Vida automática de la selección (null: quieta). */
+export function setSelectionLife(kind: LifeKind | null, amount = 1): void {
+  updateSelected('Vida automática', (it) => {
+    it.life = kind ? { kind, amount } : undefined;
+  });
 }
 
 /** Intensidad del «trazo vivo» del proyecto. */

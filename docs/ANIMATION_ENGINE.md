@@ -75,6 +75,22 @@ En la animación dibujada a mano el mismo dibujo se calca varias veces y las cop
 - Niveles: Quieto, Suave, Normal y Marcado (`settings.boil`). Los proyectos nuevos empiezan en Normal; los anteriores, sin el campo, quedan quietos.
 - Solo se aplica al reproducir, en la vista previa y al exportar. Al editar, el dibujo se ve quieto para trabajar con precisión.
 
+## Vida automática
+
+Movimiento de reposo continuo, sin keyframes (`item.life`, `src/core/anim/life.ts`), para que nada se quede muerto en pantalla. Se calcula al evaluar la escena en modo reproducción y se aplica después de la transformación del elemento, así que se suma a sus keyframes, animaciones rápidas o recorridos grabados:
+
+| Tipo | Movimiento | Ciclo |
+|---|---|---|
+| Respirar | Estira un poco en vertical y estrecha en horizontal, desde la base | 3,2 s |
+| Balancearse | Gira ±1,6° desde la base | 4 s |
+| Flotar | Sube y baja un 3,5 % de su alto con un leve cabeceo | 3 s |
+| Latir | Crece un 5 % desde el centro, con subida rápida y bajada lenta | 1 s |
+
+- Intensidad: Suave (×0,5), Normal (×1) o Marcado (×1,7).
+- Cada elemento tiene su propio desfase (según su id), así que varios no se mueven al unísono. Es determinista: la vista previa y el vídeo coinciden.
+- Como el trazo vivo, al editar no se aplica: el elemento se ve en su pose.
+- Los personajes del constructor y de la biblioteca nacen respirando (Normal).
+
 ## Pruebas obligatorias
 
 - Límites: tick 0, último tick de la escena, `in`/`out` exactos y clips solapados.

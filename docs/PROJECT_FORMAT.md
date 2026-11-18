@@ -42,6 +42,7 @@ ItemBase {
   in: Ticks; out?: Ticks                // relativos a la escena
   enter?: { kind: 'none' | 'draw' | 'fade' | 'pop'; duration: Ticks; mode?: 'length' | 'recorded' }
   exit?: { kind: 'none' | 'fade' | 'pop'; duration: Ticks }
+  life?: { kind: 'breathe' | 'sway' | 'float' | 'pulse'; amount: number }  // vida automática (0–3)
 }
 
 Stroke extends ItemBase {

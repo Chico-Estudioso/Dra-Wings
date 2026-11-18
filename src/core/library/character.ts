@@ -272,12 +272,15 @@ export const lookId = (o: Pick<CharacterOptions, 'hair' | 'expression' | 'pose'>
   `${o.hair}/${o.expression}/${o.pose}`;
 
 export function buildCharacter(o: CharacterOptions, seed = 'personaje'): Group {
-  return drawCharacter(o, seed).toGroup({ kind: 'character', id: lookId(o) }, 'Personaje', [
+  const g = drawCharacter(o, seed).toGroup({ kind: 'character', id: lookId(o) }, 'Personaje', [
     { id: 'skin', label: 'Piel', color: o.skin },
     { id: 'hair', label: o.hair === 'gorra' ? 'Gorra' : 'Pelo', color: o.hairColor },
     { id: 'shirt', label: 'Camiseta', color: o.shirt },
     { id: 'pants', label: 'Pantalón', color: o.pants },
   ]);
+  // Los personajes respiran: nunca se quedan muertos en pantalla.
+  g.life = { kind: 'breathe', amount: 1 };
+  return g;
 }
 
 /** Dibuja el personaje en las coordenadas del dibujo (sin agrupar). */

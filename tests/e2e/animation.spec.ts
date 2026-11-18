@@ -226,3 +226,39 @@ test('trazo vivo: en la vista previa las líneas tiemblan aunque nada se mueva',
   await stubMessageBox(app, 1);
   await app.close();
 });
+
+test('vida automática: el elemento se mueve solo al reproducir, sin keyframes', async () => {
+  const file = path.join(await tempDir(), 'vida.dwings');
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Vida');
+  // Sin trazo vivo, para que solo cuente la vida automática.
+  await page.getByRole('button', { name: 'Trazo vivo: Normal' }).click();
+  await page.getByRole('radio', { name: 'Quieto' }).check();
+  await page.keyboard.press('Escape');
+  const c = await center(page);
+  await page.keyboard.press('r');
+  await drag(page, { x: c.x - 50, y: c.y - 40 }, { x: c.x + 50, y: c.y + 40 }, 4);
+
+  const life = page.getByLabel('Vida automática');
+  await expect(life).toHaveValue('');
+  await scrubTo(page, 3);
+  const still = await sceneHash(page);
+  await scrubTo(page, 3.5);
+  await page.waitForTimeout(100);
+  expect(await sceneHash(page)).toBe(still);
+
+  await page.getByRole('button', { name: 'Vista previa' }).click(); // vuelve a edición para ver el panel
+  await life.selectOption({ label: 'Flotar' });
+  await page.getByLabel('Intensidad de la vida').selectOption({ label: 'Marcado' });
+  await scrubTo(page, 3);
+  const a = await sceneHash(page);
+  await scrubTo(page, 3.5);
+  await expect.poll(() => sceneHash(page)).not.toBe(a);
+  // No crea keyframes.
+  await expect(page.getByRole('button', { name: /^Keyframe en / })).toHaveCount(0);
+
+  const p = await saveAndRead(app, page, file);
+  expect(items(p)[0]!.life).toEqual({ kind: 'float', amount: 1.7 });
+  await stubMessageBox(app, 1);
+  await app.close();
+});

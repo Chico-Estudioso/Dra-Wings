@@ -6,6 +6,7 @@ Los cambios relevantes se registran aquí. Se seguirá una estructura inspirada 
 - Preparación inicial del proyecto y del kit de desarrollo.
 - «Ver un ejemplo» en el inicio: proyecto de tres escenas hecho con la biblioteca, con textos, una salida con fundido y un zoom de cámara, para aprender viéndolo.
 - Arrastrar imágenes (al lienzo) y audio (a la línea de tiempo) desde el explorador; el audio pregunta su pista si no se suelta sobre una.
+- Vida automática: cualquier elemento puede respirar, balancearse, flotar o latir sin keyframes (panel «Animación», con intensidad), cada uno a su ritmo. Los personajes nacen respirando.
 - Ayudas al dibujar con el lápiz (activas por defecto, botón «Ayudas»): estabilizador para trazos fluidos con ratón, trazo de tinta (grosor según la velocidad y puntas afinadas) y formas rápidas (dibuja un círculo, línea, rectángulo, triángulo o polígono y mantén el puntero quieto: se vuelve una forma limpia con el mismo pincel).
 - «Trazo vivo»: las líneas tiemblan un poco todo el rato al reproducir y en el vídeo, como en la animación dibujada a mano (Quieto, Suave, Normal o Marcado desde la línea de tiempo; Normal en los proyectos nuevos). Es determinista: el vídeo exportado coincide con la vista previa.
 - Los personajes cambian de expresión y de postura durante el vídeo: se elige en su panel con el cabezal en el momento del cambio; siguen siendo un solo elemento (se mueven, animan y recolorean enteros) y los cambios se ven en la línea de tiempo.

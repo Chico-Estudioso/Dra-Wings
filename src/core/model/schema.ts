@@ -58,6 +58,8 @@ const itemBase = {
   out: ticks.optional(),
   enter: enterSchema.optional(),
   exit: exitSchema.optional(),
+  /** Vida automática: movimiento de reposo continuo al reproducir y en el vídeo. */
+  life: z.object({ kind: z.enum(['breathe', 'sway', 'float', 'pulse']), amount: z.number().min(0).max(3) }).optional(),
 };
 
 export const strokeSchema = z.object({

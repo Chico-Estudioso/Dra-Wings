@@ -1868,3 +1868,11 @@ kbd {
 .assist-hint {
   margin: 2px 8px 6px;
 }
+.anim-life {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.anim-life .inline-field {
+  flex: 1;
+}

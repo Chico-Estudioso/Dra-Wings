@@ -2,10 +2,18 @@ import { ChevronLeft, ChevronRight, Clock, Diamond, Hand, LogIn, LogOut, X } fro
 import { keyTimes } from '@core/anim/keyframes';
 import type { Enter, Exit, Item } from '@core/model/types';
 import { formatTimecode, secondsFromTicks, ticksFromSeconds, type Fps } from '@core/time/ticks';
-import { clearSelectionAnimation, removeKeyAtPlayhead, setEnter, setExit, setInAtPlayhead } from './actions';
+import {
+  clearSelectionAnimation,
+  removeKeyAtPlayhead,
+  setEnter,
+  setExit,
+  setInAtPlayhead,
+  setSelectionLife,
+} from './actions';
 import { ValueSlider } from './controls';
 import { useEditor } from './editor-store';
 import { QuickAnimations } from './QuickAnimations';
+import { LIFE_AMOUNT_LABELS, LIFE_AMOUNTS, LIFE_LABELS, type LifeKind } from '@core/anim/life';
 
 const ENTER_LABELS: Record<Enter['kind'], string> = {
   draw: 'Dibujarse',
@@ -160,6 +168,47 @@ export function AnimationSection({ items, fps }: { items: Item[]; fps: Fps }) {
           </button>
         </div>
       )}
+      <div className="anim-life">
+        <label className="inline-field">
+          <span className="control-label">Vida</span>
+          <select
+            className="input input-sm"
+            aria-label="Vida automática"
+            title="Movimiento de reposo continuo al reproducir y en el vídeo, sin keyframes"
+            value={first.life?.kind ?? ''}
+            onChange={(e) =>
+              setSelectionLife((e.target.value || null) as LifeKind | null, first.life?.amount ?? LIFE_AMOUNTS.normal)
+            }
+          >
+            <option value="">Quieto</option>
+            {(Object.keys(LIFE_LABELS) as LifeKind[]).map((k) => (
+              <option key={k} value={k}>
+                {LIFE_LABELS[k]}
+              </option>
+            ))}
+          </select>
+        </label>
+        {first.life && (
+          <select
+            className="input input-sm"
+            aria-label="Intensidad de la vida"
+            value={
+              (Object.keys(LIFE_AMOUNTS) as (keyof typeof LIFE_AMOUNTS)[]).find(
+                (k) => LIFE_AMOUNTS[k] === first.life!.amount,
+              ) ?? 'normal'
+            }
+            onChange={(e) =>
+              setSelectionLife(first.life!.kind, LIFE_AMOUNTS[e.target.value as keyof typeof LIFE_AMOUNTS])
+            }
+          >
+            {(Object.keys(LIFE_AMOUNTS) as (keyof typeof LIFE_AMOUNTS)[]).map((k) => (
+              <option key={k} value={k}>
+                {LIFE_AMOUNT_LABELS[k]}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
       <button
         type="button"
         className={`btn btn-sm puppet-btn ${puppet ? 'btn-primary' : 'btn-ghost'}`}
