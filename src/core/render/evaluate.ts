@@ -1,6 +1,7 @@
 // Evaluación de una escena en un instante: lista plana de lo que hay que dibujar (ver ANIMATION_ENGINE.md).
 import { childrenAt } from '../anim/swaps';
 import { lifeMatrix } from '../anim/life';
+import { loopTime } from '../anim/loop';
 import { beatWordsProgress } from './text-reveal';
 import { stretchMatrix, TRAIL } from '../anim/elastic';
 import { valueAt } from '../anim/animated';
@@ -179,10 +180,12 @@ export function evaluateScene(scene: Scene, tick: Ticks, opts: EvaluateOptions):
         a = appearance(item, tick, opts.beats);
         if (!a.visible) continue;
       }
-      const opacity = valueAt(item.opacity, tick) * layer.opacity * a.opacity;
+      // Con «repetir movimiento», los keyframes se evalúan dentro del ciclo.
+      const kt = loopTime(item, tick);
+      const opacity = valueAt(item.opacity, kt) * layer.opacity * a.opacity;
       if (opacity <= 0) continue;
       const override = opts.overrides?.get(item.id);
-      const t = override ?? resolveTransform(item.transform, tick);
+      const t = override ?? resolveTransform(item.transform, kt);
       let m = popMatrix(matrixFrom(t), item, a.pop);
       if (opts.mode === 'play' && item.life) m = multiply(m, lifeMatrix(item, tick, opts.beats));
       if (opts.mode === 'play' && !override) {
@@ -190,7 +193,7 @@ export function evaluateScene(scene: Scene, tick: Ticks, opts: EvaluateOptions):
         // Estela: copias tenues donde estaba hace un instante (solo si se mueve).
         if (item.trail)
           for (const g of TRAIL) {
-            const past = resolveTransform(item.transform, Math.max(0, tick - g.dt));
+            const past = resolveTransform(item.transform, loopTime(item, Math.max(0, tick - g.dt)));
             if (Math.hypot(past.x - t.x, past.y - t.y) / unit < 4) continue;
             pushItem(out, item, matrixFrom(past), opacity * g.alpha, a.draw, tick);
           }

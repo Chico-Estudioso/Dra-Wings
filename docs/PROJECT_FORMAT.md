@@ -46,6 +46,7 @@ ItemBase {
   enter?: { kind: 'none' | 'draw' | 'fade' | 'pop'; duration: Ticks; mode?: 'length' | 'recorded' }
   exit?: { kind: 'none' | 'fade' | 'pop'; duration: Ticks }
   trail?: boolean                       // estela al moverse
+  loop?: 'repeat' | 'pingpong'          // al acabar sus keyframes, se repite o va y vuelve
   life?: { kind: 'breathe' | 'sway' | 'float' | 'pulse' | 'beat-pulse' | 'beat-bounce' | 'beat-sway'; amount: number }  // vida automática (0–3)
 }
 

@@ -1,4 +1,5 @@
 // Cajas, esquinas y detección de impacto de los elementos, en espacio local y de escena.
+import { loopTime } from '../anim/loop';
 import { childrenAt } from '../anim/swaps';
 import type { Item, Shape, Stroke } from '../model/types';
 import { apply, invert, matrixFrom, meanScale, resolveTransform, type Mat, type Point } from './matrix';
@@ -53,7 +54,7 @@ export function localBounds(item: Item): Rect {
 }
 
 export function itemMatrix(item: Item, tick = 0): Mat {
-  return matrixFrom(resolveTransform(item.transform, tick));
+  return matrixFrom(resolveTransform(item.transform, loopTime(item, tick)));
 }
 
 export function rectCorners(r: Rect): Point[] {

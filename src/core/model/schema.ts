@@ -58,6 +58,8 @@ const itemBase = {
   out: ticks.optional(),
   enter: enterSchema.optional(),
   exit: exitSchema.optional(),
+  /** Al acabar sus keyframes, la animación se repite o va y vuelve (sin valor: se queda quieto). */
+  loop: z.enum(['repeat', 'pingpong']).optional(),
   /** Estela: copias tenues del elemento donde estaba hace un instante, al moverse. */
   trail: z.boolean().optional(),
   /** Vida automática: movimiento de reposo continuo al reproducir y en el vídeo. */

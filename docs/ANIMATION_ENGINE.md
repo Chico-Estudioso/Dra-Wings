@@ -93,6 +93,13 @@ Movimiento de reposo continuo, sin keyframes (`item.life`, `src/core/anim/life.t
 
 **Al ritmo de la música:** Latir al ritmo (crece de golpe en cada tiempo y vuelve suave), Saltar al ritmo (aterriza en cada golpe aplastándose un poco y sube entre golpes) y Balancearse al ritmo (cambia de lado en cada golpe, desde la base). Siguen los golpes de la música de la escena (`evaluateScene` recibe `beats` en el tiempo de la escena); antes del primer golpe o tras el último se quedan quietos. Sin música con ritmo detectado, siguen un pulso de 120 BPM.
 
+## Repetir movimiento
+
+«Al terminar» (panel «Animación», con dos o más keyframes; `item.loop`, `src/core/anim/loop.ts`): al llegar al último keyframe, la animación se queda quieta (por defecto), **se repite** desde el primero o **va y vuelve**, mientras el elemento siga en pantalla. Sirve para bailes, saludos o vaivenes sin copiar keyframes.
+
+- El ciclo va del primer al último keyframe de posición, escala, giro u opacidad. Antes del primero no cambia nada.
+- Se traduce el instante al de dentro del ciclo (`loopTime`) en el render, en el toque y la selección (`itemMatrix`, `transformOf`) y en la velocidad de la elasticidad. Las apariciones y desapariciones usan el tiempo real.
+
 ## Textos que se escriben
 
 Con la aparición «Dibujarse», un texto se escribe según su «Escritura» (`text.reveal`, `src/core/render/text-reveal.ts`), pensada también para letras de canciones:

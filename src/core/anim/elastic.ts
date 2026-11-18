@@ -2,6 +2,7 @@
 // lado, algo menos de lo que se alarga), y vuelve a su forma al frenar. Opcionalmente deja estela. Se calcula
 // a partir de la velocidad del elemento, sin keyframes, y es determinista.
 import { valueAt } from './animated';
+import { loopTime } from './loop';
 import { multiply, rotateDeg, scale, translate, type Mat } from '../geometry/matrix';
 import type { Item } from '../model/types';
 import { TICKS_PER_SECOND, type Ticks } from '../time/ticks';
@@ -30,7 +31,9 @@ export function velocity(item: Item, tick: Ticks): { vx: number; vy: number } {
   const t0 = Math.max(0, tick - DT);
   const dt = (tick - t0) / TICKS_PER_SECOND;
   if (dt <= 0) return { vx: 0, vy: 0 };
-  return { vx: (valueAt(x, tick) - valueAt(x, t0)) / dt, vy: (valueAt(y, tick) - valueAt(y, t0)) / dt };
+  const a = loopTime(item, t0);
+  const b = loopTime(item, tick);
+  return { vx: (valueAt(x, b) - valueAt(x, a)) / dt, vy: (valueAt(y, b) - valueAt(y, a)) / dt };
 }
 
 /**

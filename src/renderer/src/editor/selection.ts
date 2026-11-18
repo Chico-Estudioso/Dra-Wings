@@ -1,4 +1,5 @@
 // Geometría de la selección en pantalla: caja, tiradores y punto de rotación.
+import { loopTime } from '@core/anim/loop';
 import { HANDLE_UV, type Handle } from '@core/geometry/manipulate';
 import { localBounds, unionRects, worldBounds, type Rect } from '@core/geometry/items';
 import { apply, matrixFrom, resolveTransform, type Point, type StaticTransform } from '@core/geometry/matrix';
@@ -15,7 +16,7 @@ export interface SelectionGeometry {
 }
 
 export function transformOf(item: Item, overrides?: ReadonlyMap<string, StaticTransform>, tick = 0): StaticTransform {
-  return overrides?.get(item.id) ?? resolveTransform(item.transform, tick);
+  return overrides?.get(item.id) ?? resolveTransform(item.transform, loopTime(item, tick));
 }
 
 export function selectionGeometry(

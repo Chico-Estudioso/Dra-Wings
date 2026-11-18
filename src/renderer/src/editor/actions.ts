@@ -27,6 +27,7 @@ import { setCharacterLook, type CharacterOptions } from '@core/library/character
 import type { BoilLevel } from '@core/render/boil';
 import type { LifeKind } from '@core/anim/life';
 import type { ElasticLevel } from '@core/anim/elastic';
+import type { LoopKind } from '@core/anim/loop';
 import type { TextReveal } from '@core/render/text-reveal';
 import { sceneBeats, type Beat } from '@core/audio/rhythm';
 import { barAlignedDuration, beatsOrPulse, staggerTimes } from '@core/edit/beat-sync';
@@ -284,6 +285,13 @@ export function setTextReveal(reveal: TextReveal): void {
 export function setElastic(level: ElasticLevel): void {
   useApp.getState().apply('Elasticidad', (p) => {
     p.settings.elastic = level;
+  });
+}
+
+/** Qué hace la animación de la selección al acabar sus keyframes. */
+export function setSelectionLoop(loop: LoopKind | 'none'): void {
+  updateSelected('Repetir movimiento', (it) => {
+    it.loop = loop === 'none' ? undefined : loop;
   });
 }
 

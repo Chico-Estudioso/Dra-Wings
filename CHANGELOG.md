@@ -6,6 +6,7 @@ Los cambios relevantes se registran aquí. Se seguirá una estructura inspirada 
 - Preparación inicial del proyecto y del kit de desarrollo.
 - «Ver un ejemplo» en el inicio: proyecto de tres escenas hecho con la biblioteca, con textos, una salida con fundido y un zoom de cámara, para aprender viéndolo.
 - Arrastrar imágenes (al lienzo) y audio (a la línea de tiempo) desde el explorador; el audio pregunta su pista si no se suelta sobre una.
+- Repetir movimiento: al acabar sus keyframes, la animación de un elemento puede repetirse o ir y volver mientras está en pantalla (bailes y gestos cíclicos sin copiar keyframes).
 - Textos que se escriben palabra a palabra, con letras que saltan o con una palabra en cada golpe de la música (para letras de canciones).
 - Sincronía con el ritmo (botón «Ritmo»): los elementos seleccionados aparecen uno en cada golpe o compás, el final de la escena se ajusta al compás y la cámara puede latir con cada compás. Sin música, 120 BPM.
 - Transiciones entre escenas: fundido, fundido a blanco, deslizar, zoom, barrido o círculo, rápidas, normales o lentas; iguales en la vista previa y en el vídeo.

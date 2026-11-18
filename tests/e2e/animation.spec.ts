@@ -375,3 +375,38 @@ test('texto para letras de canción: una palabra en cada golpe', async () => {
   await stubMessageBox(app, 1);
   await app.close();
 });
+
+test('repetir movimiento: un salto que se repite sigue moviéndose', async () => {
+  const file = path.join(await tempDir(), 'bucle.dwings');
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Bucle');
+  await page.getByRole('button', { name: 'Trazo vivo: Normal' }).click();
+  await page.getByRole('radio', { name: 'Quieto' }).check();
+  await page.keyboard.press('Escape');
+  const c = await center(page);
+  await page.keyboard.press('r');
+  await drag(page, { x: c.x - 40, y: c.y - 30 }, { x: c.x + 40, y: c.y + 30 }, 4);
+  await page
+    .getByRole('group', { name: 'Animaciones rápidas' })
+    .getByRole('button', { name: /^Saltar/ })
+    .click();
+
+  // Sin repetir: pasado el salto, quieto.
+  await scrubTo(page, 2);
+  const a = await sceneHash(page);
+  await scrubTo(page, 2.3);
+  await page.waitForTimeout(100);
+  expect(await sceneHash(page)).toBe(a);
+
+  await page.getByRole('button', { name: 'Vista previa' }).click();
+  await page.getByLabel('Al terminar el movimiento').selectOption({ label: 'Se repite' });
+  await scrubTo(page, 2);
+  const b = await sceneHash(page);
+  await scrubTo(page, 2.3);
+  await expect.poll(() => sceneHash(page)).not.toBe(b);
+
+  const p = await saveAndRead(app, page, file);
+  expect(items(p)[0]!.loop).toBe('repeat');
+  await stubMessageBox(app, 1);
+  await app.close();
+});

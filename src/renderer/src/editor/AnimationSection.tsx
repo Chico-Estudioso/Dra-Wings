@@ -9,11 +9,13 @@ import {
   setExit,
   setInAtPlayhead,
   setSelectionLife,
+  setSelectionLoop,
   setSelectionTrail,
 } from './actions';
 import { ValueSlider } from './controls';
 import { useEditor } from './editor-store';
 import { QuickAnimations } from './QuickAnimations';
+import { LOOP_LABELS, type LoopKind } from '@core/anim/loop';
 import { hasBeats } from '@core/audio/rhythm';
 import { useApp } from '../state/app-store';
 import { isBeatLife, LIFE_AMOUNT_LABELS, LIFE_AMOUNTS, LIFE_LABELS, type LifeKind } from '@core/anim/life';
@@ -243,6 +245,24 @@ export function AnimationSection({ items, fps }: { items: Item[]; fps: Fps }) {
           Arrastra el elemento en el lienzo: el vídeo avanza desde el cabezal y se graba su recorrido. Suelta para
           terminar (Esc cancela). Puedes seguir desde donde lo dejaste.
         </p>
+      )}
+      {keys.length > 1 && (
+        <label className="inline-field">
+          <span className="control-label">Al terminar</span>
+          <select
+            className="input input-sm"
+            aria-label="Al terminar el movimiento"
+            title="Qué hace la animación al llegar a su último keyframe"
+            value={first.loop ?? 'none'}
+            onChange={(e) => setSelectionLoop(e.target.value as LoopKind | 'none')}
+          >
+            {(Object.keys(LOOP_LABELS) as (LoopKind | 'none')[]).map((k) => (
+              <option key={k} value={k}>
+                {LOOP_LABELS[k]}
+              </option>
+            ))}
+          </select>
+        </label>
       )}
       <QuickAnimations items={items} hasKeys={keys.length > 0} />
       {!autoKey && keys.length === 0 && (
