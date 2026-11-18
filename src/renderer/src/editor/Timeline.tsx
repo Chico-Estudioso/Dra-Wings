@@ -15,6 +15,7 @@ import {
   Pause,
   Play,
   Plus,
+  Repeat,
   SkipBack,
   Trash2,
   Video,
@@ -344,6 +345,7 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
   const playing = useEditor((s) => s.playing);
   const preview = useEditor((s) => s.preview);
   const autoKey = useEditor((s) => s.autoKey);
+  const loopScene = useEditor((s) => s.loopScene);
   const onion = useEditor((s) => s.onion);
   const zoom = useEditor((s) => s.timelineZoom);
   const timelineHeight = useEditor((s) => s.timelineHeight);
@@ -615,6 +617,15 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
           onClick={togglePlay}
         >
           {playing ? <Pause size={18} /> : <Play size={18} />}
+        </button>
+        <button
+          className={`icon-btn icon-btn-sm ${loopScene ? 'is-on' : ''}`}
+          aria-pressed={loopScene}
+          aria-label="Repetir la escena"
+          title="Repetir la escena: al reproducir, vuelve a empezar al llegar al final"
+          onClick={ed.toggleLoopScene}
+        >
+          <Repeat size={14} />
         </button>
         <TimeReadout fps={fps} duration={scene.duration} />
         <SceneTabs project={project} sceneId={scene.id} />

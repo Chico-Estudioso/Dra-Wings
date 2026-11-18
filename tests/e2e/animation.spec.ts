@@ -543,3 +543,31 @@ test('color de fondo por escena y para todas', async () => {
   await stubMessageBox(app, 1);
   await app.close();
 });
+
+test('repetir la escena vuelve a su principio en vez de pasar a la siguiente', async () => {
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Bucle');
+  const duration = page.getByLabel('Duración de la escena en segundos');
+  await duration.fill('1');
+  await duration.press('Enter');
+  await page.getByRole('button', { name: 'Nueva escena' }).click();
+  await page.getByRole('tab', { name: 'Escena 1' }).click();
+
+  const loop = page.getByRole('button', { name: 'Repetir la escena' });
+  await loop.click();
+  await expect(loop).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'Reproducir' }).click();
+  // Más de dos vueltas de 1 s: sigue sonando y en la escena 1.
+  await page.waitForTimeout(2500);
+  await expect(page.getByRole('button', { name: 'Pausa' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Escena 1' })).toHaveAttribute('aria-selected', 'true');
+  await page.getByRole('button', { name: 'Pausa' }).click();
+
+  // Sin repetir, pasa a la escena 2.
+  await loop.click();
+  await page.getByRole('button', { name: 'Ir al inicio' }).click();
+  await page.getByRole('button', { name: 'Reproducir' }).click();
+  await expect(page.getByRole('tab', { name: 'Escena 2' })).toHaveAttribute('aria-selected', 'true', { timeout: 4000 });
+  await stubMessageBox(app, 1);
+  await app.close();
+});

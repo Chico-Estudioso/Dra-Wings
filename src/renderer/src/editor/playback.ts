@@ -126,13 +126,23 @@ export function usePlayback(): void {
     const total0 = projectDuration(project0);
     let origin = sceneStart(project0, ed0.sceneId) + ed0.playhead;
     if (origin >= total0 - 1) origin = 0; // al final: vuelve a empezar
-    const clock = new PlaybackClock(origin);
+    let clock = new PlaybackClock(origin);
     live = clock;
     let raf = 0;
     const step = () => {
       const project = useApp.getState().doc?.project;
       const ed = useEditor.getState();
       if (!project || !ed.playing) return;
+      if (ed.loopScene && ed.sceneId) {
+        // Repetir la escena: al llegar a su final se vuelve a su principio, con su audio.
+        const current = project.scenes.find((s) => s.id === ed.sceneId);
+        const start = current ? sceneStart(project, current.id) : 0;
+        if (current && clock.now() >= start + current.duration) {
+          clock.stop();
+          clock = new PlaybackClock(start);
+          live = clock;
+        }
+      }
       clock.sync(project, useMediaVersion.getState().v, ed.muteNarration);
       const g = clock.now();
       const total = projectDuration(project);

@@ -65,7 +65,10 @@ Todo se puede ajustar después en la línea de tiempo o en el panel «Animación
 
 ## Reproducción
 
-`usePlayback` avanza el cabezal con `requestAnimationFrame` y recorre las escenas en orden con el tiempo global (`locateTime`). En M5 el reloj maestro pasará a ser `AudioContext.currentTime`.
+`usePlayback` (`src/renderer/src/editor/playback.ts`) avanza el cabezal con `requestAnimationFrame` y recorre las escenas en orden con el tiempo global (`locateTime`). Si hay audio, el reloj maestro es `AudioContext.currentTime` (la imagen sigue al sonido); si el dispositivo de audio no avanza, se pasa al reloj de pared para no congelar la vista previa.
+
+- **Repetir la escena** (botón junto a reproducir): al llegar al final de la escena actual se vuelve a su principio con un reloj nuevo, así que el audio se reprograma desde ahí. Sirve para pulir una escena al ritmo de la canción.
+- Mientras suena, M marca el instante que se oye (ver «Marcar al oído» en `docs/AUDIO_EXPORT.md`).
 
 ## Tipo de hoja
 

@@ -70,6 +70,8 @@ interface EditorState {
   preview: boolean;
   /** Grabar movimiento: los cambios en un instante posterior a la aparición crean keyframes. */
   autoKey: boolean;
+  /** Al reproducir, la escena actual se repite en bucle. */
+  loopScene: boolean;
   /** Papel cebolla en capas de fotogramas. */
   onion: boolean;
   /** Píxeles por segundo en la línea de tiempo. */
@@ -99,6 +101,7 @@ interface EditorState {
   setPlaying(playing: boolean): void;
   setPreview(preview: boolean): void;
   toggleAutoKey(): void;
+  toggleLoopScene(): void;
   toggleOnion(): void;
   setTimelineZoom(z: number): void;
   setTimelineHeight(h: number): void;
@@ -148,6 +151,7 @@ export const useEditor = create<EditorState>()((set) => ({
   playing: false,
   preview: false,
   autoKey: false,
+  loopScene: false,
   onion: true,
   timelineZoom: 80,
   timelineHeight: readTimelineHeight(),
@@ -170,6 +174,7 @@ export const useEditor = create<EditorState>()((set) => ({
   setPlaying: (playing) => set((s) => ({ playing, preview: playing ? true : s.preview })),
   setPreview: (preview) => set((s) => ({ preview, playing: preview ? s.playing : false })),
   toggleAutoKey: () => set((s) => ({ autoKey: !s.autoKey })),
+  toggleLoopScene: () => set((s) => ({ loopScene: !s.loopScene })),
   toggleOnion: () => set((s) => ({ onion: !s.onion })),
   setTimelineZoom: (z) => set({ timelineZoom: Math.min(800, Math.max(10, z)) }),
   setTimelineHeight: (h) => {
