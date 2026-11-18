@@ -169,7 +169,10 @@ test('ayudas al dibujar: forma rápida al mantener quieto y trazo de tinta', asy
   const radii = (pts: number[]) => {
     const xs: number[] = [];
     const ys: number[] = [];
-    for (let i = 0; i < pts.length - 4; i += 4) (xs.push(pts[i]!), ys.push(pts[i + 1]!));
+    for (let i = 0; i < pts.length - 4; i += 4) {
+      xs.push(pts[i]!);
+      ys.push(pts[i + 1]!);
+    }
     const cx = xs.reduce((a, b) => a + b, 0) / xs.length;
     const cy = ys.reduce((a, b) => a + b, 0) / ys.length;
     const r = xs.map((x, i) => Math.hypot(x - cx, ys[i]! - cy));
