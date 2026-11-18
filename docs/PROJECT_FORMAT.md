@@ -93,6 +93,7 @@ AudioClip { id; assetId; start: Ticks; sourceOffset: Ticks; duration: Ticks; gai
 Marker { id; t: Ticks; label: string }  // t: tiempo global
 
 Animated<T> = { value: T } | { keys: { t: Ticks; v: T; ease: Ease }[] }    // t relativo a la escena
+Ease = 'linear' | 'easeIn' | 'easeOut' | 'easeInOut' | 'hold' | 'back' | 'bounce'   // suavizado del tramo que empieza en ese keyframe
 AnimatedTransform = { x; y; scaleX; scaleY; rotation; anchorX; anchorY }   // cada uno Animated<number>
 ```
 

@@ -1,9 +1,8 @@
 // Edición de keyframes sobre valores animables.
-import type { AnimatedNumber, Item, Transform } from '../model/types';
+import type { AnimatedNumber, Ease, Item, Transform } from '../model/types';
 import type { Ticks } from '../time/ticks';
 import { valueAt } from './animated';
 
-type Ease = 'linear' | 'easeIn' | 'easeOut' | 'easeInOut' | 'hold';
 export const DEFAULT_EASE: Ease = 'easeInOut';
 
 export const ANIMATABLE = ['x', 'y', 'scaleX', 'scaleY', 'rotation'] as const;

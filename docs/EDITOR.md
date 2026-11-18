@@ -71,6 +71,7 @@ Ver `docs/LIBRARY.md`: recursos, constructor de personajes, escenas de partida, 
 - **Barra superior:** ir al inicio, reproducir, tiempo, pestañas de escena (doble clic para renombrar, +, mover, duplicar y eliminar), duración de la escena, **Vista previa** (ojo), **Grabar movimiento** (●), papel cebolla y botones de fotograma (con una capa de fotogramas activa) y zoom.
 - **Pistas:** una por capa. Cada elemento es una barra con su aparición (color según el tipo: dibujar, fundido o pop) y una línea fina hasta que desaparece. Arrastrar la barra cambia cuándo aparece (y desplaza sus keyframes); arrastrar su borde derecho cambia la duración. Con la selección se ven sus keyframes (rombos), y un clic en uno lleva el cabezal allí.
 - **Regla:** clic o arrastre para mover el cabezal; activa la vista previa para ver el vídeo en ese instante. Tocar el lienzo vuelve al modo edición.
+- **Animaciones rápidas:** en el panel «Animación» del elemento seleccionado, botones de un clic (entrar, salir, saltar, balancearse, latir, flotar, girar, temblar y crecer) y el selector de suavizado. Ver `docs/ANIMATION_ENGINE.md`.
 - **Vista previa frente a edición:** al editar se ve todo completo, con las posiciones del instante del cabezal. La vista previa muestra exactamente lo que saldrá en el vídeo (apariciones y cámara).
 - **Alto:** se adapta a la ventana y se puede cambiar con el tirador del borde superior (arrastrando o con las flechas). Se recuerda.
 

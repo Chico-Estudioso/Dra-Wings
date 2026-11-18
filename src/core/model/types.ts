@@ -1,6 +1,7 @@
 import type { z } from 'zod';
 import type {
   animatedNumberSchema,
+  easeSchema,
   assetSchema,
   audioClipSchema,
   audioTrackSchema,
@@ -33,6 +34,7 @@ export type AudioTrack = z.infer<typeof audioTrackSchema>;
 export type AudioClip = z.infer<typeof audioClipSchema>;
 export type Marker = z.infer<typeof markerSchema>;
 export type AnimatedNumber = z.infer<typeof animatedNumberSchema>;
+export type Ease = z.infer<typeof easeSchema>;
 export type Transform = z.infer<typeof transformSchema>;
 export type Manifest = z.infer<typeof manifestSchema>;
 export type Shape = z.infer<typeof shapeSchema>;

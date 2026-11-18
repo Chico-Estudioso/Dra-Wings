@@ -13,7 +13,7 @@ const unit = z.number().min(0).max(1);
 
 export const fpsSchema = z.literal(SUPPORTED_FPS);
 export const modeSchema = z.enum(['guided', 'mixed', 'free']);
-export const easeSchema = z.enum(['linear', 'easeIn', 'easeOut', 'easeInOut', 'hold']);
+export const easeSchema = z.enum(['linear', 'easeIn', 'easeOut', 'easeInOut', 'hold', 'back', 'bounce']);
 
 export const animatedNumberSchema = z.union([
   z.object({ value: z.number() }),

@@ -2,14 +2,27 @@
 import type { AnimatedNumber } from '../model/types';
 import type { Ticks } from '../time/ticks';
 
-type Ease = 'linear' | 'easeIn' | 'easeOut' | 'easeInOut' | 'hold';
+import type { Ease } from '../model/types';
 
-const EASE: Record<Ease, (u: number) => number> = {
+/** Rebote al llegar (como una pelota que cae). */
+function bounceOut(u: number): number {
+  const n = 7.5625;
+  const d = 2.75;
+  if (u < 1 / d) return n * u * u;
+  if (u < 2 / d) return n * (u -= 1.5 / d) * u + 0.75;
+  if (u < 2.5 / d) return n * (u -= 2.25 / d) * u + 0.9375;
+  return n * (u -= 2.625 / d) * u + 0.984375;
+}
+
+/** Curvas de suavizado entre dos keyframes: 0 → 1 (las de impulso se pasan un poco y vuelven). */
+export const EASE: Record<Ease, (u: number) => number> = {
   linear: (u) => u,
   easeIn: (u) => u * u * u,
   easeOut: (u) => 1 - (1 - u) ** 3,
   easeInOut: (u) => (u < 0.5 ? 4 * u * u * u : 1 - (-2 * u + 2) ** 3 / 2),
   hold: () => 0,
+  back: (u) => 1 + 2.70158 * (u - 1) ** 3 + 1.70158 * (u - 1) ** 2,
+  bounce: bounceOut,
 };
 
 export const fixed = (value: number): AnimatedNumber => ({ value });

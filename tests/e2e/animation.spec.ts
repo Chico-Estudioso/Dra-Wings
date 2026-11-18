@@ -117,3 +117,30 @@ test('reproducir avanza el cabezal y pausa lo detiene', async () => {
   await stubMessageBox(app, 1);
   await app.close();
 });
+
+test('animaciones rápidas de un clic y suavizado del movimiento', async () => {
+  const file = path.join(await tempDir(), 'rapidas.dwings');
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Rápidas');
+  const c = await center(page);
+  await page.keyboard.press('r');
+  await drag(page, { x: c.x - 40, y: c.y - 30 }, { x: c.x + 40, y: c.y + 30 }, 4);
+  const quick = page.getByRole('group', { name: 'Animaciones rápidas' });
+  await quick.getByRole('button', { name: /^Saltar/ }).click();
+  // Los keyframes aparecen en la línea de tiempo (rombos de la selección).
+  await expect(page.getByRole('button', { name: /^Keyframe en/ }).first()).toBeVisible();
+
+  await quick.getByRole('radio', { name: 'Derecha' }).click();
+  await quick.getByRole('button', { name: /^Entrar/ }).click();
+  await page.getByLabel('Suavizado del movimiento').selectOption({ label: 'Rebote' });
+
+  const p = await saveAndRead(app, page, file);
+  const shape = items(p)[0]!;
+  const xs = shape.transform.x;
+  const ys = shape.transform.y;
+  expect('keys' in xs && xs.keys[0]!.v).toBeGreaterThan(1920); // entra desde fuera por la derecha
+  expect('keys' in ys && ys.keys.length).toBeGreaterThan(2); // el salto
+  expect('keys' in xs && xs.keys.every((k) => k.ease === 'bounce')).toBe(true);
+  await stubMessageBox(app, 1);
+  await app.close();
+});

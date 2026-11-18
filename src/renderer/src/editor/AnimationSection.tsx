@@ -5,6 +5,7 @@ import { formatTimecode, secondsFromTicks, ticksFromSeconds, type Fps } from '@c
 import { clearSelectionAnimation, removeKeyAtPlayhead, setEnter, setExit, setInAtPlayhead } from './actions';
 import { ValueSlider } from './controls';
 import { useEditor } from './editor-store';
+import { QuickAnimations } from './QuickAnimations';
 
 const ENTER_LABELS: Record<Enter['kind'], string> = {
   draw: 'Dibujarse',
@@ -158,10 +159,11 @@ export function AnimationSection({ items, fps }: { items: Item[]; fps: Fps }) {
           </button>
         </div>
       )}
+      <QuickAnimations items={items} hasKeys={keys.length > 0} />
       {!autoKey && keys.length === 0 && (
         <p className="hint">
-          Para animar: activa «Grabar movimiento» (●) en la línea de tiempo, lleva el cabezal a otro instante y mueve el
-          elemento.
+          Para animarlo a mano: activa «Grabar movimiento» (●) en la línea de tiempo, lleva el cabezal a otro instante y
+          mueve el elemento.
         </p>
       )}
     </div>

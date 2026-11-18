@@ -70,3 +70,22 @@ Todo se puede ajustar después en la línea de tiempo o en el panel «Animación
 - Límites: tick 0, último tick de la escena, `in`/`out` exactos y clips solapados.
 - Cambio de FPS: los ticks no cambian y los fotogramas exportados se recalculan.
 - Determinismo: hashes de píxeles idénticos entre evaluaciones repetidas, en distinto orden y en el worker frente a la previsualización.
+
+## Suavizado y animaciones rápidas
+
+Cada keyframe guarda el suavizado del tramo que empieza en él (`src/core/anim/animated.ts`):
+
+| Valor | En la interfaz | Efecto |
+|---|---|---|
+| `easeInOut` | Suave | Arranca y frena con suavidad (predeterminado) |
+| `linear` | Constante | Velocidad uniforme |
+| `easeIn` | Acelerar | Arranca despacio |
+| `easeOut` | Frenar | Llega despacio |
+| `back` | Con impulso | Se pasa un poco y vuelve, muy de dibujos animados |
+| `bounce` | Rebote | Rebota al llegar |
+| `hold` | A saltos | Mantiene el valor y salta al siguiente |
+
+El selector «Suavizado» del panel «Animación» cambia todos los tramos del elemento.
+
+**Animaciones rápidas** (`src/core/anim/presets.ts`, panel «Animación»): entrar o salir por un lado de la hoja, saltar (con un pequeño aplastamiento al aterrizar), balancearse, latir, flotar, girar, temblar y crecer. Crean keyframes normales a partir del cabezal (o de cuando aparece el elemento, si el cabezal está antes), relativos a cómo está el elemento en ese instante, y respetan los keyframes de fuera de su tramo. «Salir» además hace desaparecer el elemento al acabar. Si la animación termina después del final, la escena se alarga.
+

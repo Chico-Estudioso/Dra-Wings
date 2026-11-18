@@ -25,7 +25,8 @@ import { ticksPerFrame } from '@core/time/ticks';
 import { groupItems, recolorSlot, ungroupItem } from '@core/edit/group';
 import { deepClone } from '@core/edit/clone';
 import { newId } from '@core/model/factory';
-import type { Enter, Exit, Item, Layer, Project, Scene } from '@core/model/types';
+import type { Ease, Enter, Exit, Item, Layer, Project, Scene } from '@core/model/types';
+import { applyPreset, PRESET_LABELS, setItemEase, type Direction, type PresetId } from '@core/anim/presets';
 import { resolveTransform } from '@core/geometry/matrix';
 import { useApp } from '../state/app-store';
 import { useEditor } from './editor-store';
@@ -168,6 +169,25 @@ export function updateSelected(label: string, fn: (item: Item) => void): void {
       if (loc) fn(loc.item);
     }
   });
+}
+
+/** Animación rápida a la selección en el cabezal; la escena se alarga si la animación acaba después. */
+export function applyPresetToSelection(preset: PresetId, direction: Direction): void {
+  const ids = useEditor.getState().selection;
+  if (!ids.length) return;
+  const t = playhead();
+  editScene(`Animación: ${PRESET_LABELS[preset].toLowerCase()}`, (scene, project) => {
+    let end = t;
+    for (const id of ids) {
+      const loc = locateItem(scene, id);
+      if (loc) end = Math.max(end, applyPreset(loc.item, preset, t, { page: project.settings, direction }));
+    }
+    if (end > scene.duration) scene.duration = end;
+  });
+}
+
+export function setSelectionEase(ease: Ease): void {
+  updateSelected('Suavizado del movimiento', (it) => setItemEase(it, ease));
 }
 
 // Capas

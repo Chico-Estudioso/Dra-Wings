@@ -14,7 +14,8 @@ import {
 import { appearance, cameraMatrix, evaluateScene, hasCamera, OUTLINE_SHARE } from '@core/render/evaluate';
 import { appendTiming, contentEnd, defaultDrawDuration, fitSceneDuration, HOLD_AFTER } from '@core/anim/timing';
 import { keyTimes, removeKeyAt, setValueAt, shiftItemTime } from '@core/anim/keyframes';
-import { valueAt } from '@core/anim/animated';
+import { EASE, valueAt } from '@core/anim/animated';
+import { applyPreset, itemEase, mergeKeys, PRESET_SECONDS, setItemEase } from '@core/anim/presets';
 import { apply } from '@core/geometry/matrix';
 import { makeGroup } from '@core/edit/group';
 import { validateProject } from '@core/model/validate';
@@ -235,5 +236,94 @@ describe('cámara', () => {
     const m = cameraMatrix(scene, 0);
     expect(apply(m, { x: 100, y: 50 })).toEqual({ x: 0, y: 0 });
     expect(apply(m, { x: 100 + 960, y: 50 + 540 })).toEqual({ x: 1920, y: 1080 });
+  });
+});
+
+describe('suavizado y animaciones rápidas', () => {
+  const page = { width: 1920, height: 1080 };
+  // Rectángulo de 100×80 con la esquina en (500, 400).
+  const box = () =>
+    createShape('rect', 500, 400, 100, 80, { stroke: '#000000', strokeWidth: 4, fill: null, opacity: 1 });
+  const x = (it: Item, t: number) => valueAt(it.transform.x, t);
+  const y = (it: Item, t: number) => valueAt(it.transform.y, t);
+
+  it('las curvas empiezan en 0 y acaban en 1; «con impulso» se pasa un poco y vuelve', () => {
+    for (const f of Object.values(EASE).filter((f) => f !== EASE.hold)) {
+      expect(f(0)).toBeCloseTo(0);
+      expect(f(1)).toBeCloseTo(1);
+    }
+    expect(Math.max(...Array.from({ length: 50 }, (_, i) => EASE.back(i / 49)))).toBeGreaterThan(1.05);
+    expect(EASE.bounce(0.5)).toBeGreaterThan(0.5);
+    expect(EASE.hold(0.99)).toBe(0);
+  });
+
+  it('mergeKeys sustituye el tramo y conserva lo de fuera', () => {
+    const a = { keys: [0, 10, 20, 30].map((t) => ({ t, v: t, ease: 'linear' as const })) };
+    const m = mergeKeys(a, [
+      { t: 10, v: 100, ease: 'linear' },
+      { t: 20, v: 200, ease: 'linear' },
+    ]);
+    expect('keys' in m && m.keys.map((k) => [k.t, k.v])).toEqual([
+      [0, 0],
+      [10, 100],
+      [20, 200],
+      [30, 30],
+    ]);
+    expect(mergeKeys({ value: 5 }, [{ t: 3, v: 7, ease: 'linear' }])).toEqual({ value: 7 });
+  });
+
+  it('entrar desde la izquierda empieza fuera de la hoja y llega a su sitio', () => {
+    const it = box();
+    const end = applyPreset(it, 'enter', S, { page, direction: 'left' });
+    expect(end).toBe(S + PRESET_SECONDS.enter * S);
+    expect(x(it, S) + 100).toBeLessThan(0); // todo el rectángulo fuera por la izquierda
+    expect(x(it, end)).toBeCloseTo(500);
+    expect(y(it, S)).toBe(400);
+  });
+
+  it('salir por abajo termina fuera de la hoja y desaparece entonces', () => {
+    const it = box();
+    const end = applyPreset(it, 'exit', 0, { page, direction: 'down' });
+    expect(y(it, end)).toBeGreaterThan(1080);
+    expect(it.out).toBe(end);
+  });
+
+  it('saltar sube y vuelve al mismo sitio; latir y crecer acaban a su tamaño', () => {
+    const jump = box();
+    const end = applyPreset(jump, 'jump', 0, { page });
+    expect(Math.min(...[0.1, 0.2, 0.3, 0.4].map((s) => y(jump, s * S)))).toBeLessThan(400 - 20);
+    expect(y(jump, end)).toBeCloseTo(400);
+    const pulse = box();
+    const pEnd = applyPreset(pulse, 'pulse', 0, { page });
+    expect(valueAt(pulse.transform.scaleX, 0.25 * S)).toBeCloseTo(1.15);
+    expect(valueAt(pulse.transform.scaleX, pEnd)).toBeCloseTo(1);
+    const grow = box();
+    const gEnd = applyPreset(grow, 'grow', 0, { page });
+    expect(valueAt(grow.transform.scaleY, 0)).toBeCloseTo(0.2);
+    expect(valueAt(grow.transform.scaleY, gEnd)).toBeCloseTo(1);
+  });
+
+  it('empieza cuando aparece el elemento si el cabezal está antes, y conserva su animación previa', () => {
+    const it = box();
+    it.in = 2 * S;
+    it.transform.x = {
+      keys: [
+        { t: 5 * S, v: 500, ease: 'linear' },
+        { t: 6 * S, v: 900, ease: 'linear' },
+      ],
+    };
+    applyPreset(it, 'shake', 0, { page });
+    const keys = 'keys' in it.transform.x ? it.transform.x.keys : [];
+    expect(keys[0]!.t).toBe(2 * S);
+    expect(keys.slice(-2).map((k) => k.v)).toEqual([500, 900]);
+  });
+
+  it('el suavizado se aplica a todo el movimiento y se puede leer', () => {
+    const it = box();
+    applyPreset(it, 'float', 0, { page });
+    expect(itemEase(it)).toBe('easeInOut');
+    setItemEase(it, 'bounce');
+    expect(itemEase(it)).toBe('bounce');
+    expect(itemEase(box())).toBeNull();
   });
 });
