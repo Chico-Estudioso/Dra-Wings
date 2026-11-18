@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Search, UserPlus } from 'lucide-react';
+import { Search, UserPlus, ScrollText } from 'lucide-react';
 import { CATEGORIES, searchLibrary, type CategoryId, type LibraryAsset } from '@core/library/catalog';
 import { placeGroup, TEMPLATES } from '@core/library/place';
+import { ScriptDialog } from './ScriptDialog';
 import type { Project } from '@core/model/types';
 import { insertItems } from './actions';
 import { thumbnail } from './thumbnails';
@@ -26,6 +27,7 @@ export function LibraryPanel({ project }: { project: Project }) {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('todo');
   const [builderOpen, setBuilderOpen] = useState(false);
+  const [scriptOpen, setScriptOpen] = useState(false);
   const results = useMemo(() => (filter === 'escenas' ? [] : searchLibrary(query, filter)), [query, filter]);
 
   return (
@@ -67,6 +69,11 @@ export function LibraryPanel({ project }: { project: Project }) {
           </button>
         )}
 
+        {filter === 'escenas' && (
+          <button className="btn btn-secondary btn-sm" onClick={() => setScriptOpen(true)}>
+            <ScrollText size={16} aria-hidden /> Crear escenas desde un guion…
+          </button>
+        )}
         {filter === 'escenas' ? (
           <ul className="template-list">
             {TEMPLATES.map((t) => (
@@ -116,6 +123,7 @@ export function LibraryPanel({ project }: { project: Project }) {
           </ul>
         )}
       </div>
+      <ScriptDialog open={scriptOpen} onOpenChange={setScriptOpen} />
       <CharacterBuilder open={builderOpen} onOpenChange={setBuilderOpen} project={project} />
     </section>
   );

@@ -212,3 +212,34 @@ test('un personaje habla con la narración: la boca sigue a la voz', async () =>
   await stubMessageBox(app, 1);
   await app.close();
 });
+
+test('guion rápido: una escena por párrafo con el texto escribiéndose', async () => {
+  const file = path.join(await tempDir(), 'guion.dwings');
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Guion', 'Guiado');
+  await page.getByRole('tab', { name: 'Escenas' }).click();
+  await page.getByRole('button', { name: 'Crear escenas desde un guion…' }).click();
+  await page
+    .getByRole('textbox', { name: 'Guion', exact: true })
+    .fill(
+      'Había una vez una niña que soñaba con volar.\n\nUn día encontró unas alas de papel.\n\nY salió por la ventana.',
+    );
+  await expect(page.getByText('Se crearán 3 escenas.')).toBeVisible();
+  await page.getByLabel('Escritura de los textos').selectOption({ label: 'Una palabra en cada golpe' });
+  await page.getByRole('button', { name: 'Crear escenas' }).click();
+  // La escena vacía del proyecto nuevo se aprovecha: 3 escenas en total.
+  await expect(page.getByRole('tablist', { name: 'Escenas' }).getByRole('tab')).toHaveCount(3);
+  await expect(page.getByRole('tablist', { name: 'Escenas' }).getByRole('tab').first()).toHaveText(
+    'Había una vez una niña que…',
+  );
+
+  const p = await saveAndRead(app, page, file);
+  expect(p.scenes).toHaveLength(3);
+  for (const s of p.scenes) {
+    const [t] = s.layers.flatMap((l) => l.items ?? []);
+    expect(t).toMatchObject({ type: 'text', reveal: 'beat-words', enter: { kind: 'draw' }, align: 'center' });
+    expect(s.duration).toBeGreaterThan(705_600_000);
+  }
+  await stubMessageBox(app, 1);
+  await app.close();
+});

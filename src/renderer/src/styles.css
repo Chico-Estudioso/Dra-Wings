@@ -1917,3 +1917,15 @@ kbd {
 .boil-paper {
   margin: 2px 8px 6px;
 }
+
+/* Guion rápido */
+.script-text {
+  width: 100%;
+  min-height: 180px;
+  resize: vertical;
+  font: inherit;
+  line-height: 1.45;
+}
+.script-count {
+  margin-right: auto;
+}

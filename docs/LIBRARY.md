@@ -62,6 +62,15 @@ En el panel de propiedades de un personaje, «Expresión y postura» muestra có
 
 Casa en el campo, Ciudad, En clase, De noche y Conversación. Insertan recursos independientes (no una imagen plana), proporcionados al tamaño de la hoja y seleccionados para ajustarlos de inmediato.
 
+### Crear escenas desde un guion
+
+En la pestaña «Escenas», «Crear escenas desde un guion…» abre un cuadro donde pegar el guion de una historia o la letra de una canción (`src/core/edit/script.ts`, `script-actions.ts`):
+
+- Una escena por **párrafo** (separados por líneas en blanco) o por **línea**; se limpian espacios y líneas vacías.
+- Cada escena lleva su texto centrado con la letra a mano, ajustado al 80 % del ancho por palabras y con el tamaño más grande que quepa en el 62 % del alto (de 110 a 36), medido con la fuente real. El nombre de la escena es el principio del texto.
+- Se escribe solo con la escritura elegida (palabra a palabra por defecto). La escena dura lo que tarda en escribirse (0,3 s por palabra, entre 0,8 y 6 s; o un golpe por palabra con «Una palabra en cada golpe», al tempo de la música si se ha detectado) más un rato para leerla.
+- Las escenas se crean después de la actual, en un solo paso de deshacer; si la escena actual está vacía, el primer bloque va en ella.
+
 ## Modos
 
 | | Guiado | Mixto | Libre |
