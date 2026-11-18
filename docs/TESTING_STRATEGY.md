@@ -13,6 +13,7 @@
 ## CI
 
 - `validate.yml` (Windows): instalar, lint, typecheck, pruebas unitarias y de renderizado, build y E2E.
+- `package-windows` (tras `validate`): empaqueta, instala en silencio, arranca la app instalada con la comprobación de arranque (`DW_SMOKE_TEST=1`) y desinstala. El instalador no se sube.
 - Ubuntu ejecuta las mismas pruebas para detectar diferencias de plataforma (el renderizado con Xvfb).
 - Workflow de prototipos o capacidades bajo demanda cuando cambie la versión de Electron.
 

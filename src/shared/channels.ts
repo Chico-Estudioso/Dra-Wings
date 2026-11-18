@@ -19,6 +19,8 @@ export const CH = {
   exportFinish: 'export:finish',
   exportCancel: 'export:cancel',
   exportReveal: 'export:reveal',
+  takePendingOpen: 'system:take-pending-open',
+  openRequest: 'system:open-request',
 } as const;
 
 export const MENU_ACTIONS = ['new', 'open', 'save', 'saveAs', 'export', 'home', 'about'] as const;

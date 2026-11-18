@@ -16,8 +16,8 @@ export async function tempDir(prefix = 'dw-e2e-'): Promise<string> {
   return mkdtemp(path.join(tmpdir(), prefix));
 }
 
-export async function launch(userData: string): Promise<Launched> {
-  const args = ['.'];
+export async function launch(userData: string, extraArgs: string[] = []): Promise<Launched> {
+  const args = ['.', ...extraArgs];
   // En Linux como root (contenedores) o en CI (AppArmor restringe los namespaces), sin sandbox de Chromium.
   if (process.platform === 'linux' && (process.getuid?.() === 0 || process.env.CI)) args.push('--no-sandbox');
   const env = { ...process.env, DW_USER_DATA: userData } as Record<string, string>;
@@ -26,7 +26,8 @@ export async function launch(userData: string): Promise<Launched> {
   const page = await app.firstWindow();
   // Mismo tamaño en todas las plataformas (los runners de Windows tienen pantallas de 1024×768).
   await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.setContentSize(1024, 700));
-  await page.getByRole('button', { name: 'Nuevo proyecto' }).waitFor();
+  // Inicio o, si se abrió con un proyecto en la línea de órdenes, directamente el editor.
+  await page.getByRole('button', { name: 'Nuevo proyecto' }).or(page.getByTestId('overlay-canvas')).waitFor();
   return { app, page };
 }
 

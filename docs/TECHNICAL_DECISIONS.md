@@ -27,10 +27,13 @@ Registro breve. El detalle de cada una está en su ADR (`docs/decisions/`).
 | 21 | Los ajustes de exportación no se guardan en el proyecto (exportar no lo modifica) | Aprobada | `docs/AUDIO_EXPORT.md` |
 | 22 | Accesibilidad comprobada con axe en E2E (WCAG 2.1 AA, sin problemas graves ni críticos); acento `#c2521e` en el tema claro por contraste | Aprobada | `docs/UI_UX_GUIDELINES.md` |
 | 23 | Fallos: *error boundary* que guarda la recuperación y recarga de la ventana si cae el renderer | Aprobada | `docs/ARCHITECTURE.md` |
+| 25 | Instalador NSIS por usuario (sin administrador) con electron-builder; sin actualización automática en el MVP | Aprobada | `docs/PACKAGING.md` |
+| 26 | Fuses de Electron: sin RunAsNode, NODE_OPTIONS ni --inspect; solo `app.asar` con integridad; sin privilegios de `file://` | Aprobada | `docs/PACKAGING.md` |
+| 27 | El CI verifica el instalador (instalar, arrancar, desinstalar) pero no lo sube: publicar requiere aprobación | Aprobada | `docs/PACKAGING.md` |
 | 24 | Aviso de `npm audit` en `picomatch` (ReDoS) aceptado: solo lo usan Vite y Vitest al compilar y probar, con patrones propios; no se empaqueta y no hay versión corregida | Aceptada (revisar en M8) | — |
 
 ## Pendientes (se deciden en su fase)
 
 - Estrategia de caché de capas rasterizadas → cuando haya mediciones en hardware real (ver `docs/EDITOR.md`).
 - Rango de color del vídeo exportado (OpenH264 marca rango completo) → comprobar en reproductores de Windows (M7).
-- Firma de código del instalador Windows → M8.
+- Firma de código del instalador Windows → antes de publicar (requiere certificado y aprobación).

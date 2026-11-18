@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useApp } from './state/app-store';
-import { openWithDialog, saveCurrent } from './state/doc-actions';
+import { openRecent, openWithDialog, saveCurrent } from './state/doc-actions';
 import { requestLeave } from './state/leave-guard';
 import { startSync } from './state/sync';
 import { Home } from './screens/Home';
@@ -43,11 +43,16 @@ export function App() {
           break;
       }
     });
+    // Proyecto abierto desde el sistema (doble clic en un .dwings).
+    const openPending = () => void window.dw.takePendingOpen().then((p) => p && requestLeave(() => void openRecent(p)));
+    openPending();
+    const offOpen = window.dw.onOpenRequest(openPending);
     const offClose = window.dw.onRequestSaveAndClose(async () => {
       if (await saveCurrent(false)) window.dw.confirmClose();
     });
     return () => {
       offMenu();
+      offOpen();
       offClose();
     };
   }, []);

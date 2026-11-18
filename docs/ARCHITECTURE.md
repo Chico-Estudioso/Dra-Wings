@@ -61,7 +61,8 @@ La previsualización y la exportación llaman a `evaluateScene` + `drawRenderLis
 - `setWindowOpenHandler` → `deny`. `will-navigate` bloqueado. Los enlaces externos se abren con `shell.openExternal` solo tras validarlos (https).
 - Cada canal IPC tiene un esquema zod. Las rutas de archivo solo salen de diálogos nativos o de la lista de recientes guardada por el proceso principal.
 - No se ejecutan procesos externos en el MVP.
-- Al empaquetar (M8): fuses de Electron (`RunAsNode` off, `EnableNodeCliInspectArguments` off, integridad ASAR).
+- Al empaquetar: fuses de Electron (sin `RunAsNode`, `NODE_OPTIONS` ni `--inspect`, solo `app.asar` con integridad, sin privilegios de `file://`). Ver `docs/PACKAGING.md`.
+- Abrir desde el sistema: la ruta de un `.dwings` llega por la línea de órdenes (o por `second-instance` con instancia única); el proceso principal comprueba que es un archivo, lo añade a recientes y el renderer lo abre por la vía normal, que solo acepta recientes.
 
 ## Robustez
 

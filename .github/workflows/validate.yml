@@ -49,3 +49,44 @@ jobs:
           name: resultados-e2e-${{ matrix.os }}
           path: test-results/
           retention-days: 7
+
+  # Empaqueta para Windows y prueba el instalador de verdad: instalar en silencio, arrancar la app
+  # instalada (comprobación de arranque) y desinstalar. El instalador NO se publica ni se sube como
+  # artefacto: distribuirlo requiere aprobación (CLAUDE.md).
+  package-windows:
+    needs: validate
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - name: Instalar dependencias
+        run: npm ci
+      - name: Empaquetar
+        run: npm run dist:win
+      - name: Instalar, arrancar y desinstalar
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem dist -Filter '*-instalador.exe' | Select-Object -First 1
+          if (-not $setup) { throw 'No se generó el instalador' }
+          "Instalador: $($setup.Name) ($([math]::Round($setup.Length / 1MB, 1)) MB)"
+          $dir = Join-Path $env:RUNNER_TEMP 'DraWings'
+          Start-Process $setup.FullName -ArgumentList '/S', "/D=$dir" -Wait
+          $exe = Join-Path $dir 'Dra-Wings.exe'
+          if (-not (Test-Path $exe)) { throw 'La aplicación no se instaló' }
+          $userData = Join-Path $env:RUNNER_TEMP 'dw-smoke'
+          $env:DW_SMOKE_TEST = '1'
+          $env:DW_USER_DATA = $userData
+          $p = Start-Process $exe -PassThru
+          $null = $p.Handle # sin esto, PowerShell no conserva el código de salida
+          if (-not $p.WaitForExit(90000)) { Stop-Process -Id $p.Id -Force; throw 'La aplicación no terminó la comprobación de arranque' }
+          Get-Content (Join-Path $userData 'smoke.json')
+          if ($p.ExitCode -ne 0) { throw "La comprobación de arranque falló (código $($p.ExitCode))" }
+          $uninstaller = Get-ChildItem $dir -Filter 'Uninstall*.exe' | Select-Object -First 1
+          Start-Process $uninstaller.FullName -ArgumentList '/S' -Wait
+          # El desinstalador de NSIS se relanza desde una copia temporal: se espera a que termine.
+          for ($i = 0; $i -lt 60 -and (Test-Path $exe); $i++) { Start-Sleep -Seconds 1 }
+          if (Test-Path $exe) { throw 'La desinstalación dejó la aplicación' }
+          'Instalación, arranque y desinstalación correctos'

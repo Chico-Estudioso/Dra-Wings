@@ -1,0 +1,52 @@
+# Empaquetado (M8). Construir: npm run dist:win. No publica nada: publicar requiere aprobación.
+appId: com.chicoestudioso.drawings
+productName: Dra-Wings
+copyright: Copyright © 2026 Mauro Serrano Hevia
+directories:
+  output: dist
+  buildResources: build
+# Todo lo necesario va empaquetado por Vite en out/: no hace falta node_modules en la app.
+files:
+  - out/**/*
+  - '!out/**/*.map'
+  - '!out/licenses/**/*'
+  - package.json
+  - '!node_modules/**/*'
+extraResources:
+  - from: out/licenses
+    to: licenses
+asar: true
+publish: null
+# Endurecimiento de Electron (docs/ARCHITECTURE.md).
+electronFuses:
+  runAsNode: false
+  enableCookieEncryption: true
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false
+  enableEmbeddedAsarIntegrityValidation: true
+  onlyLoadAppFromAsar: true
+  grantFileProtocolExtraPrivileges: false
+fileAssociations:
+  - ext: dwings
+    name: Proyecto de Dra-Wings
+    description: Proyecto de Dra-Wings
+    role: Editor
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: build/icon.png
+  artifactName: Dra-Wings-${version}-instalador.${ext}
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Dra-Wings
+  installerLanguages: [es_ES]
+  language: '3082'
+  deleteAppDataOnUninstall: false
+linux:
+  target: [dir]
+  category: Graphics

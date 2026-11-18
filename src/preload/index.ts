@@ -19,6 +19,12 @@ const api: DwApi = {
   exportFinish: (id) => ipcRenderer.invoke(CH.exportFinish, id),
   exportCancel: (id) => ipcRenderer.invoke(CH.exportCancel, id),
   exportReveal: () => ipcRenderer.invoke(CH.exportReveal),
+  takePendingOpen: () => ipcRenderer.invoke(CH.takePendingOpen),
+  onOpenRequest: (cb) => {
+    const listener = () => cb();
+    ipcRenderer.on(CH.openRequest, listener);
+    return () => ipcRenderer.removeListener(CH.openRequest, listener);
+  },
   setWindowState: (state) => ipcRenderer.send(CH.windowState, state),
   confirmClose: () => ipcRenderer.send(CH.closeConfirmed),
   onMenuAction: (cb) => {

@@ -1,6 +1,6 @@
 import { app, BrowserWindow, dialog, ipcMain, Menu, nativeTheme, net, protocol, session, shell } from 'electron';
 import type { MenuItemConstructorOptions } from 'electron';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { projectSchema } from '@core/model/schema';
@@ -135,9 +135,61 @@ function buildMenu() {
             ]),
       ],
     },
-    { label: 'Ayuda', submenu: [{ label: 'Acerca de Dra-Wings', click: () => sendMenu('about') }] },
+    {
+      label: 'Ayuda',
+      submenu: [
+        { label: 'Acerca de Dra-Wings', click: () => sendMenu('about') },
+        ...(app.isPackaged
+          ? [
+              {
+                label: 'Licencias de terceros',
+                click: () =>
+                  void shell.openPath(path.join(process.resourcesPath, 'licenses', 'THIRD_PARTY_LICENSES.txt')),
+              },
+            ]
+          : []),
+      ],
+    },
   ];
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
+// Abrir un .dwings desde el sistema (doble clic o «Abrir con»): la ruta llega por la línea de
+// órdenes. Se añade a recientes y el renderer la abre por la vía normal (que solo acepta recientes).
+let pendingOpen: string | null = null;
+
+function projectArg(argv: string[], cwd = process.cwd()): string | null {
+  const arg = argv.slice(1).find((a) => !a.startsWith('-') && a.toLowerCase().endsWith(`.${PROJECT_EXTENSION}`));
+  return arg ? path.resolve(cwd, arg) : null;
+}
+
+async function queueSystemOpen(filePath: string): Promise<void> {
+  try {
+    if (!(await stat(filePath)).isFile()) return;
+  } catch {
+    return;
+  }
+  await recent.touch(filePath, path.basename(filePath, `.${PROJECT_EXTENSION}`));
+  pendingOpen = filePath;
+  mainWindow?.webContents.send(CH.openRequest);
+}
+
+/** Comprobación de arranque de la app empaquetada (CI): ¿carga la interfaz con su API? */
+function runSmokeTest(win: BrowserWindow) {
+  win.webContents.once('did-finish-load', () => {
+    void win.webContents
+      .executeJavaScript(
+        `new Promise((r) => setTimeout(() => r({ ui: !!document.querySelector('.home'), api: typeof window.dw?.appInfo === 'function' }), 1500))`,
+      )
+      .then(async (result: { ui: boolean; api: boolean }) => {
+        const ok = result.ui && result.api;
+        await writeFile(
+          path.join(app.getPath('userData'), 'smoke.json'),
+          JSON.stringify({ ok, ...result, version: app.getVersion() }),
+        );
+        app.exit(ok ? 0 : 1);
+      });
+  });
 }
 
 function createWindow() {
@@ -161,6 +213,7 @@ function createWindow() {
   });
   mainWindow = win;
   win.once('ready-to-show', () => win.show());
+  if (process.env.DW_SMOKE_TEST) runSmokeTest(win);
   win.on('closed', () => {
     if (mainWindow === win) mainWindow = null;
     void exports.cancel(); // una exportación a medias no deja temporales
@@ -382,6 +435,12 @@ function registerIpc() {
     if (lastExport) shell.showItemInFolder(lastExport);
   });
 
+  ipcMain.handle(CH.takePendingOpen, () => {
+    const p = pendingOpen;
+    pendingOpen = null;
+    return p;
+  });
+
   ipcMain.handle(CH.recentList, () => recent.list());
   ipcMain.handle(CH.recentRemove, async (_e, filePath: unknown) => {
     const p = recentPathSchema.safeParse(filePath);
@@ -444,16 +503,32 @@ function hardenSessions() {
   });
 }
 
-app.whenReady().then(() => {
-  registerAppProtocol();
-  hardenSessions();
-  registerIpc();
-  buildMenu();
-  createWindow();
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+if (!app.requestSingleInstanceLock()) {
+  // Ya hay una ventana abierta: ella recibe la petición (second-instance) y esta instancia termina.
+  app.quit();
+} else {
+  app.on('second-instance', (_e, argv, workingDirectory) => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+    const file = projectArg(argv, workingDirectory);
+    if (file) void queueSystemOpen(file);
   });
-});
+
+  app.whenReady().then(async () => {
+    registerAppProtocol();
+    hardenSessions();
+    registerIpc();
+    buildMenu();
+    const file = projectArg(process.argv);
+    if (file) await queueSystemOpen(file);
+    createWindow();
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    });
+  });
+}
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();

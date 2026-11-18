@@ -1,6 +1,6 @@
 # Roadmap — Dra-Wings
 
-Estado: M0 a M7 completados. Siguiente: M8 (empaquetado; publicar requiere aprobación).
+Estado: M0 a M7 completados y M8 preparado: falta la aprobación para publicar.
 
 ## M0 — Investigación y diseño ✅
 - Stack decidido: Electron + React/TS, renderizador Canvas 2D propio, ZIP `.dwings`, exportación WebCodecs (ADR-001 a ADR-006).
@@ -69,6 +69,8 @@ Estado: M0 a M7 completados. Siguiente: M8 (empaquetado; publicar requiere aprob
 - Instalador, documentación y licencias de dependencias.
 - Pruebas de instalación limpia y actualización.
 - Release candidato y publicación aprobada.
+- Hecho: instalador NSIS con fuses de Electron, asociación de `.dwings`, instancia única, licencias de terceros e icono; el CI empaqueta, instala, arranca y desinstala en Windows (ver `docs/PACKAGING.md`).
+- Pendiente (requiere aprobación o medios externos): firma de código, pruebas en Windows limpio y publicación de la release candidata.
 
 ## Evolución posterior (no incluida en el MVP)
 - Transcripción automática y sincronización asistida.

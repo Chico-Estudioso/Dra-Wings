@@ -87,6 +87,10 @@ export interface DwApi {
   exportCancel(id: string): Promise<void>;
   /** Muestra en la carpeta el último vídeo exportado. */
   exportReveal(): Promise<void>;
+  /** Proyecto que el sistema pidió abrir (doble clic en un .dwings), ya añadido a recientes. */
+  takePendingOpen(): Promise<string | null>;
+  /** Avisa cuando el sistema pide abrir un proyecto con la app ya abierta. */
+  onOpenRequest(cb: () => void): () => void;
   setWindowState(state: WindowState): void;
   confirmClose(): void;
   onMenuAction(cb: (action: MenuAction) => void): () => void;

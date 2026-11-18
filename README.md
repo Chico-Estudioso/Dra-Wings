@@ -16,7 +16,7 @@ Los modos comparten el mismo formato de proyecto.
 
 ## Estado
 
-M0 a M7 completados: arquitectura, proyectos con guardado y recuperación, lienzo y dibujo, biblioteca con modo guiado, animación con línea de tiempo, audio con narración e imágenes importadas, exportación a MP4, y una fase de calidad (rendimiento, accesibilidad y robustez). Siguiente: M8, empaquetado para Windows. Ver `ROADMAP.md`, `docs/EDITOR.md`, `docs/LIBRARY.md` y `docs/AUDIO_EXPORT.md`.
+M0 a M7 completados: arquitectura, proyectos con guardado y recuperación, lienzo y dibujo, biblioteca con modo guiado, animación con línea de tiempo, audio con narración e imágenes importadas, exportación a MP4, y una fase de calidad (rendimiento, accesibilidad y robustez). M8 (empaquetado para Windows) está preparado; publicar una versión requiere aprobación. Ver `docs/PACKAGING.md`. Ver `ROADMAP.md`, `docs/EDITOR.md`, `docs/LIBRARY.md` y `docs/AUDIO_EXPORT.md`.
 
 ## Principios
 
@@ -37,6 +37,7 @@ npm run dev        # app en modo desarrollo con recarga en caliente
 npm run check      # lint, formato, typecheck y pruebas unitarias
 npm run build      # compilar
 npm run test:e2e   # pruebas E2E con Electron (requiere build; en Linux sin pantalla: xvfb-run -a)
+npm run dist:win   # instalador de Windows en dist/ (no publica nada)
 ```
 
 Estructura: `src/main` (proceso principal), `src/preload` (puente seguro), `src/renderer` (interfaz React), `src/core` (modelo, tiempo, animación, render y audio; TypeScript puro), `src/shared` (contrato IPC) y `tests/` (unitarias y E2E).

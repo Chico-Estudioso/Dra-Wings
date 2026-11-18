@@ -18,7 +18,10 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "format:check": "prettier --check .",
-    "check": "npm run lint && npm run format:check && npm run typecheck && npm test"
+    "check": "npm run lint && npm run format:check && npm run typecheck && npm test",
+    "licenses": "node scripts/third-party-licenses.mjs",
+    "dist:win": "npm run build && npm run licenses && electron-builder --win --publish never",
+    "dist:dir": "npm run build && npm run licenses && electron-builder --dir --publish never"
   },
   "dependencies": {
     "@fontsource/caveat": "5.3.0",
@@ -50,6 +53,7 @@
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.3.0",
     "electron": "45.3.3",
+    "electron-builder": "26.18.0",
     "electron-vite": "6.0.0",
     "eslint": "10.15.0",
     "eslint-plugin-react-hooks": "7.1.1",
