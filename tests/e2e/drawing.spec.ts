@@ -189,3 +189,77 @@ test('ayudas al dibujar: forma rápida al mantener quieto y trazo de tinta', asy
   await stubMessageBox(app, 1);
   await app.close();
 });
+
+/** Dibuja con el ratón un lazo cerrado (o abierto `gap` radianes a la derecha). */
+async function loop(page: import('@playwright/test').Page, c: { x: number; y: number }, r: number, gap = 0) {
+  const steps = 48;
+  const a0 = gap / 2;
+  const a1 = Math.PI * 2 - gap / 2;
+  const at = (k: number) => {
+    const a = a0 + ((a1 - a0) * k) / steps;
+    return { x: c.x + r * Math.cos(a), y: c.y + r * Math.sin(a) };
+  };
+  await page.mouse.move(at(0).x, at(0).y);
+  await page.mouse.down();
+  for (let k = 1; k <= steps; k++) await page.mouse.move(at(k).x, at(k).y);
+  if (!gap) await page.mouse.move(at(0).x + 2, at(0).y + 2); // se solapa al cerrar, como a mano
+  await page.mouse.up();
+}
+
+/** Color [r, g, b] del lienzo de la escena en un punto de la pantalla. */
+async function pixel(page: import('@playwright/test').Page, p: { x: number; y: number }) {
+  return page.evaluate(({ x, y }) => {
+    const c = document.querySelector<HTMLCanvasElement>('[data-testid="scene-canvas"]')!;
+    const b = c.getBoundingClientRect();
+    const k = c.width / b.width;
+    const d = c.getContext('2d')!.getImageData(Math.round((x - b.left) * k), Math.round((y - b.top) * k), 1, 1).data;
+    return [d[0], d[1], d[2]];
+  }, p);
+}
+
+test('bote de pintura: rellena un dibujo cerrado debajo de su línea y cierra huecos pequeños', async () => {
+  const file = path.join(await tempDir(), 'relleno.dwings');
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Relleno');
+  const c = await center(page);
+  const left = { x: c.x - 110, y: c.y };
+  const right = { x: c.x + 110, y: c.y };
+  await loop(page, left, 70);
+  await loop(page, right, 70, 0.12); // con un hueco pequeño
+
+  await page.keyboard.press('g');
+  await expect(page.getByRole('toolbar', { name: 'Opciones de Bote de pintura' })).toBeVisible();
+  // Sobre la línea no rellena: avisa.
+  await page.mouse.click(left.x + 70, left.y);
+  await expect(page.getByText('no sobre la línea')).toBeVisible();
+  await page.mouse.click(left.x, left.y);
+  await page.mouse.click(right.x, right.y);
+  await expect.poll(() => pixel(page, left)).toEqual([0xe0, 0xa5, 0x26]);
+  expect(await pixel(page, right)).toEqual([0xe0, 0xa5, 0x26]);
+  // Fuera de los dibujos sigue el papel (el hueco no ha dejado escapar el relleno).
+  expect(await pixel(page, { x: c.x, y: c.y - 120 })).not.toEqual([0xe0, 0xa5, 0x26]);
+
+  // Sobre un relleno, cambia su color.
+  await page.getByRole('group', { name: 'Color' }).getByRole('button', { name: 'Color #2f6fd6' }).click();
+  await page.mouse.click(left.x, left.y);
+  await expect.poll(() => pixel(page, left)).toEqual([0x2f, 0x6f, 0xd6]);
+
+  const p: Project = await saveAndRead(app, page, file);
+  const items = p.scenes[0]!.layers[0]!.items!;
+  // Cada relleno queda justo debajo de su línea y aparece cuando ella termina de dibujarse.
+  expect(items.map((i) => i.type)).toEqual(['shape', 'stroke', 'shape', 'stroke']);
+  const [fillA, lineA, fillB, lineB] = items as [Project['scenes'][0]['layers'][0]['items'], ...unknown[]] as never as [
+    { shape: string; style: { fill: string }; in: number; enter: { kind: string } },
+    { in: number; enter: { duration: number } },
+    { shape: string; style: { fill: string }; in: number },
+    { in: number; enter: { duration: number } },
+  ];
+  expect(fillA.shape).toBe('polygon');
+  expect(fillA.style.fill).toBe('#2f6fd6');
+  expect(fillB.style.fill).toBe('#e0a526');
+  expect(fillA.in).toBe(lineA.in + lineA.enter.duration);
+  expect(fillB.in).toBe(lineB.in + lineB.enter.duration);
+  expect(fillA.enter.kind).toBe('fade');
+  await stubMessageBox(app, 1);
+  await app.close();
+});

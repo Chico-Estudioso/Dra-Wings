@@ -85,7 +85,7 @@ En la animación dibujada a mano el mismo dibujo se calca varias veces y las cop
 
 - Cada elemento tiene **3 variantes** que se alternan unas **8 veces por segundo**, siempre en un número entero de fotogramas (cada 3 a 24 fps, cada 4 a 30 fps) para que el ritmo sea regular.
 - **Trazos:** sus puntos se desplazan con un ruido suave a lo largo de la línea (ondulan sin romperse), con una amplitud que crece con el grosor y tiene tope. La semilla sale del id del elemento y de la variante: el resultado es determinista. Un trazo a medio dibujar tiembla igual que el completo en la parte ya dibujada. Los contornos de cada variante se guardan en la caché de trazados.
-- **Formas y textos:** un pequeño desplazamiento y giro que mueve sus bordes unas pocas unidades. Las imágenes no tiemblan.
+- **Formas y textos:** un pequeño desplazamiento y giro que mueve sus bordes unas pocas unidades. Las imágenes no tiemblan, y los **rellenos sin contorno** (los del bote de pintura y los de la biblioteca) tampoco: como en la animación a mano, el color se queda quieto bajo la línea que tiembla, sin abrir rendijas.
 - Niveles: Quieto, Suave, Normal y Marcado (`settings.boil`). Los proyectos nuevos empiezan en Normal; los anteriores, sin el campo, quedan quietos.
 - Solo se aplica al reproducir, en la vista previa y al exportar. Al editar, el dibujo se ve quieto para trabajar con precisión.
 

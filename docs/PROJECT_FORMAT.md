@@ -64,6 +64,7 @@ Shape extends ItemBase {
   type: 'shape'; shape: 'rect' | 'ellipse' | 'line' | 'arrow' | 'polygon'
   w: number; h: number                  // rect/elipse/polígono: caja local (0,0)-(w,h); línea/flecha: de (0,0) a (w,h)
   points?: number[]; smooth?: boolean   // solo polígono: vértices locales [x0, y0, x1, y1, ...]
+  holes?: number[][]                    // solo polígono: agujeros sin pintar (regla par-impar), máx. 100
   style: { stroke: Color | null; strokeWidth: number; fill: Color | null; opacity: number }
 }
 

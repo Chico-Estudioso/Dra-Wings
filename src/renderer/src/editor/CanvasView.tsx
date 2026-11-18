@@ -30,6 +30,7 @@ import { finishFreehand, LazyBrush, packShape, STABILIZER_PX } from '@core/draw/
 import { recognizeShape, SHAPE_LABELS, type Recognized } from '@core/draw/recognize';
 import { fontsReady } from './fonts';
 import { cursorForHandle, handlePoint, HANDLES, rotateHandlePoint, selectionGeometry, transformOf } from './selection';
+import { fillAt } from './fill-actions';
 import { fitView, toScene, zoomAt } from './view';
 import { TextEditor, type TextEditTarget } from './TextEditor';
 import { LIBRARY } from '@core/library/catalog';
@@ -669,6 +670,9 @@ export function CanvasView({ project }: { project: Project }) {
         armHold();
         break;
       }
+      case 'fill':
+        fillAt(p);
+        return;
       case 'eraser':
         gesture.current = { kind: 'erase', last: p, working: new Map() };
         eraseSegment(p, p);
@@ -1045,6 +1049,7 @@ export function CanvasView({ project }: { project: Project }) {
     select: cursor,
     pencil: 'crosshair',
     eraser: 'none',
+    fill: 'cell',
     rect: 'crosshair',
     ellipse: 'crosshair',
     line: 'crosshair',

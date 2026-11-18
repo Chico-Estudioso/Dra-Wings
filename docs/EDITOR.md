@@ -15,6 +15,7 @@
 | Seleccionar | V | Clic para seleccionar, Mayús+clic para añadir o quitar, arrastrar en vacío para seleccionar con un marco. Arrastrar mueve. Los tiradores escalan (Mayús mantiene la proporción) y el tirador superior rota (Mayús: pasos de 15°). Doble clic en un texto para editarlo. |
 | Lápiz | B / P | Trazo vectorial con perfect-freehand. Guarda cada punto como `[x, y, presión, tMs]`. |
 | Goma | E | Ver «Comportamiento de la goma». |
+| Bote de pintura | G | Clic dentro de un dibujo cerrado para pintarlo con su color (aparte del de las líneas). Ver «Bote de pintura». |
 | Rectángulo, Elipse | R, O | Arrastrar para crear (Mayús: cuadrado o círculo). Un clic crea una forma de tamaño medio. |
 | Línea, Flecha | L, A | Arrastrar (Mayús: ángulos de 45°). |
 | Texto | T | Clic para escribir (Esc o Ctrl+Intro para terminar). Clic sobre un texto existente para editarlo. |
@@ -50,6 +51,17 @@ Al crear una forma se activa Seleccionar con la forma ya seleccionada, lista par
 | Hoja de atajos | ? o F1 |
 | Recorrer los elementos (con el lienzo enfocado) | Tab / Mayús+Tab |
 | Eliminar el clip de audio o la marca seleccionados | Supr o Retroceso |
+
+## Bote de pintura
+
+Pensado para colorear lo dibujado a mano alzada (`src/core/draw/fill.ts` y `src/renderer/src/editor/fill-actions.ts`):
+
+- **Zona:** se dibuja la escena tal como se ve al editar (sin la textura del papel) en una imagen de hasta 1600 px de lado y se rellenan los píxeles conectados de color parecido al del clic (tolerancia 40 por canal). Las líneas, también las de capas bloqueadas, hacen de borde.
+- **Huecos:** si el relleno se escapa hasta el borde de la hoja, se repite cerrando huecos de 3, 6 y 10 px de **pantalla** (lo que el usuario ve como un hueco pequeño, sea cual sea el zoom). Si aun así llega al borde, es una zona que de verdad acaba en la hoja (el cielo sobre un horizonte, el fondo) y se rellena tal cual.
+- **Forma:** el contorno se vectoriza (seguimiento de Moore y simplificación Douglas-Peucker, hasta 1800 vértices) en un polígono suavizado sin línea. Lo que queda sin pintar dentro (una nube cerrada en el cielo, un ojo) son **agujeros** del polígono. El relleno entra 1 px bajo las líneas para que no quede rendija.
+- **Dónde y cuándo:** justo debajo de la más baja de las líneas que lo rodean (o al fondo de la capa activa si esas líneas están en una capa bloqueada), y aparece con un fundido corto cuando terminan de dibujarse.
+- **Sobre un relleno** (o cualquier forma rellena) cambia su color. Sobre una línea, una imagen o un recurso de la biblioteca no rellena y explica por qué.
+- Tarda del orden de 0,1–0,2 s en una hoja Full HD; se hace en el hilo de interfaz.
 
 ## Comportamiento de la goma
 

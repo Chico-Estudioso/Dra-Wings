@@ -135,7 +135,7 @@ function hitShape(s: Shape, p: Point, tol: number): boolean {
   if (s.shape === 'line' || s.shape === 'arrow') return distToSegment(p, { x: 0, y: 0 }, { x: s.w, y: s.h }) <= half;
   if (s.shape === 'polygon') {
     const pts = s.points ?? [];
-    if (s.style.fill && pointInPolygon(p, pts)) return true;
+    if (s.style.fill && pointInPolygon(p, pts) && !(s.holes ?? []).some((hl) => pointInPolygon(p, hl))) return true;
     for (let i = 0; i < pts.length; i += 2) {
       const j = (i + 2) % pts.length;
       if (distToSegment(p, { x: pts[i]!, y: pts[i + 1]! }, { x: pts[j]!, y: pts[j + 1]! }) <= half) return true;

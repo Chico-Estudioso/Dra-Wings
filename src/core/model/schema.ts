@@ -104,6 +104,16 @@ export const shapeSchema = z.object({
     .max(2 * 2000)
     .refine((p) => p.length % 2 === 0, 'Los vértices deben ir en pares')
     .optional(),
+  /** Solo polygon: agujeros (zonas sin rellenar dentro del polígono), con vértices como `points`. */
+  holes: z
+    .array(
+      z
+        .array(z.number().finite())
+        .max(2 * 2000)
+        .refine((p) => p.length % 2 === 0, 'Los vértices deben ir en pares'),
+    )
+    .max(100)
+    .optional(),
   smooth: z.boolean().optional(),
   style: z.object({
     stroke: color.nullable(),

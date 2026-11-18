@@ -119,14 +119,17 @@ function drawShape(ctx: Ctx2D, s: Shape, progress = 1, fillProgress = 1) {
   const w = Math.abs(s.w);
   const h = Math.abs(s.h);
   ctx.beginPath();
-  if (s.shape === 'polygon') polygonPath(ctx, s.points ?? [], !!s.smooth);
-  else if (s.shape === 'rect') ctx.rect(x, y, w, h);
+  if (s.shape === 'polygon') {
+    polygonPath(ctx, s.points ?? [], !!s.smooth);
+    for (const hole of s.holes ?? []) polygonPath(ctx, hole, !!s.smooth);
+  } else if (s.shape === 'rect') ctx.rect(x, y, w, h);
   else ctx.ellipse(x + w / 2, y + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2);
   if (fill && fillProgress > 0) {
     const alpha = ctx.globalAlpha;
     ctx.globalAlpha = alpha * fillProgress;
     ctx.fillStyle = fill;
-    ctx.fill();
+    // Los agujeros de un polígono quedan sin pintar.
+    ctx.fill(s.holes?.length ? 'evenodd' : 'nonzero');
     ctx.globalAlpha = alpha;
   }
   if (stroke && strokeWidth > 0) {
@@ -247,9 +250,14 @@ function drawImageItem(ctx: Ctx2D, item: Extract<RenderItem['item'], { type: 'im
   ctx.stroke();
 }
 
-/** Temblor de formas y textos: en proporción al grosor de su línea o al tamaño de la letra. */
+/**
+ * Temblor de formas y textos: en proporción al grosor de su línea o al tamaño de la letra. Los
+ * rellenos sin contorno no tiemblan: como en la animación a mano, el color se queda bajo la línea que
+ * tiembla (si temblaran por separado, se abrirían rendijas entre el relleno y su línea).
+ */
 function jitterFor(item: RenderItem['item'], boil: Boil) {
   if (item.type === 'shape') {
+    if (!item.style.stroke || item.style.strokeWidth <= 0) return null;
     const amp = Math.min(2.5, 0.6 + (item.style.strokeWidth || 4) * 0.12) * boil.amount;
     return jitterMatrix(seedOf(item.id), boil.variant, item.w, item.h, amp);
   }

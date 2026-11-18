@@ -5,7 +5,8 @@ import { create } from 'zustand';
 import type { FontId, Mode, Shape } from '@core/model/types';
 import type { Ticks } from '@core/time/ticks';
 
-export type Tool = 'select' | 'pencil' | 'eraser' | 'rect' | 'ellipse' | 'line' | 'arrow' | 'text' | 'hand' | 'camera';
+export type Tool =
+  'select' | 'pencil' | 'eraser' | 'fill' | 'rect' | 'ellipse' | 'line' | 'arrow' | 'text' | 'hand' | 'camera';
 
 export const SHAPE_TOOLS: Record<string, Shape['shape']> = {
   rect: 'rect',
@@ -16,6 +17,8 @@ export const SHAPE_TOOLS: Record<string, Shape['shape']> = {
 
 export interface ToolOptions {
   color: string;
+  /** Color del bote de pintura (aparte del de las líneas). */
+  bucket: string;
   fill: string | null;
   size: number;
   eraserSize: number;
@@ -123,6 +126,7 @@ export const useEditor = create<EditorState>()((set) => ({
   tool: 'pencil',
   options: {
     color: '#1d1d1f',
+    bucket: '#e0a526',
     fill: null,
     size: 8,
     eraserSize: 24,

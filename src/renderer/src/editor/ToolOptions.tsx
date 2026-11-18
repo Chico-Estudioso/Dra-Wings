@@ -21,6 +21,9 @@ const CAMERA_HINT =
 const PUPPET_HINT =
   'Animar arrastrando: arrastra un elemento y el vídeo avanzará grabando su recorrido. Suelta para terminar; Esc cancela.';
 
+const FILL_HINT =
+  'Haz clic dentro de un dibujo cerrado para pintarlo (los huecos pequeños se cierran solos). Sobre un relleno, cambia su color.';
+
 export function ToolOptions() {
   const tool = useEditor((s) => s.tool);
   const o = useEditor((s) => s.options);
@@ -86,6 +89,13 @@ export function ToolOptions() {
     <div className="tool-options" role="toolbar" aria-label={`Opciones de ${label}`}>
       {tool === 'eraser' ? (
         <ValueSlider label="Tamaño" value={o.eraserSize} min={4} max={200} onChange={(v) => set({ eraserSize: v })} />
+      ) : tool === 'fill' ? (
+        <>
+          <ColorPicker label="Color" value={o.bucket} onChange={(c) => c && set({ bucket: c })} />
+          <span className="tool-hint" title={FILL_HINT}>
+            {FILL_HINT}
+          </span>
+        </>
       ) : (
         <ColorPicker label="Color" value={o.color} onChange={(c) => c && set({ color: c })} />
       )}
