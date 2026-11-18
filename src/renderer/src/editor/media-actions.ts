@@ -25,7 +25,9 @@ import { useApp } from '../state/app-store';
 import { insertItems, writableActiveLayer } from './actions';
 import { analyzeVoice, detectRhythm } from './rhythm-actions';
 import { useEditor } from './editor-store';
-import { loadAudio, loadImage } from './media';
+import { audioContext, loadAudio, loadImage } from './media';
+import { SFX_LABELS, SFX_RATE, synthSfx, type SfxId } from '@core/audio/sfx';
+import { encodeWav } from '@core/audio/wav';
 
 /** Parte de la hoja que ocupa como máximo una imagen recién importada. */
 const IMAGE_FIT = 0.6;
@@ -204,4 +206,24 @@ export function moveMarkerTo(id: string, t: Ticks): void {
 export function deleteMarker(id: string): void {
   editAudio('Eliminar marca', (p) => removeMarker(p, id));
   useEditor.getState().selectMarker(null);
+}
+
+/** Inserta un efecto de sonido sintetizado en el cabezal (pista de efectos) y lo hace sonar. */
+export async function insertSfx(id: SfxId): Promise<void> {
+  const samples = synthSfx(id);
+  const label = SFX_LABELS[id];
+  try {
+    const ctx = audioContext();
+    const buf = ctx.createBuffer(1, samples.length, SFX_RATE);
+    buf.copyToChannel(samples, 0);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    void ctx.resume().then(() => src.start());
+  } catch {
+    // Sin audio disponible: se inserta igualmente.
+  }
+  const stored = await window.dw.importMediaBytes('audio', `${label}.wav`, encodeWav(samples, SFX_RATE));
+  if (stored.status !== 'ok') return fail(stored.status === 'error' ? stored.message : 'No se pudo guardar el efecto.');
+  await addAudio('sfx', stored, `Efecto: ${label.toLowerCase()}`);
 }

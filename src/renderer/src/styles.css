@@ -1929,3 +1929,7 @@ kbd {
 .script-count {
   margin-right: auto;
 }
+.sfx-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}

@@ -41,6 +41,7 @@ Registro breve. El detalle de cada una está en su ADR (`docs/decisions/`).
 | 36 | Elasticidad y estela procedurales a partir de la velocidad (sin keyframes); se estrecha `1/√k` en vez de conservar el área para un efecto más suave | Aprobada | `docs/ANIMATION_ENGINE.md` |
 | 37 | Las transiciones ocupan el principio de la escena que entra y muestran el último fotograma de la anterior (no la alargan ni solapan escenas): la duración y la línea de tiempo no cambian | Aprobada | `docs/ANIMATION_ENGINE.md` |
 | 38 | Lip-sync por volumen (no por fonemas): sin dependencias ni modelos, determinista y suficiente para el estilo Draw My Life; las bocas se generan al dibujar desde el constructor y no se guardan | Aprobada | `docs/LIBRARY.md`, `docs/AUDIO_EXPORT.md` |
+| 39 | Los efectos de sonido se sintetizan por código y se guardan como WAV en el proyecto (deterministas, sin licencias de terceros ni descargas) | Aprobada | `docs/AUDIO_EXPORT.md` |
 | 24 | Aviso de `npm audit` en `picomatch` (ReDoS) aceptado: solo lo usan Vite y Vitest al compilar y probar, con patrones propios; no se empaqueta y no hay versión corregida | Aceptada (revisar en M8) | — |
 
 ## Pendientes (se deciden en su fase)

@@ -50,7 +50,16 @@ import {
 } from './actions';
 import { TIMELINE_MIN_H, useEditor } from './editor-store';
 import { itemName } from './item-names';
-import { addMarkerAtPlayhead, importAudio, moveClipTo, moveMarkerTo, trimClipBy, updateTrack } from './media-actions';
+import {
+  addMarkerAtPlayhead,
+  importAudio,
+  insertSfx,
+  moveClipTo,
+  moveMarkerTo,
+  trimClipBy,
+  updateTrack,
+} from './media-actions';
+import { SFX_LABELS, type SfxId } from '@core/audio/sfx';
 import { togglePlay } from './playback';
 import { openRecordPanel } from './RecordPanel';
 import { hasFiles, importDroppedFiles } from './drop-files';
@@ -677,6 +686,20 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
                   </Popover.Close>
                 );
               })}
+              <span className="menu-label">Efectos de sonido</span>
+              <div className="sfx-grid" role="group" aria-label="Efectos de sonido">
+                {(Object.keys(SFX_LABELS) as SfxId[]).map((id) => (
+                  <Popover.Close asChild key={id}>
+                    <button
+                      className="menu-item"
+                      title={`Añadir «${SFX_LABELS[id]}» en el cabezal`}
+                      onClick={() => void insertSfx(id)}
+                    >
+                      <AudioLines size={14} aria-hidden /> {SFX_LABELS[id]}
+                    </button>
+                  </Popover.Close>
+                ))}
+              </div>
             </Popover.Content>
           </Popover.Portal>
         </Popover.Root>

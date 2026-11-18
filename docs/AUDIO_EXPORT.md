@@ -52,6 +52,14 @@ Para animar y cortar al compás (por ejemplo, un videoclip), Dra-Wings detecta l
 - Uso: golpes en la regla (los de compás, más marcados), ajuste magnético a los golpes al mover barras, clips y marcas, y vida «al ritmo» (ver `docs/ANIMATION_ENGINE.md`).
 - Probado con pistas sintéticas (92, 110, 120, 128 y 150 BPM, a 44,1 y 48 kHz, con bombo, caja, charles y ruido). Con música real hay que verificarlo a mano: en canciones sin percusión clara puede elegir el doble o la mitad del tempo.
 
+## Efectos de sonido
+
+El menú «Audio» de la línea de tiempo incluye efectos sintetizados por código (`src/core/audio/sfx.ts`), sin archivos de terceros: Pop (barrido descendente corto), Whoosh (ruido filtrado que sube y baja), Ding (campana con tres parciales), Boing (seno con vibrato), Rotulador (ruido áspero en trazos), Aplausos (muchas palmadas cortas), Tachán (nota y acorde mayor) y Clic.
+
+- Mono a 48 kHz, normalizados a 0,8 de pico, con una entrada de 0,5 ms y una salida de 4 ms para que no chasqueen.
+- Son deterministas: el mismo efecto produce siempre el mismo WAV, así que en el proyecto se guarda una sola vez aunque se use muchas veces.
+- Se insertan en el cabezal, en la pista de efectos (por el mismo canal validado de bytes que las grabaciones), y suenan una vez al añadirlos.
+
 ## Voz de la narración
 
 Para que los personajes hablen, cada narración se analiza al añadirla (grabada, importada o soltada) o con «Analizar la voz» en el panel del clip (`src/core/audio/voice.ts`): volumen RMS cada 1/30 s en decibelios, normalizado entre 30 dB por debajo del percentil 95 de la propia grabación (silencio) y ese percentil (voz fuerte), y suavizado como una boca (sube enseguida y baja con un factor de 0,6 por fotograma). Se guarda en el medio (`asset.voice`, 0..100). El nivel en un instante es el máximo de las narraciones no silenciadas que suenan, siguiendo la posición y el recorte de cada clip. Es rápido (un recorrido del audio) y se hace en el hilo de la interfaz.

@@ -98,3 +98,20 @@ test('al borrar una imagen, el archivo deja de incluir su medio y deshacer lo re
   expect((await saveAndRead(app, page, file)).assets).toHaveLength(1);
   await app.close();
 });
+
+test('efectos de sonido sintetizados en el cabezal', async () => {
+  const file = path.join(await tempDir(), 'efectos.dwings');
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Efectos');
+  await page.getByRole('button', { name: 'Audio', exact: true }).click();
+  await page.getByRole('group', { name: 'Efectos de sonido' }).getByRole('button', { name: 'Pop' }).click();
+  await expect(page.getByTestId('audio-clip')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Audio', exact: true }).click();
+  await page.getByRole('group', { name: 'Efectos de sonido' }).getByRole('button', { name: 'Ding' }).click();
+  await expect(page.getByTestId('audio-clip')).toHaveCount(2);
+  const p = await saveAndRead(app, page, file);
+  expect(p.audioTracks.map((t) => t.kind)).toEqual(['sfx']);
+  expect(p.assets.map((a) => a.name).sort()).toEqual(['Ding.wav', 'Pop.wav']);
+  await stubMessageBox(app, 1);
+  await app.close();
+});
