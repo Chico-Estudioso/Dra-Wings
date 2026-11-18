@@ -45,6 +45,7 @@ const GROUPS: { title: string; items: [keys: string, action: string][] }[] = [
     items: [
       ['Ctrl+S / Ctrl+Mayús+S', 'Guardar / guardar como'],
       ['Ctrl+E', 'Exportar vídeo'],
+      ['Ctrl+Mayús+E', 'Guardar el fotograma como imagen'],
       ['Ctrl+N / Ctrl+O', 'Nuevo / abrir proyecto'],
       ['? o F1', 'Esta hoja de atajos'],
     ],

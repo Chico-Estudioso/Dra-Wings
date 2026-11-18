@@ -57,6 +57,9 @@ export type ExportBeginResult =
 
 export type ExportFinishResult = { status: 'ok'; fileName: string } | { status: 'error'; message: string };
 
+export type ImageSaveResult =
+  { status: 'ok'; fileName: string } | { status: 'canceled' } | { status: 'error'; message: string };
+
 export interface AppInfo {
   version: string;
   platform: string;
@@ -90,8 +93,13 @@ export interface DwApi {
   exportFinish(id: string): Promise<ExportFinishResult>;
   /** Cancela la exportación y borra el temporal. */
   exportCancel(id: string): Promise<void>;
-  /** Muestra en la carpeta el último vídeo exportado. */
+  /** Muestra en la carpeta el último vídeo o imagen exportados. */
   exportReveal(): Promise<void>;
+  /**
+   * Guarda un fotograma ya dibujado (PNG). El proceso principal pide el destino con el diálogo nativo;
+   * `seconds` (instante del fotograma) solo se usa para sugerir el nombre.
+   */
+  saveFrameImage(png: Uint8Array, seconds: number): Promise<ImageSaveResult>;
   /** Proyecto que el sistema pidió abrir (doble clic en un .dwings), ya añadido a recientes. */
   takePendingOpen(): Promise<string | null>;
   /** Avisa cuando el sistema pide abrir un proyecto con la app ya abierta. */

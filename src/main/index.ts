@@ -13,16 +13,23 @@ import {
   type MenuAction,
   type ExportBeginResult,
   type ExportFinishResult,
+  type ImageSaveResult,
   type MediaImportResult,
   type OpenResult,
   type SaveResult,
   type WindowState,
 } from '@shared/ipc';
-import { PROJECT_EXTENSION, ProjectFileError, readProjectFile, writeProjectFile } from './project-file';
+import {
+  PROJECT_EXTENSION,
+  ProjectFileError,
+  readProjectFile,
+  writeFileAtomic,
+  writeProjectFile,
+} from './project-file';
 import { RecoveryStore } from './recovery';
 import { RecentStore } from './recent';
 import { MEDIA_NAME, MediaError, MediaStore } from './media';
-import { ExportError, ExportSessions } from './export';
+import { checkPng, ExportError, ExportSessions, frameImageName } from './export';
 import { APP_ORIGIN, MEDIA_EXT_BY_MIME } from '@shared/media';
 
 // Permite aislar los datos en pruebas E2E.
@@ -105,6 +112,11 @@ function buildMenu() {
         { label: 'Guardar como…', accelerator: 'CmdOrCtrl+Shift+S', click: () => sendMenu('saveAs') },
         { type: 'separator' },
         { label: 'Exportar vídeo…', accelerator: 'CmdOrCtrl+E', click: () => sendMenu('export') },
+        {
+          label: 'Guardar fotograma como imagen…',
+          accelerator: 'CmdOrCtrl+Shift+E',
+          click: () => sendMenu('exportFrame'),
+        },
         { type: 'separator' },
         { label: 'Ir a inicio', click: () => sendMenu('home') },
         ...(isMac ? [] : [{ type: 'separator' as const }, { label: 'Salir', role: 'quit' as const }]),
@@ -452,6 +464,38 @@ function registerIpc() {
     }
   });
   ipcMain.handle(CH.exportCancel, (_e, id: unknown) => exports.cancel(id));
+  ipcMain.handle(CH.imageSave, async (_e, data: unknown, seconds: unknown): Promise<ImageSaveResult> => {
+    let png: Uint8Array;
+    try {
+      png = checkPng(data);
+    } catch (e) {
+      return { status: 'error', message: e instanceof ExportError ? e.message : 'La imagen no es válida.' };
+    }
+    const name = sanitizeFileName(frameImageName(windowState.projectName ?? 'Fotograma', seconds));
+    const r = await dialog.showSaveDialog(mainWindow!, {
+      title: 'Guardar fotograma como imagen',
+      defaultPath: path.join(app.getPath('pictures'), `${name}.png`),
+      filters: [{ name: 'Imagen PNG', extensions: ['png'] }],
+      properties: ['showOverwriteConfirmation', 'createDirectory'],
+    });
+    if (r.canceled || !r.filePath) return { status: 'canceled' };
+    const target = r.filePath.toLowerCase().endsWith('.png') ? r.filePath : `${r.filePath}.png`;
+    try {
+      await writeFileAtomic(target, png, { backup: false });
+      lastExport = target;
+      return { status: 'ok', fileName: path.basename(target) };
+    } catch (e) {
+      log(e);
+      const code = (e as NodeJS.ErrnoException).code;
+      return {
+        status: 'error',
+        message:
+          code === 'ENOSPC'
+            ? 'No se pudo guardar la imagen: el disco está lleno.'
+            : 'No se pudo guardar la imagen en esa carpeta. Elige otra ubicación.',
+      };
+    }
+  });
   ipcMain.handle(CH.exportReveal, () => {
     if (lastExport) shell.showItemInFolder(lastExport);
   });

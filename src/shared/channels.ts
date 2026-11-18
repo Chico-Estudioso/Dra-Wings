@@ -20,9 +20,10 @@ export const CH = {
   exportFinish: 'export:finish',
   exportCancel: 'export:cancel',
   exportReveal: 'export:reveal',
+  imageSave: 'image:save',
   takePendingOpen: 'system:take-pending-open',
   openRequest: 'system:open-request',
 } as const;
 
-export const MENU_ACTIONS = ['new', 'open', 'save', 'saveAs', 'export', 'home', 'about'] as const;
+export const MENU_ACTIONS = ['new', 'open', 'save', 'saveAs', 'export', 'exportFrame', 'home', 'about'] as const;
 export type MenuAction = (typeof MENU_ACTIONS)[number];

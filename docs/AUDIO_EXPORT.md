@@ -76,6 +76,14 @@ Para que los personajes hablen, cada narración se analiza al añadirla (grabada
 6. **Final:** `fsync`, cierre y renombrado de `.part` al destino. **Cancelar** (o cerrar la ventana) termina el worker y borra el `.part`; si el destino ya existía, queda intacto.
 7. **Resultado:** nombre del archivo, códecs, tiempo empleado y «Mostrar en la carpeta».
 
+### Fotograma como imagen
+
+«Guardar este fotograma…» (en el diálogo de exportar, a la resolución elegida) o **Ctrl+Mayús+E** (menú Archivo, a la resolución del proyecto) guarda como PNG lo que se ve en el cabezal: sirve para miniaturas, portadas o compartir una viñeta.
+
+- Se dibuja en el hilo de interfaz con `drawSceneInProject` (la misma función que el vídeo, con transición, cámara, trazo vivo, mano y vida), sobre un `OffscreenCanvas` del tamaño final, y se codifica con `convertToBlob` (`src/renderer/src/export/frame-image.ts`). Es exactamente el fotograma del vídeo en ese instante.
+- El renderer manda los bytes al proceso principal (`image:save`), que comprueba que es un PNG (firma y tamaño máximo de 64 MiB), pide el destino con el diálogo nativo (nombre sugerido: proyecto e instante, por ejemplo «Mi historia 1m12s.png», en Imágenes) y lo escribe de forma atómica (temporal + `fsync` + renombrado). El renderer nunca elige ni ve la ruta.
+- «Mostrar en la carpeta» enseña el último vídeo o imagen exportados.
+
 **Verificación:** las pruebas E2E demultiplexan el MP4 con mediabunny en Node y comprueban códecs, tamaño, número de fotogramas, duración y la pista de audio. A mano se comprobó con ffprobe y ffmpeg que vídeo y audio empiezan en 0, que el vídeo dura lo exacto y que el audio tiene el nivel del original. No hay verificación dentro de la app: la escritura ya está validada y verificar exigiría volver a leer el archivo entero.
 
 ## Códecs por plataforma (medido con Electron 45.3.3 / Chromium 156)

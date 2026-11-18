@@ -367,9 +367,13 @@ select {
 }
 .dialog-actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
   margin-top: 20px;
+}
+.dialog-actions .action-start {
+  margin-right: auto;
 }
 .form {
   display: grid;

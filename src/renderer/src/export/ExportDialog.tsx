@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import * as RadioGroup from '@radix-ui/react-radio-group';
 import { create } from 'zustand';
-import { AlertTriangle, CheckCircle2, FolderOpen } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, FolderOpen, ImageDown } from 'lucide-react';
 import {
   defaultExportSettings,
   exportSize,
@@ -14,6 +14,9 @@ import {
 } from '@core/export/plan';
 import type { Project } from '@core/model/types';
 import { secondsFromTicks, SUPPORTED_FPS, type Fps } from '@core/time/ticks';
+import type { ImageSaveResult } from '@shared/ipc';
+import { useEditor } from '../editor/editor-store';
+import { saveFrameImage } from './frame-image';
 import {
   hasAudibleClips,
   probeCodecs,
@@ -42,13 +45,15 @@ export function clock(seconds: number): string {
 type View =
   | { kind: 'settings'; error?: string }
   | { kind: 'running'; run: ExportRun; status: ExportStatus; started: number; now: number }
-  | { kind: 'result'; outcome: ExportOutcome };
+  | { kind: 'result'; outcome: ExportOutcome }
+  | { kind: 'saving-frame' }
+  | { kind: 'frame'; result: Exclude<ImageSaveResult, { status: 'canceled' }> };
 
 export function ExportDialog({ project }: { project: Project }) {
   const open = useExportDialog((s) => s.open);
   const [settings, setSettings] = useState<ExportSettings>(() => defaultExportSettings(project));
   const [view, setView] = useState<View>({ kind: 'settings' });
-  const running = view.kind === 'running';
+  const running = view.kind === 'running' || view.kind === 'saving-frame';
   const runRef = useRef<ExportRun | null>(null);
 
   // Al cerrar la ventana del editor o salir del proyecto con una exportación en marcha, se cancela.
@@ -92,6 +97,13 @@ export function ExportDialog({ project }: { project: Project }) {
     } catch (e) {
       setView({ kind: 'settings', error: e instanceof Error ? e.message : 'No se pudo empezar la exportación.' });
     }
+  };
+
+  const saveFrame = async () => {
+    const { sceneId, playhead } = useEditor.getState();
+    setView({ kind: 'saving-frame' });
+    const result = await saveFrameImage(project, sceneId, playhead, settings.resolution);
+    setView(result.status === 'canceled' ? { kind: 'settings' } : { kind: 'frame', result });
   };
 
   return (
@@ -184,6 +196,14 @@ export function ExportDialog({ project }: { project: Project }) {
                 </p>
               )}
               <div className="dialog-actions">
+                <button
+                  type="button"
+                  className="btn btn-ghost action-start"
+                  title="Guarda como imagen PNG lo que se ve en el cabezal, a la resolución elegida"
+                  onClick={() => void saveFrame()}
+                >
+                  <ImageDown size={16} aria-hidden /> Guardar este fotograma…
+                </button>
                 <Dialog.Close type="button" className="btn btn-ghost">
                   Cancelar
                 </Dialog.Close>
@@ -194,6 +214,12 @@ export function ExportDialog({ project }: { project: Project }) {
             </form>
           )}
           {view.kind === 'running' && <Progress view={view} />}
+          {view.kind === 'saving-frame' && (
+            <p className="hint" role="status">
+              Guardando el fotograma…
+            </p>
+          )}
+          {view.kind === 'frame' && <FrameResult result={view.result} onClose={() => setOpen(false)} />}
           {view.kind === 'result' && <Result outcome={view.outcome} onClose={() => setOpen(false)} />}
         </Dialog.Content>
       </Dialog.Portal>
@@ -242,6 +268,38 @@ function Progress({ view }: { view: Extract<View, { kind: 'running' }> }) {
       <div className="dialog-actions">
         <button type="button" className="btn btn-ghost" onClick={run.cancel}>
           Cancelar exportación
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function FrameResult({
+  result,
+  onClose,
+}: {
+  result: Exclude<ImageSaveResult, { status: 'canceled' }>;
+  onClose: () => void;
+}) {
+  return (
+    <div className="form">
+      {result.status === 'ok' ? (
+        <p className="export-result" role="status">
+          <CheckCircle2 size={20} aria-hidden /> Imagen guardada: <strong>{result.fileName}</strong>
+        </p>
+      ) : (
+        <p className="form-error" role="alert">
+          <AlertTriangle size={16} aria-hidden /> {result.message}
+        </p>
+      )}
+      <div className="dialog-actions">
+        {result.status === 'ok' && (
+          <button type="button" className="btn btn-ghost" onClick={() => void window.dw.exportReveal()}>
+            <FolderOpen size={16} aria-hidden /> Mostrar en la carpeta
+          </button>
+        )}
+        <button type="button" className="btn btn-primary" onClick={onClose}>
+          Cerrar
         </button>
       </div>
     </div>

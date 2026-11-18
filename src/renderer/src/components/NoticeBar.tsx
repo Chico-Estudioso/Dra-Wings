@@ -19,6 +19,17 @@ export function NoticeBar() {
           </ul>
         ) : null}
       </div>
+      {notice.action && (
+        <button
+          className="btn btn-ghost btn-sm"
+          onClick={() => {
+            notice.action!.run();
+            notify(null);
+          }}
+        >
+          {notice.action.label}
+        </button>
+      )}
       <button className="icon-btn" aria-label="Cerrar aviso" onClick={() => notify(null)}>
         <X size={16} />
       </button>

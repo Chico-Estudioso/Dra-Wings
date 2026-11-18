@@ -10,6 +10,9 @@ import { LeaveDialog } from './components/LeaveDialog';
 import { NoticeBar } from './components/NoticeBar';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { openExportDialog } from './export/ExportDialog';
+import { saveFrameImage } from './export/frame-image';
+import { useEditor } from './editor/editor-store';
+import { defaultExportSettings } from '@core/export/plan';
 
 export function App() {
   const screen = useApp((s) => s.screen);
@@ -51,6 +54,21 @@ export function App() {
         case 'export':
           if (app.doc) openExportDialog();
           break;
+        case 'exportFrame': {
+          if (!app.doc) break;
+          const project = app.doc.project;
+          const { sceneId, playhead } = useEditor.getState();
+          void saveFrameImage(project, sceneId, playhead, defaultExportSettings(project).resolution).then((r) => {
+            if (r.status === 'ok')
+              app.notify({
+                kind: 'info',
+                text: `Imagen guardada: ${r.fileName}`,
+                action: { label: 'Mostrar en la carpeta', run: () => void window.dw.exportReveal() },
+              });
+            else if (r.status === 'error') app.notify({ kind: 'error', text: r.message });
+          });
+          break;
+        }
         case 'home':
           requestLeave(() => app.closeDoc());
           break;

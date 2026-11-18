@@ -5,7 +5,7 @@ import path from 'node:path';
 import { defaultExportSettings, exportSize, frameTick, planExport } from '@core/export/plan';
 import { createProject, createScene } from '@core/model/factory';
 import { TICKS_PER_SECOND } from '@core/time/ticks';
-import { ExportError, ExportSessions } from '../../src/main/export';
+import { checkPng, ExportError, ExportSessions, frameImageName, IMAGE_MAX_BYTES } from '../../src/main/export';
 
 describe('plan de exportación', () => {
   it('el tamaño respeta la proporción de la hoja con lados pares', () => {
@@ -74,5 +74,33 @@ describe('sesiones de exportación (proceso principal)', () => {
     await s.cancel('otro'); // no hace nada
     expect(s.active).toBe(true);
     await s.cancel(id);
+  });
+});
+
+describe('fotograma como imagen (proceso principal)', () => {
+  const png = (n = 64) => {
+    const b = new Uint8Array(n);
+    b.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    return b;
+  };
+
+  it('solo acepta un PNG de tamaño razonable', () => {
+    expect(checkPng(png())).toHaveLength(64);
+    expect(() => checkPng('texto')).toThrow(ExportError);
+    expect(() => checkPng(new Uint8Array(64))).toThrow(ExportError); // sin firma PNG
+    expect(() => checkPng(png(8))).toThrow(ExportError); // truncado
+    expect(() => checkPng(png(IMAGE_MAX_BYTES + 1))).toThrow(ExportError);
+    const jpg = new Uint8Array(64);
+    jpg.set([0xff, 0xd8, 0xff]);
+    expect(() => checkPng(jpg)).toThrow(ExportError);
+  });
+
+  it('sugiere un nombre con el instante del fotograma', () => {
+    expect(frameImageName('Mi historia', 72.9)).toBe('Mi historia 1m12s');
+    expect(frameImageName('Mi historia', 0)).toBe('Mi historia 0m00s');
+    expect(frameImageName('X', -5)).toBe('X 0m00s');
+    expect(frameImageName('X', Number.NaN)).toBe('X 0m00s');
+    expect(frameImageName('X', '12')).toBe('X 0m00s');
+    expect(frameImageName('X', 1e12)).toBe('X 1440m00s');
   });
 });

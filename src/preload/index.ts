@@ -20,6 +20,7 @@ const api: DwApi = {
   exportFinish: (id) => ipcRenderer.invoke(CH.exportFinish, id),
   exportCancel: (id) => ipcRenderer.invoke(CH.exportCancel, id),
   exportReveal: () => ipcRenderer.invoke(CH.exportReveal),
+  saveFrameImage: (png, seconds) => ipcRenderer.invoke(CH.imageSave, png, seconds),
   takePendingOpen: () => ipcRenderer.invoke(CH.takePendingOpen),
   onOpenRequest: (cb) => {
     const listener = () => cb();

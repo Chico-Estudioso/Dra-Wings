@@ -46,6 +46,7 @@ Al crear una forma se activa Seleccionar con la forma ya seleccionada, lista par
 | Keyframe anterior / siguiente de la selección | Mayús+, y Mayús+. |
 | Añadir marca en el cabezal | M |
 | Exportar vídeo | Ctrl+E |
+| Guardar el fotograma como imagen (PNG) | Ctrl+Mayús+E |
 | Hoja de atajos | ? o F1 |
 | Recorrer los elementos (con el lienzo enfocado) | Tab / Mayús+Tab |
 | Eliminar el clip de audio o la marca seleccionados | Supr o Retroceso |

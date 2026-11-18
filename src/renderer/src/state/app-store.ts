@@ -25,6 +25,8 @@ export interface Notice {
   kind: 'error' | 'info';
   text: string;
   details?: string[];
+  /** Botón opcional junto al aviso (por ejemplo, «Mostrar en la carpeta»). */
+  action?: { label: string; run: () => void };
 }
 
 interface AppState {

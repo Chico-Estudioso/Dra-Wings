@@ -74,3 +74,22 @@ export class ExportSessions {
     await rm(s.part, { force: true });
   }
 }
+
+/** Tamaño máximo de una imagen exportada (un PNG de 4K ronda los 10–30 MB). */
+export const IMAGE_MAX_BYTES = 64 * 1024 ** 2;
+const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+
+/** Comprueba lo que manda el renderer: un PNG completo y razonable. */
+export function checkPng(data: unknown): Uint8Array {
+  if (!(data instanceof Uint8Array) || data.byteLength < 33 || data.byteLength > IMAGE_MAX_BYTES)
+    throw new ExportError('La imagen no es válida.');
+  if (PNG_SIGNATURE.some((b, i) => data[i] !== b)) throw new ExportError('La imagen no es un PNG.');
+  return data;
+}
+
+/** «Mi historia 0m12s»: el instante del fotograma en el nombre sugerido (sin caracteres prohibidos). */
+export function frameImageName(project: string, seconds: unknown): string {
+  const s = typeof seconds === 'number' && Number.isFinite(seconds) ? Math.max(0, Math.min(seconds, 86_400)) : 0;
+  const whole = Math.floor(s);
+  return `${project} ${Math.floor(whole / 60)}m${String(whole % 60).padStart(2, '0')}s`;
+}

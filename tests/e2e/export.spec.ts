@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { readdir, writeFile } from 'node:fs/promises';
+import { readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { ALL_FORMATS, FilePathSource, Input } from 'mediabunny';
 import {
@@ -106,6 +106,59 @@ test('cancelar una exportación no deja archivos', async () => {
   await expect(page.getByText('Exportación cancelada')).toBeVisible();
   await expect.poll(() => readdir(dir)).toEqual([]);
   await page.getByRole('button', { name: 'Cerrar' }).click();
+  await stubMessageBox(app, 1);
+  await app.close();
+});
+
+/** Ancho y alto de un PNG (cabecera IHDR). */
+const pngSize = (b: Buffer) => ({ width: b.readUInt32BE(16), height: b.readUInt32BE(20) });
+
+test('guarda el fotograma del cabezal como imagen PNG', async () => {
+  const dir = await tempDir();
+  const out = path.join(dir, 'fotograma.png');
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Portada');
+  const c = await center(page);
+  await drag(page, { x: c.x - 150, y: c.y }, { x: c.x + 150, y: c.y + 40 });
+  // A los 4 s el trazo ya está dibujado del todo (80 px por segundo en la línea de tiempo).
+  const tl = (await page.getByTestId('timeline-scroll').boundingBox())!;
+  await page.mouse.click(tl.x + 4 * 80 + 1, tl.y + 10);
+
+  await page.getByRole('button', { name: 'Exportar', exact: true }).click();
+  await page.getByRole('radio', { name: /HD 1280 × 720/ }).click();
+  await stubSaveDialog(app, out);
+  await page.getByRole('button', { name: 'Guardar este fotograma…' }).click();
+  await expect(page.getByRole('status')).toContainText('Imagen guardada: fotograma.png');
+  const bytes = await readFile(out);
+  expect([...bytes.subarray(0, 4)]).toEqual([0x89, 0x50, 0x4e, 0x47]);
+  expect(pngSize(bytes)).toEqual({ width: 1280, height: 720 });
+  // El trazo está en la imagen: hay píxeles oscuros sobre el papel claro.
+  const dark = await page.evaluate(async (b64) => {
+    const bin = Uint8Array.from(atob(b64), (ch) => ch.charCodeAt(0));
+    const bmp = await createImageBitmap(new Blob([bin], { type: 'image/png' }));
+    const cv = new OffscreenCanvas(bmp.width, bmp.height);
+    const ctx = cv.getContext('2d')!;
+    ctx.drawImage(bmp, 0, 0);
+    const px = ctx.getImageData(0, 0, bmp.width, bmp.height).data;
+    let n = 0;
+    for (let i = 0; i < px.length; i += 4) if (px[i]! + px[i + 1]! + px[i + 2]! < 200) n++;
+    return n;
+  }, bytes.toString('base64'));
+  expect(dark).toBeGreaterThan(200);
+  await page.getByRole('button', { name: 'Cerrar' }).click();
+
+  // Desde el menú (Ctrl+Mayús+E), con la resolución del proyecto y un aviso.
+  const out2 = path.join(dir, 'menu.png');
+  await stubSaveDialog(app, out2);
+  await app.evaluate(({ Menu }) => {
+    const item = Menu.getApplicationMenu()!
+      .items.flatMap((m) => m.submenu?.items ?? [])
+      .find((i) => i.label === 'Guardar fotograma como imagen…')!;
+    (item.click as () => void)();
+  });
+  await expect(page.getByText('Imagen guardada: menu.png')).toBeVisible();
+  expect(pngSize(await readFile(out2))).toEqual({ width: 1920, height: 1080 });
+  await expect(page.getByRole('button', { name: 'Mostrar en la carpeta' })).toBeVisible();
   await stubMessageBox(app, 1);
   await app.close();
 });
