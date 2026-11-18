@@ -90,14 +90,40 @@ export function inkPressures(points: number[], zoom: number): number[] {
   return out;
 }
 
+/** Dibujo en espejo: copias del trazo reflejadas en los ejes que pasan por el centro de la hoja. */
+export type MirrorMode = 'off' | 'x' | 'xy';
+
+export const MIRROR_LABELS: Record<MirrorMode, string> = {
+  off: 'No',
+  x: 'Izquierda y derecha',
+  xy: 'Cuatro lados',
+};
+
+/**
+ * Copias en espejo de unos puntos empaquetados [x, y, presión, tMs, ...]: reflejadas en el eje vertical
+ * que pasa por `axis` y, en «cuatro lados», también en el horizontal y en ambos.
+ */
+export function mirrorPoints(points: readonly number[], mode: MirrorMode, axis: Point): number[][] {
+  if (mode === 'off') return [];
+  const flip = (fx: boolean, fy: boolean) =>
+    points.map((v, i) => {
+      const k = i % POINT_STRIDE;
+      if (k === 0 && fx) return 2 * axis.x - v;
+      if (k === 1 && fy) return 2 * axis.y - v;
+      return v;
+    });
+  return mode === 'x' ? [flip(true, false)] : [flip(true, false), flip(false, true), flip(true, true)];
+}
+
 /** Ajustes de las ayudas al dibujar (opciones del lápiz). */
 export interface DrawAssist {
   stabilizer: StabilizerLevel;
   ink: boolean;
   quickShapes: boolean;
+  mirror: MirrorMode;
 }
 
-export const DEFAULT_ASSIST: DrawAssist = { stabilizer: 'medium', ink: true, quickShapes: true };
+export const DEFAULT_ASSIST: DrawAssist = { stabilizer: 'medium', ink: true, quickShapes: true, mirror: 'off' };
 
 /** Puntos y afinado finales de un trazo a mano alzada (con tinta si procede). */
 export function finishFreehand(

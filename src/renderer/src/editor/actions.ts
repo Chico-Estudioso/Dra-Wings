@@ -97,6 +97,27 @@ export function addToActiveLayer(item: Item, label: string, select = false): boo
   return true;
 }
 
+/**
+ * Añade un trazo y sus copias (dibujo en espejo) en un solo paso: las copias empiezan y tardan lo
+ * mismo que el original, así que en el vídeo se dibujan a la vez.
+ */
+export function addWithCopies(item: Item, copies: Item[], label: string): boolean {
+  if (!copies.length) return addToActiveLayer(item, label);
+  const layer = writableActiveLayer();
+  if (!layer) return false;
+  editScene(label, (scene) => {
+    const target = findLayer(scene, layer.id);
+    if (target.kind === 'frames') return addTimed(scene, target, [item, ...copies]);
+    addTimed(scene, target, [item]);
+    for (const c of copies) {
+      c.in = item.in;
+      if (item.enter) c.enter = { ...item.enter };
+      addItem(scene, target.id, c);
+    }
+  });
+  return true;
+}
+
 export function deleteSelection(): void {
   const ids = useEditor.getState().selection;
   if (!ids.length) return;

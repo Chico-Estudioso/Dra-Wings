@@ -6,6 +6,7 @@ Los cambios relevantes se registran aquí. Se seguirá una estructura inspirada 
 - Preparación inicial del proyecto y del kit de desarrollo.
 - «Ver un ejemplo» en el inicio: proyecto de tres escenas hecho con la biblioteca, con textos, una salida con fundido y un zoom de cámara, para aprender viéndolo.
 - Arrastrar imágenes (al lienzo) y audio (a la línea de tiempo) desde el explorador; el audio pregunta su pista si no se suelta sobre una.
+- Dibujo en espejo (Ayudas del lápiz): izquierda y derecha o cuatro lados, con guía en el centro de la hoja; las copias se dibujan a la vez en el vídeo.
 - Bote de pintura (G): un clic dentro de un dibujo a mano alzada lo colorea; los huecos pequeños se cierran solos, lo de dentro (ojos, nubes) queda sin pintar, el color va debajo de la línea y aparece cuando termina de dibujarse. Los rellenos no tiemblan con el trazo vivo.
 - Escenas a las marcas: pulsa M mientras suena la canción en cada cambio de frase (se marca lo que se oye, compensando la latencia del audio) y ajusta las escenas para que cada una empiece en su marca; lo que no daba tiempo a escribirse se acelera.
 - Guardar el fotograma del cabezal como imagen PNG (desde el diálogo de exportar o con Ctrl+Mayús+E), idéntico al del vídeo: para miniaturas y portadas.

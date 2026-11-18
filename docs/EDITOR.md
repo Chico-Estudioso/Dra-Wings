@@ -77,12 +77,14 @@ Pensado para colorear lo dibujado a mano alzada (`src/core/draw/fill.ts` y `src/
 
 ## Ayudas al dibujar (lápiz)
 
-Botón «Ayudas» en las opciones del lápiz (`src/core/draw/`). Están activas por defecto y se recuerdan durante la sesión.
+Botón «Ayudas» en las opciones del lápiz (`src/core/draw/`). Están activas por defecto (salvo el espejo) y se recuerdan durante la sesión.
 
 - **Estabilizador** (Sin, Bajo, Medio, Alto): «pincel con cuerda» (`LazyBrush`). El trazo sigue al puntero a 6, 12 o 22 píxeles de pantalla y solo avanza cuando el puntero se aleja más que eso, así que el temblor de la mano no llega a la línea. Al soltar, el trazo alcanza el punto donde se soltó.
 - **Trazo de tinta:** con ratón o táctil, la presión sale de la velocidad en píxeles de pantalla (deprisa, más fino; despacio, más grueso), suavizada, y las puntas se afinan (`style.taper`, hasta 2,5 veces el grosor y como mucho el 22 % del largo). Se guarda en el trazo, así que se ve igual en todas partes.
 - **Formas rápidas:** si el puntero se queda quieto 0,45 s mientras se dibuja, el trazo se reconoce (`recognizeShape`) y, si encaja, se sustituye por la forma limpia con una etiqueta junto al puntero: línea (exacta si está casi a 0°, 45° o 90°), círculo, elipse, rectángulo (recto si casi lo está), triángulo o polígono de hasta 8 lados. Sigue siendo un trazo del mismo pincel: se dibuja progresivamente y tiembla con el trazo vivo. Moverse claramente vuelve a la mano alzada. Garabatos, curvas abiertas y espirales no se convierten.
   - Reconocimiento: el recorrido se remuestrea por longitud; se ajusta una elipse (ejes principales) y un polígono (Ramer–Douglas–Peucker cerrado desde el punto más alejado del centro), y se comparan sus errores medios en unidades de la escena. Un polígono de 3 o 4 lados gana si encaja claramente mejor; uno de 5 a 8, solo si encaja mucho mejor (si no, es una curva).
+
+- **Espejo** (No, Izquierda y derecha, Cuatro lados): lo que se dibuja se repite reflejado en el eje vertical del centro de la hoja (y en el horizontal con cuatro lados), que se ve como una guía discontinua azul mientras el lápiz está activo. La vista previa muestra las copias en vivo; al soltar, el original y sus copias se añaden en un solo paso de deshacer y con el mismo tiempo de aparición, así que en el vídeo se dibujan a la vez (`mirrorPoints` en `assist.ts`). Funciona también con las formas rápidas. Las copias son trazos normales: se pueden mover o borrar por separado.
 
 ## Biblioteca y guías
 

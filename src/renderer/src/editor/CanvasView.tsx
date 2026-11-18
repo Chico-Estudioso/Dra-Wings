@@ -22,11 +22,12 @@ import {
   commitTransforms,
   currentScene,
   goToScene,
+  addWithCopies,
   writableActiveLayer,
 } from './actions';
 import { useApp } from '../state/app-store';
 import { SHAPE_TOOLS, useEditor, type Tool, type ToolOptions } from './editor-store';
-import { finishFreehand, LazyBrush, packShape, STABILIZER_PX } from '@core/draw/assist';
+import { finishFreehand, LazyBrush, mirrorPoints, packShape, STABILIZER_PX } from '@core/draw/assist';
 import { recognizeShape, SHAPE_LABELS, type Recognized } from '@core/draw/recognize';
 import { fontsReady } from './fonts';
 import { cursorForHandle, handlePoint, HANDLES, rotateHandlePoint, selectionGeometry, transformOf } from './selection';
@@ -313,11 +314,30 @@ export function CanvasView({ project }: { project: Project }) {
     const px = 1 / view.zoom;
     const g = gesture.current;
 
+    const mirror = options.assist.mirror;
+    if (tool === 'pencil' && mirror !== 'off' && !playMode) {
+      // Ejes del dibujo en espejo (centro de la hoja).
+      ctx.save();
+      ctx.strokeStyle = 'rgba(47,111,214,0.45)';
+      ctx.lineWidth = px;
+      ctx.setLineDash([6 * px, 5 * px]);
+      ctx.beginPath();
+      ctx.moveTo(docW / 2, 0);
+      ctx.lineTo(docW / 2, docH);
+      if (mirror === 'xy') {
+        ctx.moveTo(0, docH / 2);
+        ctx.lineTo(docW, docH / 2);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
     if (g?.kind === 'draw' && g.points.length) {
       const live = drawnStroke(g, options, view.zoom);
       ctx.globalAlpha = options.opacity;
       ctx.fillStyle = options.color;
       ctx.fill(outlineToPath(strokeOutline(live)));
+      for (const points of mirrorPoints(live.points, mirror, { x: docW / 2, y: docH / 2 }))
+        ctx.fill(outlineToPath(strokeOutline({ ...live, points })));
       ctx.globalAlpha = 1;
       if (g.snapped) {
         // Qué forma se ha reconocido, junto al puntero.
@@ -929,10 +949,15 @@ export function CanvasView({ project }: { project: Project }) {
       case 'pan':
         setPanning(false);
         break;
-      case 'draw':
+      case 'draw': {
         clearTimeout(holdTimer.current);
-        addToActiveLayer(drawnStroke(g, ed.options, ed.view.zoom, true), g.snapped ? 'Dibujar forma' : 'Dibujar');
+        const stroke = drawnStroke(g, ed.options, ed.view.zoom, true);
+        const copies = mirrorPoints(stroke.points, ed.options.assist.mirror, { x: docW / 2, y: docH / 2 }).map(
+          (points) => createStroke(points, stroke.style),
+        );
+        addWithCopies(stroke, copies, g.snapped ? 'Dibujar forma' : 'Dibujar');
         break;
+      }
       case 'erase':
         commitErase(g.working);
         break;

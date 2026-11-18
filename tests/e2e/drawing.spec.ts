@@ -248,18 +248,44 @@ test('bote de pintura: rellena un dibujo cerrado debajo de su línea y cierra hu
   const items = p.scenes[0]!.layers[0]!.items!;
   // Cada relleno queda justo debajo de su línea y aparece cuando ella termina de dibujarse.
   expect(items.map((i) => i.type)).toEqual(['shape', 'stroke', 'shape', 'stroke']);
-  const [fillA, lineA, fillB, lineB] = items as [Project['scenes'][0]['layers'][0]['items'], ...unknown[]] as never as [
-    { shape: string; style: { fill: string }; in: number; enter: { kind: string } },
-    { in: number; enter: { duration: number } },
-    { shape: string; style: { fill: string }; in: number },
-    { in: number; enter: { duration: number } },
-  ];
+  const [fillA, lineA, fillB, lineB] = items;
+  if (fillA?.type !== 'shape' || fillB?.type !== 'shape' || !lineA || !lineB) throw new Error('orden inesperado');
   expect(fillA.shape).toBe('polygon');
   expect(fillA.style.fill).toBe('#2f6fd6');
   expect(fillB.style.fill).toBe('#e0a526');
-  expect(fillA.in).toBe(lineA.in + lineA.enter.duration);
-  expect(fillB.in).toBe(lineB.in + lineB.enter.duration);
-  expect(fillA.enter.kind).toBe('fade');
+  expect(fillA.in).toBe(lineA.in + lineA.enter!.duration);
+  expect(fillB.in).toBe(lineB.in + lineB.enter!.duration);
+  expect(fillA.enter?.kind).toBe('fade');
+  await stubMessageBox(app, 1);
+  await app.close();
+});
+
+test('dibujo en espejo: la copia reflejada se crea a la vez y se dibuja al mismo tiempo', async () => {
+  const file = path.join(await tempDir(), 'espejo.dwings');
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Espejo');
+  const c = await center(page);
+  await page.getByRole('button', { name: 'Ayudas' }).click();
+  await page.getByRole('radiogroup', { name: 'Espejo' }).getByText('Izquierda y derecha').click();
+  await page.keyboard.press('Escape');
+  await drag(page, { x: c.x - 200, y: c.y - 60 }, { x: c.x - 60, y: c.y + 40 }, 10);
+  await expect.poll(() => itemCount(page)).toBe(2);
+  // Un solo paso de deshacer quita las dos.
+  await page.keyboard.press('Control+z');
+  await expect.poll(() => itemCount(page)).toBe(0);
+  await page.keyboard.press('Control+y');
+  await expect.poll(() => itemCount(page)).toBe(2);
+
+  const p = await saveAndRead(app, page, file);
+  const [a, b] = p.scenes[0]!.layers[0]!.items!;
+  if (a?.type !== 'stroke' || b?.type !== 'stroke') throw new Error('se esperaban dos trazos');
+  const W = p.settings.width;
+  for (let i = 0; i < a.points.length; i += 4) {
+    expect(b.points[i]).toBeCloseTo(W - a.points[i]!, 6);
+    expect(b.points[i + 1]).toBe(a.points[i + 1]);
+  }
+  expect(b.in).toBe(a.in);
+  expect(b.enter).toEqual(a.enter);
   await stubMessageBox(app, 1);
   await app.close();
 });

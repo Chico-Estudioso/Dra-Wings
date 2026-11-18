@@ -1,22 +1,29 @@
 // Ayudas al dibujar con el lápiz: estabilizador, trazo de tinta y formas rápidas.
 import * as Popover from '@radix-ui/react-popover';
 import { Wand2 } from 'lucide-react';
-import { STABILIZER_LABELS, type DrawAssist, type StabilizerLevel } from '@core/draw/assist';
+import {
+  MIRROR_LABELS,
+  STABILIZER_LABELS,
+  type DrawAssist,
+  type MirrorMode,
+  type StabilizerLevel,
+} from '@core/draw/assist';
 import { useEditor } from './editor-store';
 
 const LEVELS = Object.keys(STABILIZER_LABELS) as StabilizerLevel[];
+const MIRRORS = Object.keys(MIRROR_LABELS) as MirrorMode[];
 
 export function DrawAssistPopover() {
   const assist = useEditor((s) => s.options.assist);
   const set = (patch: Partial<DrawAssist>) =>
     useEditor.getState().setOptions({ assist: { ...useEditor.getState().options.assist, ...patch } });
-  const active = assist.stabilizer !== 'off' || assist.ink || assist.quickShapes;
+  const active = assist.stabilizer !== 'off' || assist.ink || assist.quickShapes || assist.mirror !== 'off';
   return (
     <Popover.Root>
       <Popover.Trigger asChild>
         <button
           className={`btn btn-ghost btn-sm ${active ? 'is-on' : ''}`}
-          title="Estabilizador, trazo de tinta y formas rápidas"
+          title="Estabilizador, trazo de tinta, formas rápidas y espejo"
         >
           <Wand2 size={14} aria-hidden /> Ayudas
         </button>
@@ -60,6 +67,25 @@ export function DrawAssistPopover() {
           <p className="hint assist-hint">
             Dibuja un círculo, una línea, un rectángulo o un triángulo y mantén el puntero quieto al final: se vuelve
             una forma limpia. Muévelo para seguir a mano alzada.
+          </p>
+          <span className="menu-label">Espejo</span>
+          <div role="radiogroup" aria-label="Espejo" className="assist-levels">
+            {MIRRORS.map((m) => (
+              <label key={m} className={`chip ${assist.mirror === m ? 'is-active' : ''}`}>
+                <input
+                  type="radio"
+                  className="sr-only"
+                  name="mirror"
+                  checked={assist.mirror === m}
+                  onChange={() => set({ mirror: m })}
+                />
+                {MIRROR_LABELS[m]}
+              </label>
+            ))}
+          </div>
+          <p className="hint assist-hint">
+            Lo que dibujas se repite reflejado en el centro de la hoja (caras, mariposas, edificios…). En el vídeo se
+            dibujan a la vez.
           </p>
         </Popover.Content>
       </Popover.Portal>

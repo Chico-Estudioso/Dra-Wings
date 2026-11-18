@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { inkPressures, inkTaper, LazyBrush, strokeLength } from '@core/draw/assist';
+import { inkPressures, inkTaper, LazyBrush, mirrorPoints, strokeLength } from '@core/draw/assist';
 import { recognizeShape } from '@core/draw/recognize';
 import type { Point } from '@core/geometry/matrix';
 
@@ -154,5 +154,25 @@ describe('estabilizador y tinta', () => {
     expect(strokeLength(pts)).toBeGreaterThan(600);
     expect(inkTaper(pts, 8)).toBe(20);
     expect(inkTaper([0, 0, -1, 0, 10, 0, -1, 10], 8)).toBe(2.2);
+  });
+});
+
+describe('dibujo en espejo', () => {
+  const pts = [100, 50, 0.5, 0, 300, 80, 0.7, 40];
+  const axis = { x: 960, y: 540 };
+
+  it('sin espejo no hay copias', () => {
+    expect(mirrorPoints(pts, 'off', axis)).toEqual([]);
+  });
+
+  it('izquierda y derecha refleja x en el eje vertical y conserva presión y tiempo', () => {
+    expect(mirrorPoints(pts, 'x', axis)).toEqual([[1820, 50, 0.5, 0, 1620, 80, 0.7, 40]]);
+  });
+
+  it('cuatro lados añade el reflejo vertical y el de ambos ejes', () => {
+    const [x, y, xy] = mirrorPoints(pts, 'xy', axis);
+    expect(x).toEqual([1820, 50, 0.5, 0, 1620, 80, 0.7, 40]);
+    expect(y).toEqual([100, 1030, 0.5, 0, 300, 1000, 0.7, 40]);
+    expect(xy).toEqual([1820, 1030, 0.5, 0, 1620, 1000, 0.7, 40]);
   });
 });
