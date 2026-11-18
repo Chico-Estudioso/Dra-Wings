@@ -22,6 +22,7 @@
   "exclude": [
     "src/core/render/draw.ts",
     "src/core/render/frame.ts",
+    "src/core/render/hand.ts",
     "src/core/audio/mix.ts",
     "tests/unit/render-*.test.ts"
   ]

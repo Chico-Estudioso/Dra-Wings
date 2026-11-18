@@ -70,6 +70,7 @@ export function createProject({ name, aspect, fps, mode, now = new Date() }: New
       mode,
       boil: 'medium',
       elastic: 'medium',
+      hand: 'marker',
     },
     scenes: [createScene('Escena 1')],
     assets: [],

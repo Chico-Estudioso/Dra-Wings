@@ -65,6 +65,14 @@ Todo se puede ajustar después en la línea de tiempo o en el panel «Animación
 
 `usePlayback` avanza el cabezal con `requestAnimationFrame` y recorre las escenas en orden con el tiempo global (`locateTime`). En M5 el reloj maestro pasará a ser `AudioContext.currentTime`.
 
+## Mano que dibuja
+
+Como en los vídeos de pizarra, una mano con rotulador o lápiz sigue la punta de lo que se está dibujando (`settings.hand`; Sin mano, Rotulador o Lápiz; los proyectos nuevos empiezan con rotulador). Se elige en el menú del trazo vivo.
+
+- La punta (`src/core/render/hand-tip.ts`, puro) es la del elemento de más arriba que se está dibujando en el fotograma: el último punto del trazo a medias, el punto del contorno de una forma (línea, rectángulo en el sentido de su contorno, elipse desde la derecha en el sentido de las agujas del reloj, polígono) o el final del texto que se escribe letra a letra. En la fase de color de los recursos de la biblioteca no hay mano.
+- La mano (`src/core/render/hand.ts`) es original y está dibujada por código: el instrumento con la punta en ese punto, el pulgar, la palma, los dedos y una manga que sale de la escena desde abajo a la derecha, con una sombra suave. Mide un 34 % del lado corto de la hoja.
+- Solo al reproducir, en la vista previa y en el vídeo; no al editar. Se dibuja dentro de la cámara de la escena.
+
 ## Trazo vivo
 
 En la animación dibujada a mano el mismo dibujo se calca varias veces y las copias se alternan, así que las líneas «hierven» aunque nada se mueva (*line boil*). Dra-Wings lo imita en el renderizador común (`src/core/render/boil.ts`), así que la vista previa y el vídeo exportado coinciden fotograma a fotograma:

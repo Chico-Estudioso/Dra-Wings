@@ -20,7 +20,8 @@ Project {
   id: string; name: string; createdAt: string; updatedAt: string   // ISO 8601
   settings: { width: number; height: number; fps: Fps; background: Color; mode: 'guided' | 'mixed' | 'free'
               boil?: 'off' | 'soft' | 'medium' | 'strong'      // «trazo vivo»; sin valor = 'off' (archivos anteriores)
-              elastic?: 'off' | 'soft' | 'medium' | 'strong' } // elasticidad; sin valor = 'off'
+              elastic?: 'off' | 'soft' | 'medium' | 'strong'   // elasticidad; sin valor = 'off'
+              hand?: 'none' | 'marker' | 'pencil' }           // mano que dibuja; sin valor = 'none'
   scenes: Scene[]                       // se reproducen en orden
   assets: Asset[]                       // medios usados (imágenes y audio)
   audioTracks: AudioTrack[]

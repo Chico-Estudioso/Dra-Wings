@@ -3,12 +3,15 @@ import * as Popover from '@radix-ui/react-popover';
 import { Activity } from 'lucide-react';
 import { BOIL_LABELS, type BoilLevel } from '@core/render/boil';
 import type { Project } from '@core/model/types';
-import { setBoil } from './actions';
+import { setBoil, setHand } from './actions';
+import { HAND_LABELS, type HandStyle } from '@core/render/hand';
 
 const LEVELS = Object.keys(BOIL_LABELS) as BoilLevel[];
+const HANDS = Object.keys(HAND_LABELS) as HandStyle[];
 
 export function BoilControl({ project }: { project: Project }) {
   const level = project.settings.boil ?? 'off';
+  const hand = project.settings.hand ?? 'none';
   return (
     <Popover.Root>
       <Popover.Trigger asChild>
@@ -34,6 +37,18 @@ export function BoilControl({ project }: { project: Project }) {
           <p className="hint boil-hint">
             Las líneas tiemblan un poco todo el rato, como en la animación dibujada a mano. Se ve al reproducir, en la
             vista previa y en el vídeo; al editar el dibujo se queda quieto.
+          </p>
+          <span className="menu-label">Mano que dibuja</span>
+          <div role="radiogroup" aria-label="Mano que dibuja" className="boil-options">
+            {HANDS.map((h) => (
+              <label key={h} className="menu-item">
+                <input type="radio" name="hand" checked={hand === h} onChange={() => setHand(h)} />
+                {HAND_LABELS[h]}
+              </label>
+            ))}
+          </div>
+          <p className="hint boil-hint">
+            Una mano sigue la punta de lo que se va dibujando, como en los vídeos de pizarra.
           </p>
         </Popover.Content>
       </Popover.Portal>

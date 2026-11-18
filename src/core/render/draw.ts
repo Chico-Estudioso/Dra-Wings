@@ -189,6 +189,31 @@ export function drawText(ctx: Ctx2D, t: TextItem, progress = 1) {
   });
 }
 
+/** Hasta dónde llega un texto que se está escribiendo (espacio local), para la mano que dibuja. */
+export function textTip(ctx: Ctx2D, t: TextItem, progress: number): { x: number; y: number } | null {
+  if (progress <= 0 || progress >= 1) return null;
+  ctx.save();
+  ctx.font = fontString(t.font, t.size);
+  const lines = t.text.split('\n');
+  let remaining = Math.floor([...t.text.replace(/\n/g, '')].length * progress);
+  let tip: { x: number; y: number } | null = null;
+  lines.forEach((line, i) => {
+    if (tip) return;
+    const chars = [...line];
+    if (remaining <= chars.length) {
+      const full = ctx.measureText(line).width;
+      const x0 = t.align === 'left' ? 0 : t.align === 'center' ? (t.w - full) / 2 : t.w - full;
+      tip = {
+        x: x0 + ctx.measureText(chars.slice(0, remaining).join('')).width,
+        y: (i + 0.8) * t.size * t.lineHeight,
+      };
+    }
+    remaining -= chars.length;
+  });
+  ctx.restore();
+  return tip;
+}
+
 /** Mide la caja de un texto con el contexto dado (las fuentes deben estar cargadas). */
 export function measureText(ctx: Ctx2D, text: string, font: FontId, size: number, lineHeight: number) {
   ctx.save();

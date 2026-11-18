@@ -28,6 +28,7 @@ import type { BoilLevel } from '@core/render/boil';
 import type { LifeKind } from '@core/anim/life';
 import type { ElasticLevel } from '@core/anim/elastic';
 import type { LoopKind } from '@core/anim/loop';
+import type { HandStyle } from '@core/render/hand';
 import type { TextReveal } from '@core/render/text-reveal';
 import { sceneBeats, type Beat } from '@core/audio/rhythm';
 import { barAlignedDuration, beatsOrPulse, staggerTimes } from '@core/edit/beat-sync';
@@ -278,6 +279,13 @@ export function setTextReveal(reveal: TextReveal): void {
     it.reveal = reveal === 'letters' ? undefined : reveal;
     if (!it.enter || it.enter.kind !== 'draw')
       it.enter = { kind: 'draw', duration: it.enter?.duration || ticksPerFrame(fps()) * 30 };
+  });
+}
+
+/** Mano que dibuja del proyecto. */
+export function setHand(hand: HandStyle): void {
+  useApp.getState().apply('Mano que dibuja', (p) => {
+    p.settings.hand = hand;
   });
 }
 

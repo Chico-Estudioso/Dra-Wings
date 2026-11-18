@@ -4,9 +4,11 @@ import { locateTime } from '../edit/scenes';
 import type { Project, Scene } from '../model/types';
 import type { Ticks } from '../time/ticks';
 import type { StaticTransform } from '../geometry/matrix';
-import { drawRenderList, type Ctx2D, type ImageSources, type PathCache } from './draw';
+import { drawRenderList, textTip, type Ctx2D, type ImageSources, type PathCache } from './draw';
 import { cameraMatrix, evaluateScene } from './evaluate';
 import { boilAt } from './boil';
+import { drawingTip } from './hand-tip';
+import { drawHand } from './hand';
 import { elasticAmount } from '../anim/elastic';
 import { sceneBeats, type Beat } from '../audio/rhythm';
 import { sceneVoice } from '../audio/voice';
@@ -52,6 +54,12 @@ export function drawSceneFrame(
     unit: settings.width / 1920,
   });
   drawRenderList(ctx, list, cache, images, boil);
+  // Mano que dibuja: con la punta donde se está dibujando (en el espacio de la escena).
+  const hand = settings.hand ?? 'none';
+  if (hand !== 'none') {
+    const tip = drawingTip(list, (t, progress) => textTip(ctx, t, progress));
+    if (tip) drawHand(ctx, tip, Math.min(settings.width, settings.height) * 0.34, hand);
+  }
   ctx.restore();
 }
 

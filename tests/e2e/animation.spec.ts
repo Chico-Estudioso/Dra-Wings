@@ -410,3 +410,26 @@ test('repetir movimiento: un salto que se repite sigue moviéndose', async () =>
   await stubMessageBox(app, 1);
   await app.close();
 });
+
+test('mano que dibuja: activa en los proyectos nuevos y se puede cambiar', async () => {
+  const file = path.join(await tempDir(), 'mano.dwings');
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Mano');
+  const c = await center(page);
+  await drag(page, { x: c.x - 150, y: c.y }, { x: c.x + 150, y: c.y + 30 }, 20);
+  // A mitad del dibujo, con mano y sin ella, el fotograma es distinto.
+  await scrubTo(page, 0.4);
+  const withHand = await sceneHash(page);
+  await page.getByRole('button', { name: 'Trazo vivo: Normal' }).click();
+  await expect(page.getByRole('radio', { name: 'Mano con rotulador' })).toBeChecked();
+  await page.getByRole('radio', { name: 'Sin mano' }).check();
+  await page.keyboard.press('Escape');
+  await expect.poll(() => sceneHash(page)).not.toBe(withHand);
+  await page.getByRole('button', { name: 'Trazo vivo: Normal' }).click();
+  await page.getByRole('radio', { name: 'Mano con lápiz' }).check();
+  await page.keyboard.press('Escape');
+  const p = await saveAndRead(app, page, file);
+  expect(p.settings.hand).toBe('pencil');
+  await stubMessageBox(app, 1);
+  await app.close();
+});

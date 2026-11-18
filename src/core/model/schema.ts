@@ -302,6 +302,8 @@ export const projectSchema = z.object({
     boil: z.enum(['off', 'soft', 'medium', 'strong']).optional(),
     /** Elasticidad: lo que se mueve deprisa se estira (sin valor: rígido). */
     elastic: z.enum(['off', 'soft', 'medium', 'strong']).optional(),
+    /** Mano que dibuja lo que va apareciendo (sin valor: sin mano). */
+    hand: z.enum(['none', 'marker', 'pencil']).optional(),
   }),
   scenes: z.array(sceneSchema).min(1, 'El proyecto necesita al menos una escena'),
   assets: z.array(assetSchema),
