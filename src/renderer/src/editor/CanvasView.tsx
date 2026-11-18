@@ -27,6 +27,7 @@ import { LIBRARY } from '@core/library/catalog';
 import { ASSET_MIME, insertAsset } from './LibraryPanel';
 import { imageSourcesFor, useMediaVersion } from './media';
 import { itemName } from './item-names';
+import { hasFiles, importDroppedFiles } from './drop-files';
 
 const HANDLE_PX = 9;
 const ROTATE_OFFSET_PX = 28;
@@ -831,12 +832,18 @@ export function CanvasView({ project }: { project: Project }) {
         onPointerUp={finishGesture}
         onPointerCancel={finishGesture}
         onDragOver={(e) => {
-          if (e.dataTransfer.types.includes(ASSET_MIME)) {
+          if (e.dataTransfer.types.includes(ASSET_MIME) || hasFiles(e.dataTransfer)) {
             e.preventDefault();
             e.dataTransfer.dropEffect = 'copy';
           }
         }}
         onDrop={(e) => {
+          if (hasFiles(e.dataTransfer)) {
+            // Imágenes desde el explorador: en el punto donde se sueltan.
+            e.preventDefault();
+            void importDroppedFiles([...e.dataTransfer.files], { point: scenePoint(e) });
+            return;
+          }
           const asset = LIBRARY.find((a) => a.id === e.dataTransfer.getData(ASSET_MIME));
           if (!asset) return;
           e.preventDefault();

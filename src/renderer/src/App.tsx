@@ -16,6 +16,22 @@ export function App() {
 
   useEffect(() => startSync(), []);
 
+  // Archivos soltados fuera del lienzo o de la línea de tiempo: se rechazan (cursor de «no se puede»)
+  // en lugar de dejar que Chromium intente abrirlos.
+  useEffect(() => {
+    const reject = (e: DragEvent) => {
+      if (e.defaultPrevented || !e.dataTransfer || ![...e.dataTransfer.types].includes('Files')) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'none';
+    };
+    window.addEventListener('dragover', reject);
+    window.addEventListener('drop', reject);
+    return () => {
+      window.removeEventListener('dragover', reject);
+      window.removeEventListener('drop', reject);
+    };
+  }, []);
+
   useEffect(() => {
     const offMenu = window.dw.onMenuAction((action) => {
       const app = useApp.getState();

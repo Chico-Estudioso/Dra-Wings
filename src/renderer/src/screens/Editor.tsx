@@ -35,6 +35,7 @@ import { AudioClipPanel, MarkerPanel } from '../editor/AudioPanel';
 import { ExportDialog, openExportDialog } from '../export/ExportDialog';
 import { openShortcuts, ShortcutsDialog } from '../editor/ShortcutsDialog';
 import { RecordDialog } from '../editor/RecordDialog';
+import { AudioDropChooser } from '../editor/AudioDropChooser';
 import { useEditorShortcuts } from '../editor/shortcuts';
 import { zoomAt } from '../editor/view';
 
@@ -305,6 +306,7 @@ export function Editor() {
       </footer>
       <ShortcutsDialog />
       <RecordDialog />
+      <AudioDropChooser />
     </div>
   );
 }

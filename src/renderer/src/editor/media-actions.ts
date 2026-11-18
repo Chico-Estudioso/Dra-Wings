@@ -40,34 +40,42 @@ export function globalPlayhead(): Ticks {
   return p && sceneId ? sceneStart(p, sceneId) + playhead : 0;
 }
 
-export async function importImage(at?: { x: number; y: number }): Promise<void> {
-  if (!writableActiveLayer()) return;
-  const r = await window.dw.importMedia('image');
-  if (r.status === 'canceled') return;
-  if (r.status === 'error') return fail(r.message);
+type StoredMedia = { hash: string; mime: string; name: string; size: number };
+
+/** Coloca una imagen ya guardada en la caché en la capa activa, centrada en `at` (por defecto, la hoja). */
+export async function addImage(r: StoredMedia, at?: { x: number; y: number }): Promise<boolean> {
+  if (!writableActiveLayer()) return false;
   let bitmap: ImageBitmap;
   try {
     bitmap = await loadImage(r);
   } catch {
-    return fail('No se pudo leer la imagen. Puede que el archivo esté dañado.');
+    fail('No se pudo leer la imagen. Puede que el archivo esté dañado.');
+    return false;
   }
   const p = project();
-  if (!p) return;
+  if (!p) return false;
   const { width: W, height: H } = p.settings;
   const k = Math.min(1, (W * IMAGE_FIT) / bitmap.width, (H * IMAGE_FIT) / bitmap.height);
   const w = Math.max(1, Math.round(bitmap.width * k));
   const h = Math.max(1, Math.round(bitmap.height * k));
   const name = r.name.replace(/\.[^.]+$/, '') || 'Imagen';
   const item = createImage('', (at?.x ?? W / 2) - w / 2, (at?.y ?? H / 2) - h / 2, w, h, name);
-  insertItems([item], 'Importar imagen', (draft) => {
+  return insertItems([item], 'Importar imagen', (draft) => {
     item.assetId = upsertAsset(draft, { hash: r.hash, mime: r.mime, name: r.name, size: r.size }).id;
   });
 }
 
+/** Importa una imagen con el diálogo nativo. */
+export async function importImage(at?: { x: number; y: number }): Promise<void> {
+  if (!writableActiveLayer()) return;
+  const r = await window.dw.importMedia('image');
+  if (r.status === 'canceled') return;
+  if (r.status === 'error') return fail(r.message);
+  await addImage(r, at);
+}
+
 const ceilToFrame = (t: Ticks, p: Project) =>
   Math.ceil(t / ticksPerFrame(p.settings.fps)) * ticksPerFrame(p.settings.fps);
-
-type StoredMedia = { hash: string; mime: string; name: string; size: number };
 
 /**
  * Coloca un audio ya guardado en la caché en la pista del tipo indicado, en el instante global `at`

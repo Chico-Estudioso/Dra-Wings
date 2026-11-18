@@ -45,7 +45,7 @@ Estado: M0 a M7 completados y M8 preparado: falta la aprobación para publicar.
 - Marcadores para sincronización.
 - Reproducción con el reloj del audio.
 - **Salida:** narración sincronizada con escenas y elementos visuales.
-- Pendiente para fases posteriores: grabar la voz desde el micrófono, arrastrar archivos desde el explorador al lienzo, y GIF animados (ahora se usa el primer fotograma).
+- Después de M8 se añadieron grabar la voz desde el micrófono y arrastrar archivos desde el explorador. Sigue pendiente: GIF animados (ahora se usa el primer fotograma).
 
 ## M6 — Renderizado y exportación ✅
 - Renderizar fotogramas a partir del modelo de línea de tiempo.

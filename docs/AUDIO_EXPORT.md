@@ -9,7 +9,11 @@ Decisión de base: ADR-004 (WebCodecs + mediabunny, sin FFmpeg empaquetado).
 - **Guardar:** los medios usados se escriben en `media/` dentro del `.dwings`, sin comprimir. Los que ya no usa ningún elemento ni clip se omiten del archivo, pero siguen en la caché: deshacer después de guardar no pierde nada.
 - **Abrir:** los medios del archivo se extraen a la caché comprobando que su contenido coincide con su hash (si no, el archivo se considera dañado). Si falta alguno, el proyecto se abre igualmente, se avisa y los elementos afectados se ven como un marcador gris.
 - **Tipo real:** el proceso principal decide el tipo de cada medio por su firma (los primeros bytes), no por la extensión ni por lo que diga el renderer. Un archivo que no es lo que dice ser se rechaza.
-- **Bytes desde la interfaz** (canal `media:import-bytes`): para las grabaciones (y, más adelante, archivos soltados en la ventana) el renderer envía el contenido, nunca una ruta. Se aplican el mismo límite de tamaño y la misma comprobación de firma.
+- **Bytes desde la interfaz** (canal `media:import-bytes`): para las grabaciones y los archivos soltados en la ventana, el renderer envía el contenido, nunca una ruta. Se aplican el mismo límite de tamaño y la misma comprobación de firma.
+- **Arrastrar desde el explorador:**
+  - Imágenes al lienzo: se colocan centradas donde se sueltan (varias a la vez, escalonadas).
+  - Audio a la línea de tiempo: en el instante donde se suelta. Sobre una pista de audio va a esa pista; si no, la app pregunta si es narración, música o efecto.
+  - Lo que no es imagen ni audio se rechaza con un aviso, y soltar fuera de esas zonas no hace nada.
 - **Imágenes:** PNG, JPG, WEBP y GIF (solo el primer fotograma). Se decodifican con `createImageBitmap`, que respeta la orientación EXIF. Se colocan centradas, como mucho al 60 % de la hoja, y entran con un fundido de 1 s según el tiempo automático.
 
 ## Audio en el editor (M5)

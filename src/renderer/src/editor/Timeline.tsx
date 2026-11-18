@@ -52,6 +52,7 @@ import { itemName } from './item-names';
 import { addMarkerAtPlayhead, importAudio, moveClipTo, moveMarkerTo, trimClipBy, updateTrack } from './media-actions';
 import { togglePlay } from './playback';
 import { openRecordDialog } from './RecordDialog';
+import { hasFiles, importDroppedFiles } from './drop-files';
 import { Waveform } from './Waveform';
 
 const NAME_W = 150;
@@ -721,6 +722,21 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
           onWheel={(e) => {
             if (e.ctrlKey || e.metaKey) ed.setTimelineZoom(zoom * Math.exp(-e.deltaY * 0.002));
           }}
+          onDragOver={(e) => {
+            if (!hasFiles(e.dataTransfer)) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+          }}
+          onDrop={(e) => {
+            if (!hasFiles(e.dataTransfer)) return;
+            e.preventDefault();
+            // Audio en el instante soltado; sobre una pista de audio, en esa pista.
+            const row = (e.target as HTMLElement).closest<HTMLElement>('[data-track-kind]');
+            void importDroppedFiles([...e.dataTransfer.files], {
+              at: offset + snapToFrame(tickAt(e.clientX), fps),
+              track: (row?.dataset.trackKind as TrackKind | undefined) ?? undefined,
+            });
+          }}
           data-testid="timeline-scroll"
         >
           <div className="tl-content" style={{ width }}>
@@ -767,7 +783,7 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
             )}
             {layers.map(renderLayerRow)}
             {project.audioTracks.map((t) => (
-              <div key={t.id} className="tl-row tl-audio-row" style={{ height: AUDIO_ROW_H }}>
+              <div key={t.id} className="tl-row tl-audio-row" style={{ height: AUDIO_ROW_H }} data-track-kind={t.kind}>
                 {t.clips.map((c) => renderClip(t, c))}
               </div>
             ))}

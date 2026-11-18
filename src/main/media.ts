@@ -3,7 +3,7 @@
 import { createHash } from 'node:crypto';
 import { access, mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { MEDIA_NAME, mediaFileName } from '@shared/media';
+import { MEDIA_MAX_BYTES, MEDIA_NAME, mediaFileName } from '@shared/media';
 
 export { MEDIA_NAME };
 
@@ -66,7 +66,7 @@ const unsupported = (kind: MediaKind) =>
       : 'Formato de audio no admitido. Usa MP3, WAV, OGG, M4A, AAC o FLAC.',
   );
 
-export const MAX_BYTES: Record<MediaKind, number> = { image: 50 * 1024 ** 2, audio: 500 * 1024 ** 2 };
+export const MAX_BYTES: Record<MediaKind, number> = MEDIA_MAX_BYTES;
 
 export interface ImportedMedia {
   hash: string;

@@ -17,6 +17,9 @@ export const MEDIA_EXT_BY_MIME: Readonly<Record<string, string>> = {
   'audio/aac': 'aac',
 };
 
+/** Tamaño máximo de un medio importado (el proceso principal lo vuelve a comprobar). */
+export const MEDIA_MAX_BYTES = { image: 50 * 1024 ** 2, audio: 500 * 1024 ** 2 } as const;
+
 /** Nombre de un medio dentro del proyecto y de la caché: `<sha256>.<ext>`. */
 export const MEDIA_NAME = /^([0-9a-f]{64})\.(png|jpg|webp|gif|mp3|wav|ogg|m4a|flac|aac)$/;
 

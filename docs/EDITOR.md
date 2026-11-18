@@ -64,7 +64,7 @@ Al crear una forma se activa Seleccionar con la forma ya seleccionada, lista par
 
 ## Biblioteca y guías
 
-Ver `docs/LIBRARY.md`: recursos, constructor de personajes, escenas de partida, grupos con ranuras de color, guías magnéticas (Alt para desactivarlas al arrastrar) y comportamiento por modo. Los recursos se insertan con un clic en el centro de la hoja o arrastrándolos al lienzo.
+Ver `docs/LIBRARY.md`: recursos, constructor de personajes, escenas de partida, grupos con ranuras de color, guías magnéticas (Alt para desactivarlas al arrastrar) y comportamiento por modo. Los recursos se insertan con un clic en el centro de la hoja o arrastrándolos al lienzo. Las imágenes y el audio propios también se pueden arrastrar desde el explorador (imágenes al lienzo, audio a la línea de tiempo).
 
 ## Línea de tiempo
 
