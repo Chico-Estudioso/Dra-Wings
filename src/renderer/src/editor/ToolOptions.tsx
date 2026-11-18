@@ -11,6 +11,9 @@ const pct = (v: number) => `${Math.round(v * 100)} %`;
  * Opciones de la herramienta activa. La barra tiene altura fija (con una ayuda breve cuando la
  * herramienta no tiene opciones) para que el lienzo no cambie de tamaño al cambiar de herramienta.
  */
+const CAMERA_HINT =
+  'Arrastra el marco para encuadrar; la esquina inferior derecha hace zoom. Con «Grabar movimiento» crea keyframes en el cabezal.';
+
 export function ToolOptions() {
   const tool = useEditor((s) => s.tool);
   const o = useEditor((s) => s.options);
@@ -21,24 +24,25 @@ export function ToolOptions() {
   if (tool === 'camera')
     return (
       <div className="tool-options" role="note">
-        <span className="tool-hint">
-          Arrastra el marco para encuadrar; la esquina inferior derecha hace zoom. Con «Grabar movimiento» crea
-          keyframes en el cabezal.
+        <span className="tool-hint" title={CAMERA_HINT}>
+          {CAMERA_HINT}
         </span>
         <button className="btn btn-ghost btn-sm" onClick={resetCamera}>
           Restablecer encuadre
         </button>
       </div>
     );
+  const hint =
+    tool === 'hand'
+      ? 'Arrastra para desplazar el lienzo. Ctrl + rueda para acercar o alejar.'
+      : hasSelection
+        ? 'Arrastra para mover. Usa los tiradores para escalar y rotar (Mayús mantiene la proporción y gira de 15 en 15°).'
+        : 'Haz clic en un elemento para seleccionarlo, o arrastra para seleccionar varios.';
   if (tool === 'select' || tool === 'hand')
     return (
       <div className="tool-options" role="note">
-        <span className="tool-hint">
-          {tool === 'hand'
-            ? 'Arrastra para desplazar el lienzo. Ctrl + rueda para acercar o alejar.'
-            : hasSelection
-              ? 'Arrastra para mover. Usa los tiradores para escalar y rotar (Mayús mantiene la proporción y gira de 15 en 15°).'
-              : 'Haz clic en un elemento para seleccionarlo, o arrastra para seleccionar varios.'}
+        <span className="tool-hint" title={hint}>
+          {hint}
         </span>
       </div>
     );
