@@ -58,7 +58,8 @@ Stroke extends ItemBase {
   type: 'stroke'
   points: number[]                      // empaquetado [x, y, presión, tMs, ...]; presión = -1 si el dispositivo no la da
   style: { color: Color; size: number; thinning: number; smoothing: number; streamline: number; opacity: number
-           taper?: number }             // afinado de las puntas (unidades locales); sin valor, puntas redondas
+           taper?: number               // afinado de las puntas (unidades locales); sin valor, puntas redondas
+           brush?: 'pencil' | 'chalk' } // pincel con textura; sin valor, rotulador liso
 }
 
 Shape extends ItemBase {

@@ -289,3 +289,27 @@ test('dibujo en espejo: la copia reflejada se crea a la vez y se dibuja al mismo
   await stubMessageBox(app, 1);
   await app.close();
 });
+
+test('pinceles: el trazo guarda su pincel y se puede cambiar después', async () => {
+  const file = path.join(await tempDir(), 'pinceles.dwings');
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Pinceles');
+  const c = await center(page);
+  await page.getByLabel('Pincel', { exact: true }).selectOption({ label: 'Lápiz' });
+  const before = await sceneHash(page);
+  await drag(page, { x: c.x - 150, y: c.y }, { x: c.x + 150, y: c.y + 30 }, 10);
+  await expect.poll(() => itemCount(page)).toBe(1);
+  expect(await sceneHash(page)).not.toBe(before);
+
+  // Seleccionar el trazo y pasarlo a tiza desde sus propiedades.
+  await page.keyboard.press('v');
+  await page.keyboard.press('Control+a');
+  await page.getByLabel('Pincel del trazo').selectOption({ label: 'Tiza' });
+
+  const p = await saveAndRead(app, page, file);
+  const [s] = p.scenes[0]!.layers[0]!.items!;
+  if (s?.type !== 'stroke') throw new Error('se esperaba un trazo');
+  expect(s.style.brush).toBe('chalk');
+  await stubMessageBox(app, 1);
+  await app.close();
+});

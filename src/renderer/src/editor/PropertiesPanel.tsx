@@ -1,3 +1,4 @@
+import { BRUSH_LABELS, type BrushKind } from '@core/render/brush';
 import { useState } from 'react';
 import {
   BringToFront,
@@ -162,16 +163,42 @@ export function PropertiesPanel({
               />
             )}
         {singleGroup && <CharacterLook group={singleGroup} fps={fps} />}
-        {allShapes && first.type === 'shape' && (first.shape === 'rect' || first.shape === 'ellipse') && (
-          <ColorPicker
-            label="Relleno"
-            value={first.style.fill}
-            allowNone
-            onChange={(c) =>
-              updateSelected('Cambiar relleno', (it) => void (it.type === 'shape' && (it.style.fill = c)))
-            }
-          />
+        {allStrokes && first.type === 'stroke' && (
+          <label className="inline-field">
+            <span className="control-label">Pincel</span>
+            <select
+              className="input input-sm"
+              aria-label="Pincel del trazo"
+              value={first.style.brush ?? 'marker'}
+              onChange={(e) => {
+                const brush = e.target.value as BrushKind;
+                updateSelected('Cambiar pincel', (it) => {
+                  if (it.type !== 'stroke') return;
+                  if (brush === 'marker') delete it.style.brush;
+                  else it.style.brush = brush;
+                });
+              }}
+            >
+              {(Object.keys(BRUSH_LABELS) as BrushKind[]).map((b) => (
+                <option key={b} value={b}>
+                  {BRUSH_LABELS[b]}
+                </option>
+              ))}
+            </select>
+          </label>
         )}
+        {allShapes &&
+          first.type === 'shape' &&
+          (first.shape === 'rect' || first.shape === 'ellipse' || first.shape === 'polygon') && (
+            <ColorPicker
+              label="Relleno"
+              value={first.style.fill}
+              allowNone
+              onChange={(c) =>
+                updateSelected('Cambiar relleno', (it) => void (it.type === 'shape' && (it.style.fill = c)))
+              }
+            />
+          )}
         {(allStrokes || allShapes || allTexts) && (
           <ValueSlider
             label={allTexts ? 'Tamaño' : 'Grosor'}

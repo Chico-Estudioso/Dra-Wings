@@ -90,6 +90,8 @@ export interface StrokeStyleInput {
   smoothing?: number;
   streamline?: number;
   taper?: number;
+  /** Rotulador (liso, sin campo), lápiz o tiza. */
+  brush?: 'marker' | 'pencil' | 'chalk';
 }
 
 /** `points` empaquetados [x, y, presión, tMs, ...] en coordenadas de escena. */
@@ -122,6 +124,7 @@ export function createStroke(points: number[], style: StrokeStyleInput): Stroke 
       smoothing: style.smoothing ?? 0.5,
       streamline: style.streamline ?? 0.45,
       ...(style.taper ? { taper: style.taper } : {}),
+      ...(style.brush && style.brush !== 'marker' ? { brush: style.brush } : {}),
     },
   };
 }

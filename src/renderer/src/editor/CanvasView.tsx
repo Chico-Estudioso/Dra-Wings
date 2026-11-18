@@ -11,6 +11,7 @@ import { motionPath } from '@core/anim/motion-path';
 import type { MotionSample } from '@core/anim/record';
 import { ticksPerFrame, type Ticks } from '@core/time/ticks';
 import { drawSceneInProject, sceneBackground } from '@core/render/frame';
+import { brushFill } from '@core/render/brush';
 import { drawPaper } from '@core/render/paper';
 import { strokeOutline } from '@core/render/stroke-outline';
 import type { Item, Project, Scene } from '@core/model/types';
@@ -335,7 +336,7 @@ export function CanvasView({ project }: { project: Project }) {
     if (g?.kind === 'draw' && g.points.length) {
       const live = drawnStroke(g, options, view.zoom);
       ctx.globalAlpha = options.opacity;
-      ctx.fillStyle = options.color;
+      ctx.fillStyle = brushFill(ctx, options.color, options.brush);
       ctx.fill(outlineToPath(strokeOutline(live)));
       for (const points of mirrorPoints(live.points, mirror, { x: docW / 2, y: docH / 2 }))
         ctx.fill(outlineToPath(strokeOutline({ ...live, points })));

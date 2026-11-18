@@ -13,7 +13,7 @@
 | Herramienta | Tecla | Comportamiento |
 |---|---|---|
 | Seleccionar | V | Clic para seleccionar, Mayús+clic para añadir o quitar, arrastrar en vacío para seleccionar con un marco. Arrastrar mueve. Los tiradores escalan (Mayús mantiene la proporción) y el tirador superior rota (Mayús: pasos de 15°). Doble clic en un texto para editarlo. |
-| Lápiz | B / P | Trazo vectorial con perfect-freehand. Guarda cada punto como `[x, y, presión, tMs]`. |
+| Lápiz | B / P | Trazo vectorial con perfect-freehand. Guarda cada punto como `[x, y, presión, tMs]`. Pincel: Rotulador (liso), Lápiz (grafito con grano) o Tiza (con huecos); ver «Pinceles». |
 | Goma | E | Ver «Comportamiento de la goma». |
 | Bote de pintura | G | Clic dentro de un dibujo cerrado para pintarlo con su color (aparte del de las líneas). Ver «Bote de pintura». |
 | Rectángulo, Elipse | R, O | Arrastrar para crear (Mayús: cuadrado o círculo). Un clic crea una forma de tamaño medio. |
@@ -51,6 +51,10 @@ Al crear una forma se activa Seleccionar con la forma ya seleccionada, lista par
 | Hoja de atajos | ? o F1 |
 | Recorrer los elementos (con el lienzo enfocado) | Tab / Mayús+Tab |
 | Eliminar el clip de audio o la marca seleccionados | Supr o Retroceso |
+
+## Pinceles
+
+El pincel se elige en las opciones del lápiz y se puede cambiar después en las propiedades de uno o varios trazos (`style.brush`; `src/core/render/brush.ts`). El trazo se rellena con su color liso (rotulador) o con un patrón de ese color cuya transparencia tiene grano (lápiz: nunca vacío, entre el 18 % y el 100 %) o huecos (tiza). El patrón es una tesela de 192 × 192 calculada con ruido determinista y se dibuja en el espacio del trazo: el grano viaja con él al moverlo o temblar y la vista previa coincide con el vídeo. Los patrones se guardan en caché por color (hasta 64).
 
 ## Bote de pintura
 

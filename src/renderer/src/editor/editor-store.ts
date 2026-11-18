@@ -1,6 +1,7 @@
 // Estado de edición que no forma parte del documento (no se guarda ni se deshace):
 // herramienta, opciones, selección, capa activa y vista.
 import { DEFAULT_ASSIST, type DrawAssist } from '@core/draw/assist';
+import type { BrushKind } from '@core/render/brush';
 import { create } from 'zustand';
 import type { FontId, Mode, Shape } from '@core/model/types';
 import type { Ticks } from '@core/time/ticks';
@@ -19,6 +20,8 @@ export interface ToolOptions {
   color: string;
   /** Color del bote de pintura (aparte del de las líneas). */
   bucket: string;
+  /** Pincel del lápiz. */
+  brush: BrushKind;
   fill: string | null;
   size: number;
   eraserSize: number;
@@ -130,6 +133,7 @@ export const useEditor = create<EditorState>()((set) => ({
   options: {
     color: '#1d1d1f',
     bucket: '#e0a526',
+    brush: 'marker',
     fill: null,
     size: 8,
     eraserSize: 24,

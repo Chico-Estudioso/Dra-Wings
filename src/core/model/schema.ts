@@ -88,6 +88,8 @@ export const strokeSchema = z.object({
     opacity: unit,
     /** Afinado de las puntas (distancia en unidades locales); sin valor, puntas redondas. */
     taper: z.number().nonnegative().max(10_000).optional(),
+    /** Pincel con textura (sin valor: rotulador liso). */
+    brush: z.enum(['pencil', 'chalk']).optional(),
   }),
 });
 

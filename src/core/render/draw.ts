@@ -7,6 +7,7 @@ import type { RenderItem } from './evaluate';
 import { strokeOutline } from './stroke-outline';
 import { layoutTokens, tokenProgress, type TextReveal } from './text-reveal';
 import { jitterMatrix, seedOf, type Boil } from './boil';
+import { brushFill } from './brush';
 
 export type Ctx2D = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 
@@ -299,7 +300,7 @@ export function drawRenderList(
                 )
               : cache.get(item, () => outlineToPath(strokeOutline(item)));
         ctx.globalAlpha = base * r.opacity * item.style.opacity;
-        ctx.fillStyle = item.style.color;
+        ctx.fillStyle = brushFill(ctx, item.style.color, item.style.brush);
         ctx.fill(path);
         break;
       }

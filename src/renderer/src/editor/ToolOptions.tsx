@@ -1,3 +1,4 @@
+import { BRUSH_LABELS, type BrushKind } from '@core/render/brush';
 import type { FontId } from '@core/model/types';
 import { ColorPicker, ValueSlider } from './controls';
 import { useEditor } from './editor-store';
@@ -101,6 +102,21 @@ export function ToolOptions() {
       )}
       {tool === 'pencil' && (
         <>
+          <label className="inline-field">
+            <span className="control-label">Pincel</span>
+            <select
+              className="input input-sm"
+              aria-label="Pincel"
+              value={o.brush}
+              onChange={(e) => set({ brush: e.target.value as BrushKind })}
+            >
+              {(Object.keys(BRUSH_LABELS) as BrushKind[]).map((b) => (
+                <option key={b} value={b}>
+                  {BRUSH_LABELS[b]}
+                </option>
+              ))}
+            </select>
+          </label>
           <ValueSlider label="Grosor" value={o.size} min={1} max={80} onChange={(v) => set({ size: v })} />
           <ValueSlider
             label="Opacidad"
