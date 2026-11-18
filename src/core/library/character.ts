@@ -1,6 +1,6 @@
 // Constructor de personajes original, estilo Draw My Life: cabeza y torso con contorno de tinta,
 // extremidades de trazo grueso y piezas intercambiables. Todo es vectorial y recoloreable.
-import type { Group } from '../model/types';
+import type { Group, Item } from '../model/types';
 import type { Ticks } from '../time/ticks';
 import { valueAt } from '../anim/animated';
 import { variantAt } from '../anim/swaps';
@@ -191,7 +191,8 @@ function drawHairFront(s: Sketch, o: CharacterOptions) {
   }
 }
 
-function drawFace(s: Sketch, e: Expression) {
+/** Ojos y cejas de cada expresión. */
+function drawEyes(s: Sketch, e: Expression) {
   const [lx, ly] = EYE_L;
   const [rx, ry] = EYE_R;
   const eyeDots = () => {
@@ -199,25 +200,9 @@ function drawFace(s: Sketch, e: Expression) {
     s.fillEllipse(rx, ry, 4.5, 5, INK);
   };
   switch (e) {
-    case 'feliz':
-      eyeDots();
-      s.arc(100, 84, 17, 13, Math.PI * 0.15, Math.PI * 0.85, { size: 3.5 });
-      break;
     case 'risa':
       s.arc(lx, ly + 3, 6, 6, Math.PI * 1.1, Math.PI * 1.9, { size: 3 });
       s.arc(rx, ry + 3, 6, 6, Math.PI * 1.1, Math.PI * 1.9, { size: 3 });
-      s.fillPoly(ellipsePoints(100, 90, 16, 15, 14, 0, Math.PI), '#7a2330');
-      s.line([...ellipsePoints(100, 90, 16, 15, 14, 0, Math.PI), [84, 90]], { size: 3 });
-      break;
-    case 'neutral':
-      eyeDots();
-      s.line(
-        [
-          [89, 96],
-          [111, 96],
-        ],
-        { size: 3.5 },
-      );
       break;
     case 'triste':
       eyeDots();
@@ -235,7 +220,6 @@ function drawFace(s: Sketch, e: Expression) {
         ],
         { size: 3 },
       );
-      s.arc(100, 108, 14, 10, Math.PI * 1.15, Math.PI * 1.85, { size: 3.5 });
       break;
     case 'sorpresa':
       s.ellipse(lx, ly, 7, 8, { size: 2.5 });
@@ -244,7 +228,6 @@ function drawFace(s: Sketch, e: Expression) {
       s.fillEllipse(rx, ry + 1, 3, 3, INK);
       s.arc(lx, ly - 6, 8, 8, Math.PI * 1.2, Math.PI * 1.8, { size: 2.5 });
       s.arc(rx, ry - 6, 8, 8, Math.PI * 1.2, Math.PI * 1.8, { size: 2.5 });
-      s.ellipse(100, 98, 6, 8, { size: 3 });
       break;
     case 'enfado':
       eyeDots();
@@ -262,9 +245,62 @@ function drawFace(s: Sketch, e: Expression) {
         ],
         { size: 3.5 },
       );
+      break;
+    default:
+      eyeDots();
+  }
+}
+
+/** Boca cerrada de cada expresión. */
+function drawMouth(s: Sketch, e: Expression) {
+  switch (e) {
+    case 'feliz':
+      s.arc(100, 84, 17, 13, Math.PI * 0.15, Math.PI * 0.85, { size: 3.5 });
+      break;
+    case 'risa':
+      s.fillPoly(ellipsePoints(100, 90, 16, 15, 14, 0, Math.PI), '#7a2330');
+      s.line([...ellipsePoints(100, 90, 16, 15, 14, 0, Math.PI), [84, 90]], { size: 3 });
+      break;
+    case 'neutral':
+      s.line(
+        [
+          [89, 96],
+          [111, 96],
+        ],
+        { size: 3.5 },
+      );
+      break;
+    case 'triste':
+      s.arc(100, 108, 14, 10, Math.PI * 1.15, Math.PI * 1.85, { size: 3.5 });
+      break;
+    case 'sorpresa':
+      s.ellipse(100, 98, 6, 8, { size: 3 });
+      break;
+    case 'enfado':
       s.arc(100, 104, 12, 7, Math.PI * 1.15, Math.PI * 1.85, { size: 3.5 });
       break;
   }
+}
+
+/** Altura del centro de la boca de cada expresión (unidades del dibujo). */
+const MOUTH_Y: Record<Expression, number> = {
+  feliz: 92,
+  risa: 94,
+  neutral: 96,
+  triste: 102,
+  sorpresa: 98,
+  enfado: 100,
+};
+
+/** Boca hablando: entreabierta o abierta (para sincronizar con la voz). */
+export type Mouth = 'half' | 'open';
+
+function drawTalkingMouth(s: Sketch, e: Expression, mouth: Mouth) {
+  const y = MOUTH_Y[e];
+  const [rx, ry] = mouth === 'open' ? [11, 9] : [10, 4.5];
+  s.fillEllipse(100, y, rx, ry, '#7a2330');
+  if (mouth === 'open') s.fillEllipse(100, y + ry * 0.45, rx * 0.55, ry * 0.4, '#e8908a');
+  s.ellipse(100, y, rx, ry, { size: 3 });
 }
 
 /** Identificador del aspecto de un personaje: `pelo/expresión/postura`. */
@@ -284,7 +320,7 @@ export function buildCharacter(o: CharacterOptions, seed = 'personaje'): Group {
 }
 
 /** Dibuja el personaje en las coordenadas del dibujo (sin agrupar). */
-function drawCharacter(o: CharacterOptions, seed = 'personaje'): Sketch {
+function drawCharacter(o: CharacterOptions, seed = 'personaje', mouth?: Mouth): Sketch {
   const s = new Sketch(`${seed}:${o.hair}:${o.expression}:${o.pose}`);
   const limbs = POSE_LIMBS[o.pose];
   const { cx, cy, rx, ry } = HEAD;
@@ -345,8 +381,14 @@ function drawCharacter(o: CharacterOptions, seed = 'personaje'): Sketch {
   s.fillEllipse(78, 84, 7, 4, '#e8908a');
   s.fillEllipse(122, 84, 7, 4, '#e8908a');
 
-  drawFace(s, o.expression);
+  drawEyes(s, o.expression);
+  // La boca cerrada se dibuja siempre (así el temblor del resto del dibujo no cambia); hablando, se
+  // quita y se pone la abierta encima de todo.
+  const before = s.items.length;
+  drawMouth(s, o.expression);
+  if (mouth) s.items.splice(before);
   drawHairFront(s, o);
+  if (mouth) drawTalkingMouth(s, o.expression, mouth);
   return s;
 }
 
@@ -368,6 +410,31 @@ export function characterOptions(group: Group, t: Ticks): CharacterOptions | nul
     shirt: color('shirt', DEFAULT_CHARACTER.shirt),
     pants: color('pants', DEFAULT_CHARACTER.pants),
   };
+}
+
+const talking = new WeakMap<Group, Map<string, Item[]>>();
+
+/**
+ * Dibujo del personaje con la boca hablando (entreabierta o abierta), con su aspecto en `t` y el
+ * mismo encuadre que el original. Null si no es un personaje del constructor.
+ */
+export function talkingChildren(group: Group, t: Ticks, mouth: Mouth): Item[] | null {
+  const o = characterOptions(group, t);
+  const stroke = group.children.find((c) => c.type === 'stroke');
+  if (!o || !stroke) return null;
+  let cache = talking.get(group);
+  if (!cache) talking.set(group, (cache = new Map()));
+  const key = `${lookId(o)}:${mouth}`;
+  let children = cache.get(key);
+  if (!children) {
+    // Mismo desplazamiento que el resto de dibujos del grupo (ver setCharacterLook).
+    const dx = valueAt(stroke.transform.x, 0);
+    const dy = valueAt(stroke.transform.y, 0);
+    children = drawCharacter(o, 'personaje', mouth).items;
+    for (const c of children) shiftItem(c, dx, dy);
+    cache.set(key, children);
+  }
+  return children;
 }
 
 /**

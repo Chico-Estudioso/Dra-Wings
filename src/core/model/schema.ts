@@ -155,6 +155,8 @@ export interface GroupItem extends ItemBase {
   slots?: z.infer<typeof colorSlotSchema>[];
   /** Cambios de dibujo en el tiempo (por ejemplo, otra expresión o postura), ordenados por `t`. */
   swaps?: GroupSwap[];
+  /** Personaje que mueve la boca con la voz de la narración. */
+  talk?: boolean;
 }
 
 /** Desde el instante `t` (de la escena), el grupo se dibuja con estos hijos (mismas coordenadas locales). */
@@ -185,6 +187,7 @@ export const groupSchema = z.object({
   get swaps(): z.ZodOptional<z.ZodArray<z.ZodType<GroupSwap>>> {
     return z.array(swapSchema).max(200).optional();
   },
+  talk: z.boolean().optional(),
 });
 
 export const swapSchema: z.ZodType<GroupSwap> = z.object({
@@ -244,6 +247,13 @@ export const assetSchema = z.object({
   name: z.string().max(260),
   size: z.number().int().nonnegative(),
   durationTicks: ticks.optional(),
+  /** Voz analizada (narración): nivel 0..100 cada 1/rate s desde el principio del archivo. */
+  voice: z
+    .object({
+      rate: z.number().int().positive().max(240),
+      levels: z.array(z.number().int().min(0).max(100)).max(500_000),
+    })
+    .optional(),
   /** Ritmo detectado (música): golpes en ticks desde el principio del archivo. */
   beats: z
     .object({

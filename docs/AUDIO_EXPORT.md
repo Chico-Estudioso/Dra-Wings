@@ -52,6 +52,10 @@ Para animar y cortar al compás (por ejemplo, un videoclip), Dra-Wings detecta l
 - Uso: golpes en la regla (los de compás, más marcados), ajuste magnético a los golpes al mover barras, clips y marcas, y vida «al ritmo» (ver `docs/ANIMATION_ENGINE.md`).
 - Probado con pistas sintéticas (92, 110, 120, 128 y 150 BPM, a 44,1 y 48 kHz, con bombo, caja, charles y ruido). Con música real hay que verificarlo a mano: en canciones sin percusión clara puede elegir el doble o la mitad del tempo.
 
+## Voz de la narración
+
+Para que los personajes hablen, cada narración se analiza al añadirla (grabada, importada o soltada) o con «Analizar la voz» en el panel del clip (`src/core/audio/voice.ts`): volumen RMS cada 1/30 s en decibelios, normalizado entre 30 dB por debajo del percentil 95 de la propia grabación (silencio) y ese percentil (voz fuerte), y suavizado como una boca (sube enseguida y baja con un factor de 0,6 por fotograma). Se guarda en el medio (`asset.voice`, 0..100). El nivel en un instante es el máximo de las narraciones no silenciadas que suenan, siguiendo la posición y el recorte de cada clip. Es rápido (un recorrido del audio) y se hace en el hilo de la interfaz.
+
 ## Exportación (M6)
 
 ![Diálogo de exportación](img/export-m6.png)

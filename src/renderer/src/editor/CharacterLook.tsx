@@ -4,7 +4,9 @@ import { X } from 'lucide-react';
 import { characterOptions, EXPRESSIONS, POSES, type Expression, type Pose } from '@core/library/character';
 import type { Group } from '@core/model/types';
 import { formatTimecode, type Fps } from '@core/time/ticks';
-import { removeLookChange, setLookAtPlayhead } from './actions';
+import { removeLookChange, setLookAtPlayhead, setTalk } from './actions';
+import { hasVoice } from '@core/audio/voice';
+import { useApp } from '../state/app-store';
 import { useEditor } from './editor-store';
 
 function lookLabel(variant: string | undefined): string {
@@ -16,6 +18,7 @@ function lookLabel(variant: string | undefined): string {
 
 export function CharacterLook({ group, fps }: { group: Group; fps: Fps }) {
   const playhead = useEditor((s) => s.playhead);
+  const voiceReady = useApp((s) => !!s.doc && hasVoice(s.doc.project));
   const o = characterOptions(group, playhead);
   if (!o) return null;
   const fromStart = playhead <= group.in;
@@ -53,6 +56,13 @@ export function CharacterLook({ group, fps }: { group: Group; fps: Fps }) {
           ))}
         </select>
       </label>
+      <label className="check-field">
+        <input type="checkbox" checked={!!group.talk} onChange={(e) => setTalk(e.target.checked)} />
+        Habla con la narración
+      </label>
+      {group.talk && !voiceReady && (
+        <p className="hint">Mueve la boca cuando suena la narración. Graba o importa una en la pista de narración.</p>
+      )}
       <p className="hint">
         {fromStart
           ? 'Se aplica desde que aparece. Para que cambie a mitad, lleva antes el cabezal a ese momento.'

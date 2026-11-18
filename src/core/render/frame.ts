@@ -9,6 +9,7 @@ import { cameraMatrix, evaluateScene } from './evaluate';
 import { boilAt } from './boil';
 import { elasticAmount } from '../anim/elastic';
 import { sceneBeats, type Beat } from '../audio/rhythm';
+import { sceneVoice } from '../audio/voice';
 import { barPulse, beatsOrPulse } from '../edit/beat-sync';
 import { transitionAt } from './transition';
 
@@ -25,6 +26,7 @@ export function drawSceneFrame(
   images?: ImageSources,
   overrides?: ReadonlyMap<string, StaticTransform>,
   beats?: readonly Beat[],
+  voice?: (t: Ticks) => number,
 ): void {
   ctx.save();
   ctx.beginPath();
@@ -45,6 +47,7 @@ export function drawSceneFrame(
     mode: 'play',
     overrides,
     beats: beats?.map((b) => b.t),
+    voice,
     elastic: elasticAmount(settings.elastic),
     unit: settings.width / 1920,
   });
@@ -66,7 +69,17 @@ export function drawSceneInProject(
   overrides?: ReadonlyMap<string, StaticTransform>,
 ): void {
   const draw = (s: Scene, t: Ticks, ov?: ReadonlyMap<string, StaticTransform>) =>
-    drawSceneFrame(ctx, project.settings, s, t, cache, images, ov, sceneBeats(project, s.id, s.duration));
+    drawSceneFrame(
+      ctx,
+      project.settings,
+      s,
+      t,
+      cache,
+      images,
+      ov,
+      sceneBeats(project, s.id, s.duration),
+      sceneVoice(project, s.id),
+    );
   const tr = transitionAt(project, scene, local);
   if (!tr) return draw(scene, local, overrides);
   const { width: w, height: h, background } = project.settings;

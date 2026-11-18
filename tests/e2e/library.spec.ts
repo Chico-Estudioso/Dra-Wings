@@ -1,7 +1,20 @@
 import { expect, test } from '@playwright/test';
 import path from 'node:path';
 import type { Group, Project } from '../../src/core/model/types';
-import { center, drag, itemCount, launch, newFreeProject, saveAndRead, stubMessageBox, tempDir } from './helpers';
+import {
+  center,
+  drag,
+  itemCount,
+  launch,
+  newFreeProject,
+  saveAndRead,
+  sceneHash,
+  stubMessageBox,
+  stubOpenDialog,
+  tempDir,
+} from './helpers';
+import { writeFile } from 'node:fs/promises';
+import { speechWav } from './media-files';
 
 const items = (p: Project) => p.scenes[0]!.layers.flatMap((l) => l.items ?? []);
 
@@ -158,6 +171,44 @@ test('un personaje cambia de expresión y de postura a mitad de escena', async (
   // Quitar el cambio desde la lista.
   await look.getByRole('button', { name: 'Quitar el cambio de 00:02:00' }).click();
   await expect(look.getByRole('listitem')).toHaveCount(0);
+  await stubMessageBox(app, 1);
+  await app.close();
+});
+
+test('un personaje habla con la narración: la boca sigue a la voz', async () => {
+  test.setTimeout(90_000);
+  const dir = await tempDir();
+  const voice = path.join(dir, 'voz.wav');
+  await writeFile(voice, speechWav(6));
+  const file = path.join(dir, 'habla.dwings');
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Habla', 'Guiado');
+  await page.getByRole('button', { name: 'Trazo vivo: Normal' }).click();
+  await page.getByRole('radio', { name: 'Quieto' }).check();
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Añadir Alex' }).click();
+  await page.getByLabel('Vida automática').selectOption({ label: 'Quieto' });
+  await page.getByRole('checkbox', { name: 'Habla con la narración' }).check();
+
+  await stubOpenDialog(app, voice);
+  await page.getByRole('button', { name: 'Audio', exact: true }).click();
+  await page.getByRole('button', { name: 'Narración (voz)' }).click();
+  await expect(page.getByTestId('voice-status')).toHaveText('Voz lista para los personajes', { timeout: 30_000 });
+
+  // 3,3 s: en mitad de una sílaba. 3,17 s (fotograma 3,167 s): casi al final del silencio que
+  // empieza en 3,0 s, con la boca ya cerrada.
+  const ruler = (await page.getByTestId('timeline-scroll').boundingBox())!;
+  const hashAt = async (s: number) => {
+    await page.mouse.click(ruler.x + s * 80 + 1, ruler.y + 10);
+    await page.waitForTimeout(150);
+    return sceneHash(page);
+  };
+  expect(await hashAt(3.3)).not.toBe(await hashAt(3.17));
+
+  const p: Project = await saveAndRead(app, page, file);
+  const alex = items(p)[0] as Group;
+  expect(alex.talk).toBe(true);
+  expect(p.assets.find((a) => a.mime.startsWith('audio'))!.voice!.levels.length).toBeGreaterThan(150);
   await stubMessageBox(app, 1);
   await app.close();
 });

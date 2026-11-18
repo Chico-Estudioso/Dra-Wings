@@ -1,9 +1,9 @@
 // Propiedades del clip de audio o de la marca seleccionados en la línea de tiempo.
 import { useState } from 'react';
-import { Drum, Scissors, Trash2 } from 'lucide-react';
+import { Drum, MessageCircle, Scissors, Trash2 } from 'lucide-react';
 import { TRACK_NAMES } from '@core/audio/edit';
 import type { Asset, Project } from '@core/model/types';
-import { detectRhythm, useRhythm } from './rhythm-actions';
+import { analyzeVoice, detectRhythm, useRhythm } from './rhythm-actions';
 import { formatTimecode, secondsFromTicks, ticksFromSeconds } from '@core/time/ticks';
 import { ValueSlider } from './controls';
 import {
@@ -100,6 +100,7 @@ export function AudioClipPanel({ project, clipId }: { project: Project; clipId: 
           onCommit={(v) => updateTrack(track.id, 'Volumen de la pista', (t) => void (t.volume = v))}
         />
         {track.kind === 'music' && asset && <RhythmRow asset={asset} />}
+        {track.kind === 'narration' && asset && <VoiceRow asset={asset} />}
         <div className="button-grid" role="group" aria-label="Clip de audio">
           <button
             className="icon-btn"
@@ -120,6 +121,24 @@ export function AudioClipPanel({ project, clipId }: { project: Project; clipId: 
         </div>
       </div>
     </section>
+  );
+}
+
+/** Voz analizada de la narración (para que los personajes hablen con ella). */
+function VoiceRow({ asset }: { asset: Asset }) {
+  const busy = useRhythm((s) => s.busy.has(asset.id));
+  return (
+    <div className="rhythm-row" role="group" aria-label="Voz">
+      <MessageCircle size={15} aria-hidden />
+      <span data-testid="voice-status">
+        {busy ? 'Analizando la voz…' : asset.voice ? 'Voz lista para los personajes' : 'Voz sin analizar'}
+      </span>
+      {!asset.voice && (
+        <button className="btn btn-ghost btn-sm" disabled={busy} onClick={() => void analyzeVoice(asset.id)}>
+          Analizar la voz
+        </button>
+      )}
+    </div>
   );
 }
 

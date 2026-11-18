@@ -317,6 +317,13 @@ export function setLookAtPlayhead(look: Partial<Pick<CharacterOptions, 'expressi
   });
 }
 
+/** El personaje seleccionado mueve la boca con la voz de la narración. */
+export function setTalk(on: boolean): void {
+  updateSelected('Hablar con la narración', (it) => {
+    if (it.type === 'group') it.talk = on || undefined;
+  });
+}
+
 /** Quita el cambio de aspecto del instante `t` del personaje seleccionado. */
 export function removeLookChange(t: number): void {
   updateSelected('Quitar cambio de aspecto', (it) => {

@@ -77,6 +77,7 @@ Group extends ItemBase {
   source?: { kind: 'library' | 'character'; id: string }   // informativo
   slots?: { id: string; label: string; color: Color }[]    // ranuras de color recoloreables
   swaps?: { t: Ticks; children: Item[]; variant?: string }[]  // cambios de dibujo en el tiempo, ordenados por t
+  talk?: boolean                        // personaje que mueve la boca con la narración
 }
 // Desde cada `swaps[i].t` (y hasta el siguiente) el grupo se dibuja con esos hijos, en las mismas
 // coordenadas locales; antes del primero, con `children`. En personajes, `variant` y `source.id`
@@ -97,6 +98,7 @@ Asset {
   size: number                          // bytes
   durationTicks?: Ticks                 // solo audio
   beats?: { bpm: number; ticks: Ticks[]; downbeat: 0 | 1 | 2 | 3 }  // ritmo detectado (música): golpes desde el inicio del archivo
+  voice?: { rate: number; levels: number[] }  // voz analizada (narración): nivel 0..100 cada 1/rate s
 }
 
 Cel { id; start: Ticks; duration: Ticks; items: Item[] }   // alineado a la rejilla de fotogramas

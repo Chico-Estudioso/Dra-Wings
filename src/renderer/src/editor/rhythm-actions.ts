@@ -3,6 +3,7 @@
 import { create } from 'zustand';
 import type { BeatAnalysis } from '@core/audio/beats';
 import { downmix } from '@core/audio/wav';
+import { VOICE_RATE, voiceEnvelope } from '@core/audio/voice';
 import { ticksFromSeconds } from '@core/time/ticks';
 import { useApp } from '../state/app-store';
 import { loadAudio } from './media';
@@ -31,6 +32,30 @@ function analyze(samples: Float32Array, sampleRate: number): Promise<BeatAnalysi
     };
     worker.postMessage({ samples, sampleRate }, [samples.buffer]);
   });
+}
+
+/**
+ * Analiza la voz de una narración (volumen 30 veces por segundo) para que los personajes que hablan
+ * muevan la boca con ella. Es rápido: se hace en el hilo de la interfaz por tramos.
+ */
+export async function analyzeVoice(assetId: string, { quiet = false } = {}): Promise<void> {
+  const app = useApp.getState();
+  const asset = app.doc?.project.assets.find((a) => a.id === assetId);
+  if (!asset || useRhythm.getState().busy.has(assetId)) return;
+  setBusy(assetId, true);
+  try {
+    const buffer = await loadAudio(asset);
+    const channels = Array.from({ length: buffer.numberOfChannels }, (_, i) => buffer.getChannelData(i));
+    const levels = voiceEnvelope(downmix(channels), buffer.sampleRate);
+    useApp.getState().apply('Analizar la voz', (draft) => {
+      const a = draft.assets.find((x) => x.id === assetId);
+      if (a) a.voice = { rate: VOICE_RATE, levels };
+    });
+  } catch {
+    if (!quiet) app.notify({ kind: 'error', text: `No se pudo analizar la voz de «${asset.name}».` });
+  } finally {
+    setBusy(assetId, false);
+  }
 }
 
 /** Detecta el ritmo de un medio de audio del proyecto y lo guarda. */

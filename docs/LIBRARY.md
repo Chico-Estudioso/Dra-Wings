@@ -50,6 +50,7 @@ En el panel de propiedades de un personaje, «Expresión y postura» muestra có
 - El personaje sigue siendo un solo elemento: se mueve, se anima (también con «Animar arrastrando») y se recolorea entero, con todos sus cambios. Al moverlo en el tiempo, sus cambios le acompañan.
 - El dibujo nuevo se coloca con el mismo encuadre que el original: todos los trazos del constructor nacen en el origen del dibujo, así que su posición dentro del grupo dice dónde está ese origen (`setCharacterLook` en `src/core/library/character.ts`). La caja del grupo se amplía si una postura sobresale (por ejemplo, brazos arriba) sin mover el personaje en pantalla.
 - Un cambio que deja el mismo aspecto que ya tenía se elimina solo.
+- **Habla con la narración** (casilla del panel del personaje, `group.talk`): mientras suena una narración, el personaje abre la boca según el volumen de la voz (entreabierta por encima del 20 %, abierta por encima del 55 %), con los ojos de su expresión del momento. La boca hablando se dibuja con el mismo encuadre que el original y el resto del dibujo sale idéntico (la boca cerrada se dibuja igualmente para que el temblor de la mano no cambie, y se sustituye por la abierta encima de todo). Esos dibujos se generan al reproducir y se guardan en caché por aspecto (`talkingChildren`); no se almacenan en el proyecto.
 - Los personajes nacen con «Vida automática: Respirar», que se puede cambiar o quitar en su panel.
 - Desagrupar conserva el dibujo original y descarta los cambios (se puede deshacer).
 

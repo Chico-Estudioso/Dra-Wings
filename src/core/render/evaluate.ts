@@ -1,6 +1,7 @@
 // Evaluación de una escena en un instante: lista plana de lo que hay que dibujar (ver ANIMATION_ENGINE.md).
 import { childrenAt } from '../anim/swaps';
 import { lifeMatrix } from '../anim/life';
+import { talkingChildren } from '../library/character';
 import { loopTime } from '../anim/loop';
 import { beatWordsProgress } from './text-reveal';
 import { stretchMatrix, TRAIL } from '../anim/elastic';
@@ -39,6 +40,8 @@ export interface EvaluateOptions {
   overrides?: ReadonlyMap<string, StaticTransform>;
   /** Golpes de la música en el tiempo de la escena (vida «al ritmo»). */
   beats?: readonly Ticks[];
+  /** Nivel de voz de la narración (0..1) en el tiempo de la escena: los personajes que hablan. */
+  voice?: (t: Ticks) => number;
   /** Intensidad de la elasticidad (0: rígido). */
   elastic?: number;
   /** Ancho de la hoja / 1920: las velocidades se miden igual en cualquier formato. */
@@ -108,8 +111,15 @@ interface Leaf {
   opacity: number;
 }
 
-function leaves(group: Extract<Item, { type: 'group' }>, m: Mat, opacity: number, tick: Ticks, out: Leaf[]): Leaf[] {
-  for (const child of childrenAt(group, tick)) {
+function leaves(
+  group: Extract<Item, { type: 'group' }>,
+  m: Mat,
+  opacity: number,
+  tick: Ticks,
+  out: Leaf[],
+  children: readonly Item[] = childrenAt(group, tick),
+): Leaf[] {
+  for (const child of children) {
     const o = opacity * valueAt(child.opacity, tick);
     if (o <= 0) continue;
     const cm = multiply(m, matrixFrom(resolveTransform(child.transform, tick)));
@@ -150,9 +160,24 @@ function pushGroupLeaves(out: RenderItem[], list: Leaf[], draw: number) {
   });
 }
 
-function pushItem(out: RenderItem[], item: Item, matrix: Mat, opacity: number, draw: number, tick: Ticks) {
+function pushItem(
+  out: RenderItem[],
+  item: Item,
+  matrix: Mat,
+  opacity: number,
+  draw: number,
+  tick: Ticks,
+  voice?: (t: Ticks) => number,
+) {
   if (item.type === 'group') {
-    pushGroupLeaves(out, leaves(item, matrix, opacity, tick, []), draw);
+    // Personaje que habla: con la voz, la boca entreabierta o abierta.
+    let children: readonly Item[] | undefined;
+    if (item.talk && voice) {
+      const level = voice(tick);
+      const mouth = level > 0.55 ? 'open' : level > 0.2 ? 'half' : null;
+      if (mouth) children = talkingChildren(item, tick, mouth) ?? undefined;
+    }
+    pushGroupLeaves(out, leaves(item, matrix, opacity, tick, [], children), draw);
     return;
   }
   if (item.type === 'shape' && draw < 1) {
@@ -200,7 +225,7 @@ export function evaluateScene(scene: Scene, tick: Ticks, opts: EvaluateOptions):
         const stretch = stretchMatrix(item, tick, opts.elastic ?? 0, t.x + t.anchorX, t.y + t.anchorY, unit);
         if (stretch) m = multiply(stretch, m);
       }
-      pushItem(out, item, m, opacity, a.draw, tick);
+      pushItem(out, item, m, opacity, a.draw, tick, opts.mode === 'play' ? opts.voice : undefined);
     }
   }
   return out;

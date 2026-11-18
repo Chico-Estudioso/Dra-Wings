@@ -23,7 +23,7 @@ import type { AudioTrack, Project } from '@core/model/types';
 import { ticksFromSeconds, ticksPerFrame, type Ticks } from '@core/time/ticks';
 import { useApp } from '../state/app-store';
 import { insertItems, writableActiveLayer } from './actions';
-import { detectRhythm } from './rhythm-actions';
+import { analyzeVoice, detectRhythm } from './rhythm-actions';
 import { useEditor } from './editor-store';
 import { loadAudio, loadImage } from './media';
 
@@ -104,10 +104,12 @@ export async function addAudio(
   let extended: string | null = null;
   let assetId = '';
   let needsRhythm = false;
+  let needsVoice = false;
   app().apply(label, (draft) => {
     const asset = upsertAsset(draft, { ...r, durationTicks: duration });
     assetId = asset.id;
     needsRhythm = kind === 'music' && !asset.beats;
+    needsVoice = kind === 'narration' && !asset.voice;
     const clip = addClip(trackFor(draft, kind), asset.id, at, duration);
     clipId = clip.id;
     const missing = clipEnd(clip) - projectDuration(draft);
@@ -120,6 +122,8 @@ export async function addAudio(
   if (clipId) useEditor.getState().selectClip(clipId);
   // La música se analiza sola para poder animar y cortar al ritmo.
   if (needsRhythm) void detectRhythm(assetId, { quiet: true });
+  // La narración se analiza para que los personajes que hablan muevan la boca.
+  if (needsVoice) void analyzeVoice(assetId, { quiet: true });
   if (extended)
     app().notify({ kind: 'info', text: `La escena «${extended}» se ha alargado para que se oiga toda la narración.` });
   return true;

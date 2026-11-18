@@ -83,3 +83,27 @@ export function beatWav(bpm: number, seconds: number, rate = 22_050): Buffer {
   for (let i = 0; i < n; i++) b.writeInt16LE(Math.round(Math.max(-1, Math.min(1, x[i]!)) * 30000), 44 + i * 2);
   return b;
 }
+
+/** WAV mono de 16 bits que imita el habla: sílabas de 0,2 s separadas por 0,2 s de silencio. */
+export function speechWav(seconds: number, rate = 16_000): Buffer {
+  const n = Math.round(seconds * rate);
+  const b = Buffer.alloc(44 + n * 2);
+  b.write('RIFF', 0, 'ascii');
+  b.writeUInt32LE(36 + n * 2, 4);
+  b.write('WAVEfmt ', 8, 'ascii');
+  b.writeUInt32LE(16, 16);
+  b.writeUInt16LE(1, 20);
+  b.writeUInt16LE(1, 22);
+  b.writeUInt32LE(rate, 24);
+  b.writeUInt32LE(rate * 2, 28);
+  b.writeUInt16LE(2, 32);
+  b.writeUInt16LE(16, 34);
+  b.write('data', 36, 'ascii');
+  b.writeUInt32LE(n * 2, 40);
+  for (let i = 0; i < n; i++) {
+    const t = i / rate;
+    const v = t % 0.4 < 0.2 ? 0.5 * Math.sin(2 * Math.PI * 180 * t) : 0;
+    b.writeInt16LE(Math.round(v * 30000), 44 + i * 2);
+  }
+  return b;
+}
