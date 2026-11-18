@@ -6,6 +6,7 @@ Los cambios relevantes se registran aquí. Se seguirá una estructura inspirada 
 - Preparación inicial del proyecto y del kit de desarrollo.
 - «Ver un ejemplo» en el inicio: proyecto de tres escenas hecho con la biblioteca, con textos, una salida con fundido y un zoom de cámara, para aprender viéndolo.
 - Arrastrar imágenes (al lienzo) y audio (a la línea de tiempo) desde el explorador; el audio pregunta su pista si no se suelta sobre una.
+- Cámara que sigue a un personaje u objeto, con un movimiento suave y sin salirse de la hoja (cerca, medio o lejos).
 - Efectos de sonido: pop, whoosh, ding, boing, rotulador, aplausos, tachán y clic, sintetizados por la app (sin archivos de terceros), en el menú «Audio».
 - Guion rápido: pega el guion de una historia o la letra de una canción y se crea una escena por párrafo o por línea, con el texto maquetado y escribiéndose solo (también una palabra en cada golpe).
 - Tipo de hoja: lisa, papel con grano, cuaderno de rayas o cuadrícula (menú del trazo vivo).

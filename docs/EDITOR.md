@@ -87,6 +87,7 @@ Ver `docs/LIBRARY.md`: recursos, constructor de personajes, escenas de partida, 
 - **Habla con la narración** (panel de un personaje): mueve la boca con la voz. El panel de un clip de narración indica si la voz está analizada. Ver `docs/LIBRARY.md`.
 - **Expresión y postura:** en el panel de un personaje; se aplican desde el cabezal y cada cambio se ve como un círculo en su barra (clic para ir a él). Ver `docs/LIBRARY.md`.
 - **Al terminar** (panel «Animación» con keyframes): se queda quieto, se repite o va y vuelve. Ver `docs/ANIMATION_ENGINE.md`.
+- **Seguir con la cámara** (panel «Animación» de un elemento): la cámara de la escena lo sigue suavemente, cerca, a media distancia o lejos.
 - **Guion rápido:** en la pestaña «Escenas» de la biblioteca, pegar un guion o una letra crea una escena por párrafo o por línea. Ver `docs/LIBRARY.md`.
 - **Escritura** (panel de un texto): letra a letra, palabra a palabra, letras que saltan o una palabra en cada golpe. Ver `docs/ANIMATION_ENGINE.md`.
 - **Transición** (icono de mezcla junto a la duración, en las escenas que no son la primera): cómo entra la escena desde la anterior y a qué velocidad. Ver `docs/ANIMATION_ENGINE.md`.

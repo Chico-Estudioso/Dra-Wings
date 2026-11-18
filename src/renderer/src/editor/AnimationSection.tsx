@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Clock, Diamond, Hand, LogIn, LogOut, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, Diamond, Hand, LogIn, LogOut, Video, X } from 'lucide-react';
 import { keyTimes } from '@core/anim/keyframes';
 import type { Enter, Exit, Item } from '@core/model/types';
 import { formatTimecode, secondsFromTicks, ticksFromSeconds, type Fps } from '@core/time/ticks';
@@ -10,6 +10,7 @@ import {
   setInAtPlayhead,
   setSelectionLife,
   setSelectionLoop,
+  setFollow,
   setSelectionTrail,
 } from './actions';
 import { ValueSlider } from './controls';
@@ -27,6 +28,49 @@ const ENTER_LABELS: Record<Enter['kind'], string> = {
   none: 'Sin animación',
 };
 const EXIT_LABELS: Record<Exit['kind'], string> = { fade: 'Fundido', pop: 'Encoger', none: 'Desaparecer sin más' };
+
+const FOLLOW_ZOOMS = [
+  { label: 'Cerca', zoom: 2.2 },
+  { label: 'Medio', zoom: 1.6 },
+  { label: 'Lejos', zoom: 1.25 },
+];
+
+/** La cámara de la escena sigue a este elemento. */
+function FollowRow({ id }: { id: string }) {
+  const sceneId = useEditor((s) => s.sceneId);
+  const follow = useApp((s) => s.doc?.project.scenes.find((sc) => sc.id === sceneId)?.follow);
+  if (follow?.id !== id)
+    return (
+      <button
+        type="button"
+        className="btn btn-ghost btn-sm puppet-btn"
+        title="La cámara de esta escena lo sigue con un movimiento suave"
+        onClick={() => setFollow(id)}
+      >
+        <Video size={14} aria-hidden /> Seguir con la cámara
+      </button>
+    );
+  return (
+    <div className="anim-row">
+      <Video size={14} aria-hidden />
+      <select
+        className="input input-sm"
+        aria-label="Distancia de la cámara"
+        value={FOLLOW_ZOOMS.find((z) => z.zoom === follow.zoom)?.label ?? 'Medio'}
+        onChange={(e) => setFollow(id, FOLLOW_ZOOMS.find((z) => z.label === e.target.value)!.zoom)}
+      >
+        {FOLLOW_ZOOMS.map((z) => (
+          <option key={z.label} value={z.label}>
+            La cámara lo sigue · {z.label.toLowerCase()}
+          </option>
+        ))}
+      </select>
+      <button className="btn btn-ghost btn-sm" onClick={() => setFollow(null)}>
+        Dejar de seguir
+      </button>
+    </div>
+  );
+}
 
 /** Animación del elemento seleccionado: aparición, momento de entrada, salida y keyframes. */
 export function AnimationSection({ items, fps }: { items: Item[]; fps: Fps }) {
@@ -231,6 +275,7 @@ export function AnimationSection({ items, fps }: { items: Item[]; fps: Fps }) {
       {first.life && isBeatLife(first.life.kind) && !hasMusicBeats && (
         <p className="hint">Sigue un pulso de 120 BPM. Importa una canción en la pista de música y seguirá su ritmo.</p>
       )}
+      <FollowRow id={first.id} />
       <button
         type="button"
         className={`btn btn-sm puppet-btn ${puppet ? 'btn-primary' : 'btn-ghost'}`}

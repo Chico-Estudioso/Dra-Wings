@@ -229,6 +229,8 @@ export const sceneSchema = z.object({
   duration: ticks.positive(),
   layers: z.array(layerSchema),
   camera: transformSchema,
+  /** La cámara sigue a este elemento (con este zoom); mientras, la cámara manual no se aplica. */
+  follow: z.object({ id, zoom: z.number().min(1).max(4) }).optional(),
   /** La cámara hace un pequeño zoom al empezar cada compás de la música. */
   beatPulse: z.boolean().optional(),
   /** Cómo entra esta escena desde la anterior (sin valor: corte). */

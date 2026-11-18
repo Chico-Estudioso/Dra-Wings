@@ -15,10 +15,10 @@ import {
   type Mat,
   type StaticTransform,
 } from '../geometry/matrix';
-import { POINT_STRIDE } from '../geometry/items';
+import { POINT_STRIDE, worldBounds } from '../geometry/items';
 import type { Item, Scene } from '../model/types';
-import { layerItemsAt } from '../edit/ops';
-import type { Ticks } from '../time/ticks';
+import { layerItemsAt, locateItem } from '../edit/ops';
+import { TICKS_PER_SECOND, type Ticks } from '../time/ticks';
 
 export interface RenderItem {
   item: Item;
@@ -231,18 +231,57 @@ export function evaluateScene(scene: Scene, tick: Ticks, opts: EvaluateOptions):
   return out;
 }
 
-/**
- * Matriz de la cámara de la escena: `x`, `y` son la esquina superior izquierda del encuadre en la
- * hoja y `scaleX` el zoom (1 = hoja completa). Se aplica antes de dibujar en vista previa y vídeo.
- */
-export function cameraMatrix(scene: Scene, tick: Ticks): Mat {
-  const c = resolveTransform(scene.camera, tick);
-  const zoom = c.scaleX > 0 ? c.scaleX : 1;
-  return multiply(scale(zoom, zoom), translate(-c.x, -c.y));
+/** Encuadre de la cámara: esquina superior izquierda en la hoja y zoom (1 = hoja completa). */
+export interface CameraRect {
+  x: number;
+  y: number;
+  zoom: number;
 }
 
-/** ¿La cámara de la escena se mueve o hace zoom en algún momento? */
+/** Retraso de la cámara que sigue: media ponderada de dónde estuvo el elemento estos instantes. */
+const FOLLOW_SAMPLES = 8;
+const FOLLOW_STEP = TICKS_PER_SECOND / 15;
+
+/**
+ * Encuadre de la cámara en `tick`. Si la escena sigue a un elemento (y se conoce el tamaño de la
+ * hoja), se centra en él con un retraso suave y sin salirse de la hoja; si no, la cámara manual.
+ */
+export function cameraRect(scene: Scene, tick: Ticks, page?: { width: number; height: number }): CameraRect {
+  const follow = scene.follow;
+  const item = follow && page ? locateItem(scene, follow.id)?.item : undefined;
+  if (follow && page && item) {
+    let sx = 0;
+    let sy = 0;
+    let sw = 0;
+    for (let k = 0; k < FOLLOW_SAMPLES; k++) {
+      const b = worldBounds(item, Math.max(0, tick - k * FOLLOW_STEP));
+      const w = FOLLOW_SAMPLES - k;
+      sx += (b.x + b.w / 2) * w;
+      sy += (b.y + b.h / 2) * w;
+      sw += w;
+    }
+    const zoom = follow.zoom;
+    const fw = page.width / zoom;
+    const fh = page.height / zoom;
+    const clamp = (v: number, max: number) => Math.min(Math.max(v, 0), Math.max(0, max));
+    return { x: clamp(sx / sw - fw / 2, page.width - fw), y: clamp(sy / sw - fh / 2, page.height - fh), zoom };
+  }
+  const c = resolveTransform(scene.camera, tick);
+  return { x: c.x, y: c.y, zoom: c.scaleX > 0 ? c.scaleX : 1 };
+}
+
+/**
+ * Matriz de la cámara de la escena (ver `cameraRect`). Se aplica antes de dibujar en vista previa y
+ * vídeo.
+ */
+export function cameraMatrix(scene: Scene, tick: Ticks, page?: { width: number; height: number }): Mat {
+  const c = cameraRect(scene, tick, page);
+  return multiply(scale(c.zoom, c.zoom), translate(-c.x, -c.y));
+}
+
+/** ¿La cámara de la escena se mueve, hace zoom o sigue a alguien en algún momento? */
 export function hasCamera(scene: Scene): boolean {
+  if (scene.follow) return true;
   const c = scene.camera;
   return [c.x, c.y, c.scaleX].some((a) => 'keys' in a || ('value' in a && a.value !== (a === c.scaleX ? 1 : 0)));
 }

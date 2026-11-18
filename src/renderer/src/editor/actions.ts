@@ -297,6 +297,13 @@ export function setHand(hand: HandStyle): void {
   });
 }
 
+/** La cámara de la escena actual sigue a un elemento (null: vuelve la cámara manual). */
+export function setFollow(id: string | null, zoom = 1.6): void {
+  editScene(id ? 'Seguir con la cámara' : 'Dejar de seguir con la cámara', (scene) => {
+    scene.follow = id ? { id, zoom } : undefined;
+  });
+}
+
 /** Elasticidad del proyecto. */
 export function setElastic(level: ElasticLevel): void {
   useApp.getState().apply('Elasticidad', (p) => {

@@ -44,7 +44,7 @@ export function drawSceneFrame(
     ctx.scale(z, z);
     ctx.translate(-settings.width / 2, -settings.height / 2);
   }
-  ctx.transform(...cameraMatrix(scene, local));
+  ctx.transform(...cameraMatrix(scene, local, settings));
   drawPaper(ctx, settings.paper, settings.width, settings.height);
   const boil = boilAt(settings.boil, local, settings.fps);
   const list = evaluateScene(scene, local, {

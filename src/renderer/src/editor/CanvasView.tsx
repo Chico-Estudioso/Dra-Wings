@@ -6,7 +6,7 @@ import { hitItem, rectsIntersect, unionRects, worldBounds, type Rect } from '@co
 import { resizeGroup, resizeSingle, rotateGroup, snapAngle, type Handle } from '@core/geometry/manipulate';
 import { apply, invert, matrixFrom, resolveTransform, type Point, type StaticTransform } from '@core/geometry/matrix';
 import { drawRenderList, outlineToPath, PathCache, type Ctx2D } from '@core/render/draw';
-import { cameraMatrix, evaluateScene, hasCamera } from '@core/render/evaluate';
+import { cameraMatrix, cameraRect, evaluateScene, hasCamera } from '@core/render/evaluate';
 import { motionPath } from '@core/anim/motion-path';
 import type { MotionSample } from '@core/anim/record';
 import { ticksPerFrame, type Ticks } from '@core/time/ticks';
@@ -72,7 +72,8 @@ interface PuppetGesture {
 }
 
 /** Punto del mundo que se ve en un punto de la hoja en la vista previa (a través de la cámara). */
-const throughCamera = (scene: Scene, t: Ticks, page: Point) => apply(invert(cameraMatrix(scene, t)), page);
+const throughCamera = (scene: Scene, t: Ticks, page: Point, size: { width: number; height: number }) =>
+  apply(invert(cameraMatrix(scene, t, size)), page);
 
 /**
  * Trazo del lápiz tal como queda: la forma reconocida o la mano alzada estabilizada (con tinta si
@@ -350,7 +351,7 @@ export function CanvasView({ project }: { project: Project }) {
 
     if (g?.kind === 'puppet' && g.samples.length > 1) {
       // Rastro de lo que se va grabando (en la vista previa, a través de la cámara).
-      const cam = cameraMatrix(scene, playhead);
+      const cam = cameraMatrix(scene, playhead, project.settings);
       ctx.save();
       ctx.strokeStyle = TRAIL_COLOR;
       ctx.lineWidth = 2.5 * px;
@@ -405,8 +406,7 @@ export function CanvasView({ project }: { project: Project }) {
       ctx.setLineDash([]);
     }
     if (!playMode && (tool === 'camera' || hasCamera(scene))) {
-      const ct = resolveTransform(scene.camera, playhead);
-      const c = cameraOverride ?? { x: ct.x, y: ct.y, zoom: ct.scaleX || 1 };
+      const c = cameraOverride ?? cameraRect(scene, playhead, project.settings);
       ctx.save();
       ctx.strokeStyle = tool === 'camera' ? '#d9622b' : 'rgba(217,98,43,0.55)';
       ctx.lineWidth = (tool === 'camera' ? 2.5 : 1.5) * px;
@@ -481,6 +481,7 @@ export function CanvasView({ project }: { project: Project }) {
     cameraOverride,
     puppet,
     fps,
+    project.settings,
   ]);
 
   const scenePoint = (e: { clientX: number; clientY: number }): Point => {
@@ -549,7 +550,7 @@ export function CanvasView({ project }: { project: Project }) {
 
   /** Recoge la posición del elemento en `t` según el puntero y la muestra en vivo. */
   const samplePuppet = (g: PuppetGesture, t: Ticks) => {
-    const w = throughCamera(g.scene, t, g.page);
+    const w = throughCamera(g.scene, t, g.page, project.settings);
     const x = g.base.x + w.x - g.from.x;
     const y = g.base.y + w.y - g.from.y;
     g.samples.push({ t, x, y });
@@ -578,7 +579,7 @@ export function CanvasView({ project }: { project: Project }) {
     if (!sc) return false;
     const page = scenePoint(e);
     const t0 = ed.playhead;
-    const hit = puppetTarget(ed.preview || ed.playing ? throughCamera(sc, t0, page) : page);
+    const hit = puppetTarget(ed.preview || ed.playing ? throughCamera(sc, t0, page, project.settings) : page);
     if (!hit) return false;
     if (ed.playing) ed.setPlaying(false);
     ed.select([hit.id]);
@@ -598,7 +599,7 @@ export function CanvasView({ project }: { project: Project }) {
       scene: sc,
       t0,
       base: { x: base.x, y: base.y },
-      from: throughCamera(sc, t0, page),
+      from: throughCamera(sc, t0, page, project.settings),
       page,
       page0: page,
       pivot: { x: box.x + box.w / 2 - base.x, y: box.y + box.h / 2 - base.y },

@@ -32,6 +32,7 @@ Project {
 
 Scene { id; name; duration: Ticks; layers: Layer[]; camera: AnimatedTransform    // cámara: x, y = esquina del encuadre; scaleX = zoom
         beatPulse?: boolean                // cámara que late al empezar cada compás
+        follow?: { id: string; zoom: number }  // la cámara sigue a este elemento (zoom 1–4)
         transition?: { kind: 'cut' | 'fade' | 'dip' | 'slide' | 'zoom' | 'wipe' | 'iris'; duration: Ticks } }  // entrada desde la escena anterior
 
 Layer {

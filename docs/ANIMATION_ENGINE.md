@@ -54,6 +54,8 @@ Todo se puede ajustar después en la línea de tiempo o en el panel «Animación
 
 `scene.camera` es el **encuadre**: `x` e `y` son la esquina superior izquierda en la hoja y `scaleX` el zoom (1 = hoja completa). `cameraMatrix = S(zoom) · T(−x, −y)` se aplica en la vista previa y en el vídeo, nunca al editar. La herramienta **Encuadre** (C) mueve el marco o hace zoom desde su esquina, con keyframes si «Grabar movimiento» está activo.
 
+
+**Cámara que sigue** (`scene.follow`, `cameraRect` en `src/core/render/evaluate.ts`): desde el panel «Animación» de un elemento, «Seguir con la cámara» (cerca ×2,2, medio ×1,6 o lejos ×1,25). La cámara se centra en el elemento con un retraso suave (media ponderada de su centro en los últimos ~0,5 s, 8 muestras) y sin salirse de la hoja. Mientras sigue, la cámara manual de la escena no se aplica (la herramienta de cámara lo avisa). Todo lo que usa la cámara pasa por `cameraRect`: vista previa, vídeo, el marco de cámara al editar y «Animar arrastrando». Si el elemento se borra, vuelve la cámara manual.
 ## Fotograma a fotograma
 
 - Una capa `kind: 'frames'` tiene `cels` con `start` y `duration` (al crear: 2 fotogramas del proyecto). Al dibujar en ella, el elemento va al fotograma del cabezal o crea uno.

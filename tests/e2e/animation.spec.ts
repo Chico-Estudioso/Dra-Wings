@@ -448,3 +448,28 @@ test('tipo de hoja: cuaderno de rayas al editar y en el proyecto', async () => {
   await stubMessageBox(app, 1);
   await app.close();
 });
+
+test('la cámara sigue a un elemento', async () => {
+  const file = path.join(await tempDir(), 'sigue.dwings');
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Sigue');
+  const c = await center(page);
+  await page.keyboard.press('r');
+  await drag(page, { x: c.x - 40, y: c.y - 30 }, { x: c.x + 40, y: c.y + 30 }, 4);
+  await scrubTo(page, 2);
+  const plain = await sceneHash(page);
+  await page.getByRole('button', { name: 'Vista previa' }).click();
+  await page.getByRole('button', { name: 'Seguir con la cámara' }).click();
+  await page.getByLabel('Distancia de la cámara').selectOption({ label: 'La cámara lo sigue · cerca' });
+  // En la vista previa el encuadre se acerca al elemento.
+  await scrubTo(page, 2);
+  await expect.poll(() => sceneHash(page)).not.toBe(plain);
+  // Con la herramienta de cámara se avisa de que el encuadre manual no se aplica.
+  await page.getByRole('button', { name: 'Vista previa' }).click();
+  await page.keyboard.press('c');
+  await expect(page.getByText(/La cámara sigue a/)).toBeVisible();
+  const p = await saveAndRead(app, page, file);
+  expect(p.scenes[0]!.follow).toEqual({ id: items(p)[0]!.id, zoom: 2.2 });
+  await stubMessageBox(app, 1);
+  await app.close();
+});

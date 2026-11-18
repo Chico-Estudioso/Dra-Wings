@@ -1,7 +1,10 @@
 import type { FontId } from '@core/model/types';
 import { ColorPicker, ValueSlider } from './controls';
 import { useEditor } from './editor-store';
-import { resetCamera } from './actions';
+import { resetCamera, setFollow } from './actions';
+import { useApp } from '../state/app-store';
+import { locateItem } from '@core/edit/ops';
+import { itemName } from './item-names';
 import { FONT_LABELS } from './fonts';
 import { TOOLS } from './Toolbar';
 import { DrawAssistPopover } from './DrawAssistPopover';
@@ -24,8 +27,25 @@ export function ToolOptions() {
   const set = useEditor((s) => s.setOptions);
   const hasSelection = useEditor((s) => s.selection.length > 0);
   const puppet = useEditor((s) => s.puppet);
+  const sceneId = useEditor((s) => s.sceneId);
+  const followName = useApp((s) => {
+    const scene = s.doc?.project.scenes.find((sc) => sc.id === sceneId);
+    const item = scene?.follow && locateItem(scene, scene.follow.id)?.item;
+    return item ? itemName(item) : null;
+  });
   const label = TOOLS.find((t) => t.id === tool)?.label;
 
+  if (tool === 'camera' && followName)
+    return (
+      <div className="tool-options" role="note">
+        <span className="tool-hint">
+          La cámara sigue a «{followName}»: el encuadre manual no se aplica en esta escena.
+        </span>
+        <button className="btn btn-ghost btn-sm" onClick={() => setFollow(null)}>
+          Dejar de seguir
+        </button>
+      </div>
+    );
   if (tool === 'camera')
     return (
       <div className="tool-options" role="note">
