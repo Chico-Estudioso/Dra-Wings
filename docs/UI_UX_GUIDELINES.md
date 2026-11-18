@@ -53,6 +53,7 @@ El modo Libre no recorta nada: solo oculta ayudas.
 - «Abrir…» y la lista de recientes con miniatura. Los recientes que ya no existen se marcan y se pueden quitar.
 - Si hay una recuperación pendiente, aparece primero: «Restaurar» o «Descartar».
 - Mientras no hay proyectos recientes, una guía breve explica en cuatro pasos cómo se hace un vídeo.
+- «Ver un ejemplo» abre un proyecto nuevo de tres escenas hecho con la biblioteca (textos que se escriben, un fundido de salida y un zoom de cámara) para aprender viéndolo y modificándolo. Es un proyecto normal, sin guardar.
 
 ## Puntos de confusión previstos para principiantes
 

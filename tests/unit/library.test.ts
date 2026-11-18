@@ -15,9 +15,11 @@ import {
   type CharacterOptions,
 } from '@core/library/character';
 import { placeGroup, TEMPLATES } from '@core/library/place';
+import { buildExampleProject } from '@core/library/example';
 import { evaluateScene } from '@core/render/evaluate';
-import { validateProject } from '@core/model/validate';
+import { checkReferences, validateProject } from '@core/model/validate';
 import type { Group, Item, Project } from '@core/model/types';
+import { TICKS_PER_SECOND } from '@core/time/ticks';
 
 const base = () => createProject({ name: 'p', aspect: 'landscape', fps: 30, mode: 'guided' });
 const close = (a: number, b: number, eps = 1e-6) => expect(Math.abs(a - b)).toBeLessThan(eps);
@@ -177,5 +179,46 @@ describe('biblioteca', () => {
       }
       expect(leafCount(items)).toBeGreaterThan(items.length);
     }
+  });
+});
+
+describe('proyecto de ejemplo', () => {
+  // Medida aproximada (en la app se mide con las fuentes reales).
+  const measure = (text: string, _font: string, size: number, lineHeight: number) => ({
+    w: Math.ceil(text.length * size * 0.5),
+    h: Math.ceil(size * lineHeight),
+  });
+
+  it('es un proyecto válido de tres escenas que se dibujan en orden', () => {
+    const p = buildExampleProject(measure);
+    expect(validateProject(JSON.parse(JSON.stringify(p))).ok).toBe(true);
+    expect(checkReferences(p)).toEqual([]);
+    expect(p.settings.mode).toBe('guided');
+    expect(p.scenes.map((s) => s.name)).toEqual(['Había una vez', 'Un día en la ciudad', 'Ahora tú']);
+    for (const s of p.scenes) {
+      const items = s.layers[0]!.items!;
+      expect(items.length).toBeGreaterThan(1);
+      // Tiempo automático: cada elemento empieza cuando termina el anterior.
+      for (let i = 1; i < items.length; i++)
+        expect(items[i]!.in).toBe(items[i - 1]!.in + items[i - 1]!.enter!.duration);
+      const last = items[items.length - 1]!;
+      expect(s.duration).toBeGreaterThanOrEqual(last.in + last.enter!.duration);
+      expect(items.some((it) => it.type === 'text')).toBe(true);
+      // Ritmo de ejemplo: ninguna escena se hace larga.
+      expect(s.duration / TICKS_PER_SECOND).toBeLessThan(17);
+    }
+  });
+
+  it('en la primera escena el texto se desvanece y la cámara se acerca a la casa', () => {
+    const [s1] = buildExampleProject(measure).scenes;
+    const zoom = s1!.camera.scaleX;
+    expect('keys' in zoom && zoom.keys.map((k) => k.v)).toEqual([1, 1.5]);
+    const items = s1!.layers[0]!.items!;
+    const drawn = Math.max(...items.map((it) => it.in + it.enter!.duration));
+    const caption = items[items.length - 1]!;
+    // Un segundo para leerlo; el zoom empieza cuando el texto ya se ha ido.
+    expect('keys' in zoom && zoom.keys[0]!.t).toBe(drawn + TICKS_PER_SECOND);
+    expect(caption).toMatchObject({ type: 'text', out: drawn + TICKS_PER_SECOND, exit: { kind: 'fade' } });
+    expect(s1!.duration).toBeGreaterThan('keys' in zoom ? zoom.keys[1]!.t : 0);
   });
 });

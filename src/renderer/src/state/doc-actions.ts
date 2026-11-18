@@ -1,6 +1,9 @@
 // Operaciones de documento que hablan con el proceso principal.
 import { pruneAssets } from '@core/audio/clips';
 import { createProject, type NewProjectOptions } from '@core/model/factory';
+import { buildExampleProject } from '@core/library/example';
+import { measureText } from '@core/render/draw';
+import { fontsReady } from '../editor/fonts';
 import type { OpenResult } from '@shared/ipc';
 import { useApp } from './app-store';
 
@@ -50,6 +53,14 @@ export async function saveCurrent(saveAs = false): Promise<boolean> {
 
 export function newProject(opts: NewProjectOptions): void {
   state().openDoc(createProject(opts), null, { dirty: true });
+}
+
+/** Abre el proyecto de ejemplo (nuevo, sin guardar). Los textos se miden con las fuentes reales. */
+export async function openExample(): Promise<void> {
+  await fontsReady();
+  const ctx = document.createElement('canvas').getContext('2d')!;
+  const project = buildExampleProject((text, font, size, lineHeight) => measureText(ctx, text, font, size, lineHeight));
+  state().openDoc(project, null, { dirty: true });
 }
 
 export async function openWithDialog(): Promise<boolean> {

@@ -1,8 +1,20 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Film, FileWarning, FolderOpen, History, Mic, Plus, RotateCcw, Shapes, Trash2, X } from 'lucide-react';
+import {
+  Film,
+  FileWarning,
+  FolderOpen,
+  History,
+  Mic,
+  Plus,
+  RotateCcw,
+  Shapes,
+  Sparkles,
+  Trash2,
+  X,
+} from 'lucide-react';
 import type { RecentEntry, RecoveryEntry } from '@shared/ipc';
 import { useApp } from '../state/app-store';
-import { openRecent, openWithDialog, restoreRecovery } from '../state/doc-actions';
+import { openExample, openRecent, openWithDialog, restoreRecovery } from '../state/doc-actions';
 import { relativeTime } from '../format';
 
 export function Home() {
@@ -69,6 +81,9 @@ export function Home() {
         </button>
         <button className="btn btn-secondary btn-lg" onClick={() => void openWithDialog()}>
           <FolderOpen size={20} aria-hidden /> Abrir proyecto…
+        </button>
+        <button className="btn btn-ghost btn-lg" onClick={() => void openExample()}>
+          <Sparkles size={20} aria-hidden /> Ver un ejemplo
         </button>
       </div>
 

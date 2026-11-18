@@ -105,3 +105,22 @@ test('cambiar de modo conserva el contenido y ajusta las ayudas', async () => {
   await stubMessageBox(app, 1);
   await app.close();
 });
+
+test('el proyecto de ejemplo se abre desde el inicio con sus tres escenas', async () => {
+  const { app, page } = await launch(await tempDir());
+  await page.getByRole('button', { name: 'Ver un ejemplo' }).click();
+  await expect(page.getByLabel('Nombre del proyecto')).toHaveValue('Ejemplo: mi primera historia');
+  await expect(page.getByRole('tablist', { name: 'Escenas' }).getByRole('tab')).toHaveText([
+    'Había una vez',
+    'Un día en la ciudad',
+    'Ahora tú',
+  ]);
+  await expect.poll(() => itemCount(page)).toBeGreaterThan(5);
+  // Se puede reproducir y es un proyecto nuevo sin guardar.
+  await page.getByRole('button', { name: 'Reproducir' }).click();
+  await expect(page.getByTestId('timeline-time')).not.toContainText('00:00:00 /', { timeout: 3000 });
+  await page.getByRole('button', { name: 'Pausa' }).click();
+  await expect(page.getByTestId('save-status')).toHaveText('Cambios sin guardar');
+  await stubMessageBox(app, 1);
+  await app.close();
+});

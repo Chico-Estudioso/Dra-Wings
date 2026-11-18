@@ -4,6 +4,7 @@ Los cambios relevantes se registran aquí. Se seguirá una estructura inspirada 
 
 ## [Unreleased]
 - Preparación inicial del proyecto y del kit de desarrollo.
+- «Ver un ejemplo» en el inicio: proyecto de tres escenas hecho con la biblioteca, con textos, una salida con fundido y un zoom de cámara, para aprender viéndolo.
 - Arrastrar imágenes (al lienzo) y audio (a la línea de tiempo) desde el explorador; el audio pregunta su pista si no se suelta sobre una.
 - Grabar la narración con el micrófono desde la app (menú «Audio»): medidor de nivel, cuenta atrás, animación reproduciéndose mientras se graba (opcional), escucha previa y colocación en la pista de narración. Solo se concede el micrófono, nunca la cámara. Los medios importados se identifican ahora por su contenido, no por la extensión.
 - M8 (preparación): empaquetado para Windows con electron-builder (instalador NSIS por usuario, en español), fuses de Electron, icono original, licencias de terceros dentro de la app (Ayuda → Licencias de terceros), asociación de archivos `.dwings` con instancia única (doble clic abre el proyecto, también con la app ya abierta) y verificación en CI de instalar, arrancar y desinstalar. No se ha publicado ninguna versión.

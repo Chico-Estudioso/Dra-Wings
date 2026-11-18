@@ -58,6 +58,10 @@ Casa en el campo, Ciudad, En clase, De noche y Conversación. Insertan recursos 
 
 Cambiar de modo nunca toca el documento: solo ajusta paneles y ayudas.
 
+## Proyecto de ejemplo
+
+`src/core/library/example.ts` monta, con las mismas piezas de la biblioteca, un proyecto de tres escenas («Había una vez», «Un día en la ciudad» y «Ahora tú»). Los textos se miden con las fuentes reales al crearlo. Se abre desde «Ver un ejemplo» en el inicio.
+
 ## Guías magnéticas
 
 Al mover elementos, sus bordes y centros se ajustan (a 7 px de pantalla) a los bordes y al centro de la hoja y a los de otros elementos, y se dibuja la guía. Mantener **Alt** al arrastrar las desactiva momentáneamente.
