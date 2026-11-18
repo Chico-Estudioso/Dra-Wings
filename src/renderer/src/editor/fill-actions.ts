@@ -10,6 +10,7 @@ import { createShape } from '@core/model/factory';
 import type { Item, Shape } from '@core/model/types';
 import { drawRenderList, PathCache } from '@core/render/draw';
 import { evaluateScene } from '@core/render/evaluate';
+import { sceneBackground } from '@core/render/frame';
 import { TICKS_PER_SECOND } from '@core/time/ticks';
 import { useApp } from '../state/app-store';
 import { currentScene, editScene, writableActiveLayer } from './actions';
@@ -44,7 +45,8 @@ export function fillAt(p: Point): void {
   const scene = currentScene();
   const ed = useEditor.getState();
   if (!project || !scene) return;
-  const { width, height, background } = project.settings;
+  const { width, height } = project.settings;
+  const background = sceneBackground(project.settings, scene);
   if (p.x < 0 || p.y < 0 || p.x >= width || p.y >= height) return notify('Haz clic dentro de la hoja para rellenar.');
   const color = ed.options.bucket;
   const t = ed.playhead;

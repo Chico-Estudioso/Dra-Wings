@@ -1847,7 +1847,7 @@ kbd {
 
 /* Trazo vivo */
 .boil-popover {
-  max-width: 260px;
+  max-width: 340px;
 }
 .boil-options {
   display: grid;
@@ -1936,4 +1936,16 @@ kbd {
 .sfx-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
+}
+
+/* Fondo de la escena */
+.bg-popover .color-picker {
+  flex-wrap: wrap;
+  max-width: 340px;
+}
+.bg-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
 }

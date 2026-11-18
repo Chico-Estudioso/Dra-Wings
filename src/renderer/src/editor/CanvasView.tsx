@@ -10,7 +10,7 @@ import { cameraMatrix, cameraRect, evaluateScene, hasCamera } from '@core/render
 import { motionPath } from '@core/anim/motion-path';
 import type { MotionSample } from '@core/anim/record';
 import { ticksPerFrame, type Ticks } from '@core/time/ticks';
-import { drawSceneInProject } from '@core/render/frame';
+import { drawSceneInProject, sceneBackground } from '@core/render/frame';
 import { drawPaper } from '@core/render/paper';
 import { strokeOutline } from '@core/render/stroke-outline';
 import type { Item, Project, Scene } from '@core/model/types';
@@ -180,7 +180,8 @@ export function CanvasView({ project }: { project: Project }) {
   const mediaVersion = useMediaVersion((s) => s.v);
   const [cameraOverride, setCameraOverride] = useState<{ x: number; y: number; zoom: number } | null>(null);
   const scene = project.scenes.find((s) => s.id === sceneId) ?? project.scenes[0]!;
-  const { width: docW, height: docH, background, fps } = project.settings;
+  const { width: docW, height: docH, fps } = project.settings;
+  const background = sceneBackground(project.settings, scene);
 
   const redraw = useCallback(() => setTick((t) => t + 1), []);
 

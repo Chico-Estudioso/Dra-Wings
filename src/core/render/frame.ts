@@ -16,6 +16,11 @@ import { sceneVoice } from '../audio/voice';
 import { barPulse, beatsOrPulse } from '../edit/beat-sync';
 import { transitionAt } from './transition';
 
+/** Color de fondo de una escena: el suyo o, si no tiene, el del proyecto. */
+export function sceneBackground(settings: Pick<Project['settings'], 'background'>, scene: Pick<Scene, 'background'>) {
+  return scene.background ?? settings.background;
+}
+
 /**
  * Dibuja la escena en el instante `local` (relativo a la escena) sobre la hoja (0,0)-(width,height)
  * de la transformación actual del contexto: fondo, recorte a la hoja, cámara y elementos.
@@ -35,7 +40,7 @@ export function drawSceneFrame(
   ctx.beginPath();
   ctx.rect(0, 0, settings.width, settings.height);
   ctx.clip();
-  ctx.fillStyle = settings.background;
+  ctx.fillStyle = sceneBackground(settings, scene);
   ctx.fillRect(0, 0, settings.width, settings.height);
   if (scene.beatPulse) {
     // Cámara que late: zoom breve hacia el centro al empezar cada compás.
@@ -92,7 +97,7 @@ export function drawSceneInProject(
     );
   const tr = transitionAt(project, scene, local);
   if (!tr) return draw(scene, local, overrides);
-  const { width: w, height: h, background } = project.settings;
+  const { width: w, height: h } = project.settings;
   const { p, prev } = tr;
   const last = Math.max(0, prev.duration - 1);
   ctx.save();
@@ -107,12 +112,12 @@ export function drawSceneInProject(
       draw(scene, local, overrides);
       break;
     case 'dip': {
-      // A blanco (el color de fondo) y de vuelta.
+      // Al color de fondo de la escena que entra (blanco por defecto) y de vuelta.
       const out = p < 0.5;
       if (out) draw(prev, last);
       else draw(scene, local, overrides);
       ctx.globalAlpha *= out ? p * 2 : (1 - p) * 2;
-      ctx.fillStyle = background;
+      ctx.fillStyle = sceneBackground(project.settings, scene);
       ctx.fillRect(0, 0, w, h);
       break;
     }

@@ -67,6 +67,7 @@ import { Waveform } from './Waveform';
 import { BoilControl } from './BoilControl';
 import { ElasticControl } from './ElasticControl';
 import { TransitionControl } from './TransitionControl';
+import { BackgroundControl } from './BackgroundControl';
 import { RhythmControl } from './RhythmControl';
 
 const NAME_W = 150;
@@ -620,6 +621,7 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
         <span className="topbar-spacer" />
         <DurationInput key={scene.id + scene.duration} scene={scene} />
         {project.scenes[0]?.id !== scene.id && <TransitionControl scene={scene} />}
+        <BackgroundControl project={project} scene={scene} />
         <button
           className={`icon-btn icon-btn-sm ${preview ? 'is-on' : ''}`}
           aria-pressed={preview}

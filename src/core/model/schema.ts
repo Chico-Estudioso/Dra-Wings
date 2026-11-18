@@ -243,6 +243,8 @@ export const sceneSchema = z.object({
   follow: z.object({ id, zoom: z.number().min(1).max(4) }).optional(),
   /** La cámara hace un pequeño zoom al empezar cada compás de la música. */
   beatPulse: z.boolean().optional(),
+  /** Color de fondo de esta escena (sin valor: el del proyecto). */
+  background: color.optional(),
   /** Cómo entra esta escena desde la anterior (sin valor: corte). */
   transition: z
     .object({

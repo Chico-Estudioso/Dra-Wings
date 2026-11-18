@@ -8,11 +8,13 @@ export function ColorPicker({
   value,
   onChange,
   allowNone = false,
+  colors = PALETTE,
 }: {
   label: string;
   value: string | null;
   onChange: (c: string | null) => void;
   allowNone?: boolean;
+  colors?: readonly string[];
 }) {
   return (
     <div className="color-picker" role="group" aria-label={label}>
@@ -28,7 +30,7 @@ export function ColorPicker({
           <Ban size={14} />
         </button>
       )}
-      {PALETTE.map((c) => (
+      {colors.map((c) => (
         <button
           key={c}
           className={`swatch ${value?.toLowerCase() === c ? 'is-active' : ''}`}

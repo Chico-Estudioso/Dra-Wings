@@ -76,3 +76,31 @@ describe('transiciones entre escenas', () => {
     expect(fills.at(-1)!.style).toBe(p.settings.background);
   });
 });
+
+describe('color de fondo por escena', () => {
+  it('cada escena pinta su fondo; sin él, el del proyecto', () => {
+    const p = twoScenes();
+    p.settings.paper = 'plain';
+    const [a, b] = p.scenes;
+    b!.background = '#fde2e4';
+    expect(validateProject(p).ok).toBe(true);
+    const first = fakeCtx();
+    drawSceneInProject(first.ctx, p, a!, S, new PathCache());
+    expect(first.fills[0]!.style).toBe('#ffffff');
+    const second = fakeCtx();
+    drawSceneInProject(second.ctx, p, b!, S, new PathCache());
+    expect(second.fills[0]!.style).toBe('#fde2e4');
+  });
+
+  it('el fundido a color pasa por el fondo de la escena que entra', () => {
+    const p = twoScenes();
+    p.settings.paper = 'plain';
+    const b = p.scenes[1]!;
+    b.background = '#2b2d42';
+    b.transition = { kind: 'dip', duration: S };
+    const { ctx, fills } = fakeCtx();
+    drawSceneInProject(ctx, p, b, S / 4, new PathCache());
+    // Fondo de la escena anterior (blanco) y, encima, el velo del color de la que entra.
+    expect(fills.map((f) => f.style)).toEqual(['#ffffff', '#2b2d42']);
+  });
+});

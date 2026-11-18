@@ -506,3 +506,40 @@ test('copiar la animación de un elemento y pegarla en otro', async () => {
   await stubMessageBox(app, 1);
   await app.close();
 });
+
+test('color de fondo por escena y para todas', async () => {
+  const file = path.join(await tempDir(), 'fondos.dwings');
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Fondos');
+  const c = await center(page);
+  const pixel = () =>
+    page.evaluate(({ x, y }) => {
+      const cv = document.querySelector<HTMLCanvasElement>('[data-testid="scene-canvas"]')!;
+      const b = cv.getBoundingClientRect();
+      const k = cv.width / b.width;
+      const d = cv.getContext('2d')!.getImageData(Math.round((x - b.left) * k), Math.round((y - b.top) * k), 1, 1).data;
+      return `#${[d[0], d[1], d[2]].map((v) => v!.toString(16).padStart(2, '0')).join('')}`;
+    }, c);
+
+  await page.getByRole('button', { name: 'Fondo de la escena' }).click();
+  await page.getByRole('group', { name: 'Fondo' }).getByRole('button', { name: 'Color #fde2e4' }).click();
+  await page.keyboard.press('Escape');
+  await expect.poll(pixel).toBe('#fde2e4');
+
+  // Una escena nueva tiene el fondo del proyecto (blanco)…
+  await page.getByRole('button', { name: 'Nueva escena' }).click();
+  await expect.poll(pixel).toBe('#ffffff');
+  // …hasta usar el rosa en todas.
+  await page.getByRole('tab', { name: 'Escena 1' }).click();
+  await page.getByRole('button', { name: 'Fondo de la escena' }).click();
+  await page.getByRole('button', { name: 'Usar en todas las escenas' }).click();
+  await page.keyboard.press('Escape');
+  await page.getByRole('tab', { name: 'Escena 2' }).click();
+  await expect.poll(pixel).toBe('#fde2e4');
+
+  const p = await saveAndRead(app, page, file);
+  expect(p.settings.background).toBe('#fde2e4');
+  expect(p.scenes.every((s) => s.background === undefined)).toBe(true);
+  await stubMessageBox(app, 1);
+  await app.close();
+});
