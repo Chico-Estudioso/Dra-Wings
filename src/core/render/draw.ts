@@ -209,10 +209,12 @@ export function drawRenderList(
   images?: ImageSources,
   boil?: Boil | null,
 ) {
+  // La opacidad de cada elemento se multiplica por la del contexto (por ejemplo, en un fundido).
+  const base = ctx.globalAlpha;
   for (const r of list) {
     ctx.save();
     ctx.transform(...r.matrix);
-    ctx.globalAlpha = r.opacity;
+    ctx.globalAlpha = base * r.opacity;
     const item = r.item;
     const jitter = boil && jitterFor(item, boil);
     if (jitter) ctx.transform(...jitter);
@@ -226,13 +228,13 @@ export function drawRenderList(
                   outlineToPath(strokeOutline(item, 1, boil)),
                 )
               : cache.get(item, () => outlineToPath(strokeOutline(item)));
-        ctx.globalAlpha = r.opacity * item.style.opacity;
+        ctx.globalAlpha = base * r.opacity * item.style.opacity;
         ctx.fillStyle = item.style.color;
         ctx.fill(path);
         break;
       }
       case 'shape':
-        ctx.globalAlpha = r.opacity * item.style.opacity;
+        ctx.globalAlpha = base * r.opacity * item.style.opacity;
         drawShape(ctx, item, r.progress, r.fill ?? 1);
         break;
       case 'text':

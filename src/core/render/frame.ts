@@ -9,6 +9,7 @@ import { cameraMatrix, evaluateScene } from './evaluate';
 import { boilAt } from './boil';
 import { elasticAmount } from '../anim/elastic';
 import { sceneBeats } from '../audio/rhythm';
+import { transitionAt } from './transition';
 
 /**
  * Dibuja la escena en el instante `local` (relativo a la escena) sobre la hoja (0,0)-(width,height)
@@ -43,6 +44,96 @@ export function drawSceneFrame(
   ctx.restore();
 }
 
+/**
+ * Fotograma de una escena del proyecto en su instante `local`, con la transición de entrada si está
+ * en curso (mientras dura se ve el último fotograma de la escena anterior).
+ */
+export function drawSceneInProject(
+  ctx: Ctx2D,
+  project: Project,
+  scene: Scene,
+  local: Ticks,
+  cache: PathCache,
+  images?: ImageSources,
+  overrides?: ReadonlyMap<string, StaticTransform>,
+): void {
+  const draw = (s: Scene, t: Ticks, ov?: ReadonlyMap<string, StaticTransform>) =>
+    drawSceneFrame(
+      ctx,
+      project.settings,
+      s,
+      t,
+      cache,
+      images,
+      ov,
+      sceneBeats(project, s.id, s.duration).map((b) => b.t),
+    );
+  const tr = transitionAt(project, scene, local);
+  if (!tr) return draw(scene, local, overrides);
+  const { width: w, height: h, background } = project.settings;
+  const { p, prev } = tr;
+  const last = Math.max(0, prev.duration - 1);
+  ctx.save();
+  // Nada de las escenas en movimiento se sale de la hoja.
+  ctx.beginPath();
+  ctx.rect(0, 0, w, h);
+  ctx.clip();
+  switch (tr.kind) {
+    case 'fade':
+      draw(prev, last);
+      ctx.globalAlpha *= p;
+      draw(scene, local, overrides);
+      break;
+    case 'dip': {
+      // A blanco (el color de fondo) y de vuelta.
+      const out = p < 0.5;
+      if (out) draw(prev, last);
+      else draw(scene, local, overrides);
+      ctx.globalAlpha *= out ? p * 2 : (1 - p) * 2;
+      ctx.fillStyle = background;
+      ctx.fillRect(0, 0, w, h);
+      break;
+    }
+    case 'slide':
+      ctx.translate(-p * w, 0);
+      draw(prev, last);
+      ctx.translate(w, 0);
+      draw(scene, local, overrides);
+      break;
+    case 'zoom': {
+      const a = ctx.globalAlpha;
+      ctx.save();
+      ctx.translate(w / 2, h / 2);
+      ctx.scale(1 + p * 0.35, 1 + p * 0.35);
+      ctx.translate(-w / 2, -h / 2);
+      ctx.globalAlpha = a * (1 - p);
+      draw(prev, last);
+      ctx.restore();
+      ctx.translate(w / 2, h / 2);
+      ctx.scale(0.85 + p * 0.15, 0.85 + p * 0.15);
+      ctx.translate(-w / 2, -h / 2);
+      ctx.globalAlpha = a * p;
+      draw(scene, local, overrides);
+      break;
+    }
+    case 'wipe':
+      draw(prev, last);
+      ctx.beginPath();
+      ctx.rect(0, 0, p * w, h);
+      ctx.clip();
+      draw(scene, local, overrides);
+      break;
+    case 'iris':
+      draw(prev, last);
+      ctx.beginPath();
+      ctx.arc(w / 2, h / 2, (p * Math.hypot(w, h)) / 2, 0, Math.PI * 2);
+      ctx.clip();
+      draw(scene, local, overrides);
+      break;
+  }
+  ctx.restore();
+}
+
 /** Fotograma del instante global `tick` del proyecto (las escenas se suceden). */
 export function drawProjectFrame(
   ctx: Ctx2D,
@@ -52,6 +143,5 @@ export function drawProjectFrame(
   images?: ImageSources,
 ): void {
   const { scene, local } = locateTime(project, tick);
-  const beats = sceneBeats(project, scene.id, scene.duration).map((b) => b.t);
-  drawSceneFrame(ctx, project.settings, scene, local, cache, images, undefined, beats);
+  drawSceneInProject(ctx, project, scene, local, cache, images);
 }

@@ -222,6 +222,13 @@ export const sceneSchema = z.object({
   duration: ticks.positive(),
   layers: z.array(layerSchema),
   camera: transformSchema,
+  /** Cómo entra esta escena desde la anterior (sin valor: corte). */
+  transition: z
+    .object({
+      kind: z.enum(['cut', 'fade', 'dip', 'slide', 'zoom', 'wipe', 'iris']),
+      duration: ticks,
+    })
+    .optional(),
 });
 
 export const assetSchema = z.object({

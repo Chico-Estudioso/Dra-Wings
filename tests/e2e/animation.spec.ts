@@ -281,3 +281,41 @@ test('elasticidad del proyecto y estela de un elemento', async () => {
   await stubMessageBox(app, 1);
   await app.close();
 });
+
+test('transición de fundido entre escenas en la vista previa', async () => {
+  const file = path.join(await tempDir(), 'transicion.dwings');
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Transición', 'Guiado');
+  await page.getByRole('button', { name: 'Trazo vivo: Normal' }).click();
+  await page.getByRole('radio', { name: 'Quieto' }).check();
+  await page.keyboard.press('Escape');
+  // Escena 1: una casa grande en el centro. Escena 2: vacía, entra con fundido lento.
+  await page.getByRole('button', { name: 'Añadir Casa' }).click();
+  await page.getByRole('button', { name: 'Nueva escena' }).click();
+  await page.getByRole('button', { name: /^Transición de entrada/ }).click();
+  await page.getByRole('radio', { name: 'Fundido', exact: true }).check();
+  await page.locator('label', { hasText: 'Lenta' }).click();
+  await expect(page.getByRole('radio', { name: 'Lenta' })).toBeChecked();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: 'Transición de entrada: Fundido' })).toBeVisible();
+
+  /** Color del centro del lienzo con el cabezal en `seconds` de la escena actual. */
+  const centerAt = async (seconds: number) => {
+    await scrubTo(page, seconds);
+    await page.waitForTimeout(150);
+    return page.evaluate(() => {
+      const c = document.querySelector<HTMLCanvasElement>('[data-testid="scene-canvas"]')!;
+      const d = c.getContext('2d')!.getImageData(Math.floor(c.width / 2), Math.floor(c.height / 2), 1, 1).data;
+      return d[0]! + d[1]! + d[2]!;
+    });
+  };
+  const end = await centerAt(4); // ya ha entrado: la escena 2, vacía (blanco)
+  const mid = await centerAt(0.75); // a mitad del fundido: mezcla
+  expect(end).toBe(255 * 3);
+  expect(mid).toBeLessThan(end - 20);
+
+  const p = await saveAndRead(app, page, file);
+  expect(p.scenes[1]!.transition).toEqual({ kind: 'fade', duration: Math.round(1.5 * 705_600_000) });
+  await stubMessageBox(app, 1);
+  await app.close();
+});

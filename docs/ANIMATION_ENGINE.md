@@ -93,6 +93,14 @@ Movimiento de reposo continuo, sin keyframes (`item.life`, `src/core/anim/life.t
 
 **Al ritmo de la música:** Latir al ritmo (crece de golpe en cada tiempo y vuelve suave), Saltar al ritmo (aterriza en cada golpe aplastándose un poco y sube entre golpes) y Balancearse al ritmo (cambia de lado en cada golpe, desde la base). Siguen los golpes de la música de la escena (`evaluateScene` recibe `beats` en el tiempo de la escena); antes del primer golpe o tras el último se quedan quietos. Sin música con ritmo detectado, siguen un pulso de 120 BPM.
 
+## Transiciones entre escenas
+
+Cada escena (salvo la primera) puede entrar con una transición (`scene.transition`, `src/core/render/transition.ts` y `drawSceneInProject` en `frame.ts`): Corte, Fundido, Fundido a blanco (pasa por el color de fondo), Deslizar (la nueva empuja a la anterior hacia la izquierda), Zoom (la anterior se acerca y se desvanece mientras la nueva llega desde un poco más pequeña), Barrido (de izquierda a derecha) y Círculo (se abre desde el centro). Velocidad Rápida (0,4 s), Normal (0,8 s) o Lenta (1,5 s), con suavizado.
+
+- Ocupa el principio de la escena que entra; mientras dura se ve el último fotograma de la anterior. La duración total del vídeo no cambia.
+- Las dos escenas se dibujan con el mismo motor sobre el mismo contexto, con su opacidad, transformación o recorte. La opacidad de cada elemento se multiplica por la del contexto, de modo que un fundido afecta a la escena entera.
+- La vista previa, la reproducción y la exportación usan la misma función.
+
 ## Elasticidad y estela
 
 **Elasticidad** (`settings.elastic`, `src/core/anim/elastic.ts`): lo que se mueve deprisa se estira en la dirección del movimiento (factor `k` hasta 1,45) y se estrecha de lado (`1/√k`), alrededor de su ancla; al frenar recupera la forma. La velocidad sale de la posición del elemento en el instante y 1/60 s antes, medida como si la hoja tuviera 1920 de ancho (la misma sensación en cualquier formato); por debajo de 40 unidades por segundo no se nota. Niveles Rígido, Suave, Normal y Marcado; los proyectos nuevos empiezan en Normal. Se combina con las animaciones rápidas (por ejemplo, «Entrar» o «Saltar») y con lo grabado con «Animar arrastrando».

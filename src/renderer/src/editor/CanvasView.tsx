@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { sceneBeats } from '@core/audio/rhythm';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createShape, createStroke } from '@core/model/factory';
 import { eraseItems } from '@core/edit/erase';
 import { celAt, locateItem, selectableItems } from '@core/edit/ops';
@@ -11,7 +10,7 @@ import { cameraMatrix, evaluateScene, hasCamera } from '@core/render/evaluate';
 import { motionPath } from '@core/anim/motion-path';
 import type { MotionSample } from '@core/anim/record';
 import { ticksPerFrame, type Ticks } from '@core/time/ticks';
-import { drawSceneFrame } from '@core/render/frame';
+import { drawSceneInProject } from '@core/render/frame';
 import { strokeOutline } from '@core/render/stroke-outline';
 import type { Item, Project, Scene } from '@core/model/types';
 import {
@@ -178,10 +177,6 @@ export function CanvasView({ project }: { project: Project }) {
   const [cameraOverride, setCameraOverride] = useState<{ x: number; y: number; zoom: number } | null>(null);
   const scene = project.scenes.find((s) => s.id === sceneId) ?? project.scenes[0]!;
   const { width: docW, height: docH, background, fps } = project.settings;
-  const beats = useMemo(
-    () => sceneBeats(project, scene.id, scene.duration).map((b) => b.t),
-    [project, scene.id, scene.duration],
-  );
 
   const redraw = useCallback(() => setTick((t) => t + 1), []);
 
@@ -227,7 +222,7 @@ export function CanvasView({ project }: { project: Project }) {
 
     if (playMode) {
       // Vista previa: lo que saldrá en el vídeo en el instante del cabezal, a través de la cámara.
-      drawSceneFrame(ctx, project.settings, scene, playhead, cache.current, images, overrides.current, beats);
+      drawSceneInProject(ctx, project, scene, playhead, cache.current, images, overrides.current);
       return;
     }
 
@@ -300,7 +295,6 @@ export function CanvasView({ project }: { project: Project }) {
     activeLayerId,
     project,
     mediaVersion,
-    beats,
   ]);
 
   // Capa superpuesta: trazo en curso, selección, marco y cursor de goma.

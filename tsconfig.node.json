@@ -17,6 +17,12 @@
     // Estado del renderer sin dependencias de DOM, probado con Vitest en Node.
     "src/renderer/src/state/app-store.ts"
   ],
-  // El dibujo usa Path2D y Canvas (DOM): solo se compila con tsconfig.web.json.
-  "exclude": ["src/core/render/draw.ts", "src/core/render/frame.ts", "src/core/audio/mix.ts"]
+  // El dibujo usa Path2D y Canvas (DOM): solo se compila con tsconfig.web.json, igual que sus pruebas
+  // (tests/unit/render-*.test.ts, que usan un contexto de dibujo simulado).
+  "exclude": [
+    "src/core/render/draw.ts",
+    "src/core/render/frame.ts",
+    "src/core/audio/mix.ts",
+    "tests/unit/render-*.test.ts"
+  ]
 }

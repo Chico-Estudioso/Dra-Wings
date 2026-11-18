@@ -28,7 +28,8 @@ Project {
   export: { preset: '720p' | '1080p' | 'square' | 'vertical'; fps?: Fps }   // valor inicial del diálogo: '720p' → HD; el resto → Full HD
 }
 
-Scene { id; name; duration: Ticks; layers: Layer[]; camera: AnimatedTransform }   // cámara: x, y = esquina del encuadre; scaleX = zoom
+Scene { id; name; duration: Ticks; layers: Layer[]; camera: AnimatedTransform    // cámara: x, y = esquina del encuadre; scaleX = zoom
+        transition?: { kind: 'cut' | 'fade' | 'dip' | 'slide' | 'zoom' | 'wipe' | 'iris'; duration: Ticks } }  // entrada desde la escena anterior
 
 Layer {
   id; name; visible: boolean; locked: boolean; opacity: number

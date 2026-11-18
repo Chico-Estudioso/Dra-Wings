@@ -83,6 +83,7 @@ Ver `docs/LIBRARY.md`: recursos, constructor de personajes, escenas de partida, 
 - **Animaciones rápidas:** en el panel «Animación» del elemento seleccionado, botones de un clic (entrar, salir, saltar, balancearse, latir, flotar, girar, temblar y crecer) y el selector de suavizado. Ver `docs/ANIMATION_ENGINE.md`.
 - **Trazo vivo** (icono de pulso en la barra de la línea de tiempo): cuánto tiemblan las líneas al reproducir y en el vídeo (Quieto, Suave, Normal o Marcado). Ver `docs/ANIMATION_ENGINE.md`.
 - **Expresión y postura:** en el panel de un personaje; se aplican desde el cabezal y cada cambio se ve como un círculo en su barra (clic para ir a él). Ver `docs/LIBRARY.md`.
+- **Transición** (icono de mezcla junto a la duración, en las escenas que no son la primera): cómo entra la escena desde la anterior y a qué velocidad. Ver `docs/ANIMATION_ENGINE.md`.
 - **Elasticidad** (icono de curva junto al trazo vivo): cuánto se estira lo que se mueve deprisa. **Estela al moverse**, en el panel «Animación» de cada elemento. Ver `docs/ANIMATION_ENGINE.md`.
 - **Ritmo:** al importar música se detectan sus golpes; se ven en la regla (los de compás, más marcados) y las barras, clips y marcas se pegan a ellos. Ver `docs/AUDIO_EXPORT.md`.
 - **Vida automática:** selector «Vida» del panel «Animación» (Quieto, Respirar, Balancearse, Flotar o Latir) con su intensidad. Se ve al reproducir y en el vídeo, sin keyframes. Ver `docs/ANIMATION_ENGINE.md`.

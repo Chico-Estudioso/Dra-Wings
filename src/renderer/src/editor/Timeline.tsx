@@ -57,6 +57,7 @@ import { hasFiles, importDroppedFiles } from './drop-files';
 import { Waveform } from './Waveform';
 import { BoilControl } from './BoilControl';
 import { ElasticControl } from './ElasticControl';
+import { TransitionControl } from './TransitionControl';
 
 const NAME_W = 150;
 const RULER_H = 24;
@@ -608,6 +609,7 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
         <SceneTabs project={project} sceneId={scene.id} />
         <span className="topbar-spacer" />
         <DurationInput key={scene.id + scene.duration} scene={scene} />
+        {project.scenes[0]?.id !== scene.id && <TransitionControl scene={scene} />}
         <button
           className={`icon-btn icon-btn-sm ${preview ? 'is-on' : ''}`}
           aria-pressed={preview}
