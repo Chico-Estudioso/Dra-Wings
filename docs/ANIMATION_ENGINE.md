@@ -65,6 +65,10 @@ Todo se puede ajustar después en la línea de tiempo o en el panel «Animación
 
 `usePlayback` avanza el cabezal con `requestAnimationFrame` y recorre las escenas en orden con el tiempo global (`locateTime`). En M5 el reloj maestro pasará a ser `AudioContext.currentTime`.
 
+## Tipo de hoja
+
+Sobre el color de fondo, la hoja puede ser lisa, **papel con grano** (una tesela de 256 × 256 con fibras claras y oscuras muy suaves, siempre la misma), **cuaderno de rayas** (16 rayas azules y un margen rojo) o **cuadrícula** (celdas de 1/20 del alto) (`settings.paper`, `src/core/render/paper.ts`). Se ve al editar y en la vista previa y el vídeo; en estos va dentro de la cámara, así que se acerca con lo dibujado. Se elige en el menú del trazo vivo.
+
 ## Mano que dibuja
 
 Como en los vídeos de pizarra, una mano con rotulador o lápiz sigue la punta de lo que se está dibujando (`settings.hand`; Sin mano, Rotulador o Lápiz; los proyectos nuevos empiezan con rotulador). Se elige en el menú del trazo vivo.

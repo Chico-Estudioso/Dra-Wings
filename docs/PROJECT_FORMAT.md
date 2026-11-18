@@ -21,7 +21,8 @@ Project {
   settings: { width: number; height: number; fps: Fps; background: Color; mode: 'guided' | 'mixed' | 'free'
               boil?: 'off' | 'soft' | 'medium' | 'strong'      // «trazo vivo»; sin valor = 'off' (archivos anteriores)
               elastic?: 'off' | 'soft' | 'medium' | 'strong'   // elasticidad; sin valor = 'off'
-              hand?: 'none' | 'marker' | 'pencil' }           // mano que dibuja; sin valor = 'none'
+              hand?: 'none' | 'marker' | 'pencil'             // mano que dibuja; sin valor = 'none'
+              paper?: 'plain' | 'paper' | 'notebook' | 'grid' } // tipo de hoja; sin valor = lisa
   scenes: Scene[]                       // se reproducen en orden
   assets: Asset[]                       // medios usados (imágenes y audio)
   audioTracks: AudioTrack[]

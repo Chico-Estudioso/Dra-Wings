@@ -3,7 +3,8 @@ import * as Popover from '@radix-ui/react-popover';
 import { Activity } from 'lucide-react';
 import { BOIL_LABELS, type BoilLevel } from '@core/render/boil';
 import type { Project } from '@core/model/types';
-import { setBoil, setHand } from './actions';
+import { setBoil, setHand, setPaper } from './actions';
+import { PAPER_LABELS, type PaperStyle } from '@core/render/paper';
 import { HAND_LABELS, type HandStyle } from '@core/render/hand';
 
 const LEVELS = Object.keys(BOIL_LABELS) as BoilLevel[];
@@ -50,6 +51,21 @@ export function BoilControl({ project }: { project: Project }) {
           <p className="hint boil-hint">
             Una mano sigue la punta de lo que se va dibujando, como en los vídeos de pizarra.
           </p>
+          <label className="inline-field boil-paper">
+            <span className="control-label">Hoja</span>
+            <select
+              className="input input-sm"
+              aria-label="Tipo de hoja"
+              value={project.settings.paper ?? 'plain'}
+              onChange={(e) => setPaper(e.target.value as PaperStyle)}
+            >
+              {(Object.keys(PAPER_LABELS) as PaperStyle[]).map((k) => (
+                <option key={k} value={k}>
+                  {PAPER_LABELS[k]}
+                </option>
+              ))}
+            </select>
+          </label>
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>

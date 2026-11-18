@@ -11,6 +11,7 @@ import { motionPath } from '@core/anim/motion-path';
 import type { MotionSample } from '@core/anim/record';
 import { ticksPerFrame, type Ticks } from '@core/time/ticks';
 import { drawSceneInProject } from '@core/render/frame';
+import { drawPaper } from '@core/render/paper';
 import { strokeOutline } from '@core/render/stroke-outline';
 import type { Item, Project, Scene } from '@core/model/types';
 import {
@@ -239,6 +240,7 @@ export function CanvasView({ project }: { project: Project }) {
     ctx.clip();
     ctx.fillStyle = background;
     ctx.fillRect(0, 0, docW, docH);
+    drawPaper(ctx, project.settings.paper, docW, docH);
     // Papel cebolla: fotogramas anterior y siguiente de la capa de fotogramas activa.
     const active = scene.layers.find((l) => l.id === activeLayerId);
     if (onion && active?.kind === 'frames') {

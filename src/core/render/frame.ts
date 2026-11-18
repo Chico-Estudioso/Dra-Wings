@@ -9,6 +9,7 @@ import { cameraMatrix, evaluateScene } from './evaluate';
 import { boilAt } from './boil';
 import { drawingTip } from './hand-tip';
 import { drawHand } from './hand';
+import { drawPaper } from './paper';
 import { elasticAmount } from '../anim/elastic';
 import { sceneBeats, type Beat } from '../audio/rhythm';
 import { sceneVoice } from '../audio/voice';
@@ -44,6 +45,7 @@ export function drawSceneFrame(
     ctx.translate(-settings.width / 2, -settings.height / 2);
   }
   ctx.transform(...cameraMatrix(scene, local));
+  drawPaper(ctx, settings.paper, settings.width, settings.height);
   const boil = boilAt(settings.boil, local, settings.fps);
   const list = evaluateScene(scene, local, {
     mode: 'play',

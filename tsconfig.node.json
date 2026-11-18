@@ -23,6 +23,7 @@
     "src/core/render/draw.ts",
     "src/core/render/frame.ts",
     "src/core/render/hand.ts",
+    "src/core/render/paper.ts",
     "src/core/audio/mix.ts",
     "tests/unit/render-*.test.ts"
   ]

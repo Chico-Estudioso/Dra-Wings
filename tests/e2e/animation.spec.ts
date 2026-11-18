@@ -433,3 +433,18 @@ test('mano que dibuja: activa en los proyectos nuevos y se puede cambiar', async
   await stubMessageBox(app, 1);
   await app.close();
 });
+
+test('tipo de hoja: cuaderno de rayas al editar y en el proyecto', async () => {
+  const file = path.join(await tempDir(), 'hoja.dwings');
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Hoja');
+  const plain = await sceneHash(page);
+  await page.getByRole('button', { name: 'Trazo vivo: Normal' }).click();
+  await page.getByLabel('Tipo de hoja').selectOption({ label: 'Cuaderno de rayas' });
+  await page.keyboard.press('Escape');
+  await expect.poll(() => sceneHash(page)).not.toBe(plain);
+  const p = await saveAndRead(app, page, file);
+  expect(p.settings.paper).toBe('notebook');
+  await stubMessageBox(app, 1);
+  await app.close();
+});

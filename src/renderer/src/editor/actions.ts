@@ -29,6 +29,7 @@ import type { LifeKind } from '@core/anim/life';
 import type { ElasticLevel } from '@core/anim/elastic';
 import type { LoopKind } from '@core/anim/loop';
 import type { HandStyle } from '@core/render/hand';
+import type { PaperStyle } from '@core/render/paper';
 import type { TextReveal } from '@core/render/text-reveal';
 import { sceneBeats, type Beat } from '@core/audio/rhythm';
 import { barAlignedDuration, beatsOrPulse, staggerTimes } from '@core/edit/beat-sync';
@@ -279,6 +280,13 @@ export function setTextReveal(reveal: TextReveal): void {
     it.reveal = reveal === 'letters' ? undefined : reveal;
     if (!it.enter || it.enter.kind !== 'draw')
       it.enter = { kind: 'draw', duration: it.enter?.duration || ticksPerFrame(fps()) * 30 };
+  });
+}
+
+/** Tipo de hoja del proyecto. */
+export function setPaper(paper: PaperStyle): void {
+  useApp.getState().apply('Tipo de hoja', (p) => {
+    p.settings.paper = paper === 'plain' ? undefined : paper;
   });
 }
 

@@ -6,6 +6,7 @@ Los cambios relevantes se registran aquí. Se seguirá una estructura inspirada 
 - Preparación inicial del proyecto y del kit de desarrollo.
 - «Ver un ejemplo» en el inicio: proyecto de tres escenas hecho con la biblioteca, con textos, una salida con fundido y un zoom de cámara, para aprender viéndolo.
 - Arrastrar imágenes (al lienzo) y audio (a la línea de tiempo) desde el explorador; el audio pregunta su pista si no se suelta sobre una.
+- Tipo de hoja: lisa, papel con grano, cuaderno de rayas o cuadrícula (menú del trazo vivo).
 - La naturaleza de la biblioteca nace con vida (nubes que flotan, sol y estrellas que laten, árboles y flores que se balancean) y el proyecto de ejemplo enseña las novedades: textos que se escriben, transiciones y un personaje que se alegra y salta.
 - Mano que dibuja: como en los vídeos de pizarra, una mano con rotulador o lápiz sigue la punta de lo que se va dibujando al reproducir y en el vídeo (activa en los proyectos nuevos; se cambia en el menú del trazo vivo).
 - Personajes que hablan: con «Habla con la narración», el personaje abre y cierra la boca siguiendo el volumen de la voz grabada o importada (la narración se analiza sola al añadirla).
