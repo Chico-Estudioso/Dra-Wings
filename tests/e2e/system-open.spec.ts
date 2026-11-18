@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { spawn } from 'node:child_process';
+import electronPath from 'electron';
 import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { createProject } from '../../src/core/model/factory';
@@ -23,16 +24,11 @@ test('un .dwings abierto desde el sistema se abre al arrancar y con la app ya ab
   await expect(page.getByLabel('Nombre del proyecto')).toHaveValue('Desde el explorador');
 
   // Otra instancia con otro archivo: no abre una segunda ventana, se lo pasa a la primera.
-  const electron = path.join(
-    process.cwd(),
-    'node_modules',
-    '.bin',
-    process.platform === 'win32' ? 'electron.cmd' : 'electron',
-  );
+  // Se lanza el ejecutable de Electron sin shell: así la ruta con espacios llega entera, como al hacer
+  // doble clic (con shell en Windows se partiría por el espacio).
   const extra = process.platform === 'linux' && (process.getuid?.() === 0 || process.env.CI) ? ['--no-sandbox'] : [];
-  const child = spawn(electron, ['.', second, ...extra], {
+  const child = spawn(electronPath as unknown as string, ['.', second, ...extra], {
     env: { ...process.env, DW_USER_DATA: userData },
-    shell: process.platform === 'win32',
     stdio: 'ignore',
   });
   const exited = new Promise<number | null>((r) => child.on('exit', r));
