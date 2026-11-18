@@ -34,7 +34,7 @@ import { PropertiesPanel } from '../editor/PropertiesPanel';
 import { AudioClipPanel, MarkerPanel } from '../editor/AudioPanel';
 import { ExportDialog, openExportDialog } from '../export/ExportDialog';
 import { openShortcuts, ShortcutsDialog } from '../editor/ShortcutsDialog';
-import { RecordDialog } from '../editor/RecordDialog';
+import { RecordPanel } from '../editor/RecordPanel';
 import { AudioDropChooser } from '../editor/AudioDropChooser';
 import { useEditorShortcuts } from '../editor/shortcuts';
 import { zoomAt } from '../editor/view';
@@ -224,6 +224,7 @@ export function Editor() {
           <ToolOptions />
           <div className="canvas-area">
             <CanvasView project={project} />
+            <RecordPanel />
           </div>
         </div>
         <aside className="sidepanel" aria-label="Paneles">
@@ -305,7 +306,6 @@ export function Editor() {
         </button>
       </footer>
       <ShortcutsDialog />
-      <RecordDialog />
       <AudioDropChooser />
     </div>
   );

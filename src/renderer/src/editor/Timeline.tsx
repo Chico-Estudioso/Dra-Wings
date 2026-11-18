@@ -51,7 +51,7 @@ import { TIMELINE_MIN_H, useEditor } from './editor-store';
 import { itemName } from './item-names';
 import { addMarkerAtPlayhead, importAudio, moveClipTo, moveMarkerTo, trimClipBy, updateTrack } from './media-actions';
 import { togglePlay } from './playback';
-import { openRecordDialog } from './RecordDialog';
+import { openRecordPanel } from './RecordPanel';
 import { hasFiles, importDroppedFiles } from './drop-files';
 import { Waveform } from './Waveform';
 
@@ -627,7 +627,7 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
           <Popover.Portal>
             <Popover.Content className="menu-popover" sideOffset={4} align="end" aria-label="Añadir audio">
               <Popover.Close asChild>
-                <button className="menu-item" onClick={openRecordDialog}>
+                <button className="menu-item" onClick={openRecordPanel}>
                   <Circle size={15} fill="currentColor" className="menu-rec" aria-hidden /> Grabar narración…
                 </button>
               </Popover.Close>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { audioEnd, clipGainAt, pruneAssets, scheduleFrom, usedAssetIds } from '@core/audio/clips';
+import { audioEnd, clipGainAt, pruneAssets, scheduleFrom, usedAssetIds, withoutNarration } from '@core/audio/clips';
 import {
   addClip,
   addMarker,
@@ -66,6 +66,17 @@ describe('fundidos y programación de clips', () => {
     expect(scheduleFrom(p, 3 * S, 11 * S)[1]).toMatchObject({ length: S });
     // Lo que ya terminó no se programa.
     expect(scheduleFrom(p, 13 * S)).toHaveLength(0);
+  });
+
+  it('para grabar una narración nueva se puede silenciar la que ya hay (sin tocar el proyecto)', () => {
+    const { p, asset } = withClip();
+    addClip(trackFor(p, 'music'), asset.id, 0, S);
+    const quiet = withoutNarration(p);
+    expect(quiet.audioTracks.map((t) => t.kind)).toEqual(['music']);
+    expect(p.audioTracks.map((t) => t.kind)).toEqual(['narration', 'music']);
+    expect(scheduleFrom(quiet, 0).map((s) => s.track.kind)).toEqual(['music']);
+    const noNarration = { ...p, audioTracks: p.audioTracks.filter((t) => t.kind === 'music') };
+    expect(withoutNarration(noNarration)).toBe(noNarration);
   });
 
   it('las pistas silenciadas no suenan y el final del audio se calcula', () => {

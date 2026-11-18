@@ -18,10 +18,10 @@ Decisión de base: ADR-004 (WebCodecs + mediabunny, sin FFmpeg empaquetado).
 
 ## Audio en el editor (M5)
 
-- **Grabar la narración** (menú «Audio» → «Grabar narración…»):
+- **Grabar la narración** (menú «Audio» → «Grabar narración…»). Es un modo sobre el lienzo, no una ventana: el vídeo se ve mientras se narra.
   - El permiso del micrófono se concede solo para audio (nunca la cámara) y solo a la propia interfaz; el resto de permisos siguen denegados. En Windows, además, el micrófono debe estar permitido para las aplicaciones de escritorio en la configuración de privacidad (la app lo explica si está bloqueado).
-  - Medidor de nivel, cuenta atrás de 3 s y, opcionalmente, la animación reproduciéndose mientras se graba para ir narrando sobre ella. Máximo 20 minutos por toma.
-  - Al detener, la toma se convierte a WAV mono de 16 bits a 48 kHz; la escucha previa es ese WAV (exactamente lo que se guardará). «Usar grabación» la coloca en la pista de narración en el instante en que empezó la grabación.
+  - Empieza en el cabezal (se elige moviéndolo). Medidor de nivel, cuenta atrás de 3 s grande sobre el lienzo y, por defecto, el vídeo reproduciéndose mientras se graba. Opcionalmente se silencia la narración que ya hay (solo en la reproducción de ese momento). Mientras se graba, el resto del editor no responde al ratón, e Intro, Espacio o Esc detienen. Máximo 20 minutos por toma.
+  - Al detener, la toma se convierte a WAV mono de 16 bits a 48 kHz y se coloca al momento en la pista de narración. Después: «Escuchar con el vídeo» (reproduce desde el inicio de la toma), «Repetir toma» (la quita y vuelve a grabar desde el mismo punto) o «Grabar otra» (desde donde esté el cabezal).
 - **Formatos:** MP3, WAV, OGG/Opus, M4A/AAC y FLAC, es decir, lo que decodifica el Chromium de Electron. Se decodifica con un `OfflineAudioContext` a **48 kHz**: no depende del dispositivo de salida y es la frecuencia que usará la exportación. Si la decodificación falla, se muestra un error y no se añade nada.
 - **Pistas:** narración, música y efectos, en ese orden. Se crean al importar el primer clip de cada tipo y desaparecen al quedarse vacías. Cada una tiene volumen (0–200 %) y silencio.
 - **Clips:** posición en el tiempo global del proyecto (`start`), recorte (`sourceOffset` y `duration`, sin salirse del archivo y con un mínimo de 0,1 s), ganancia (0–200 %), fundidos lineales de entrada y salida (nunca suman más que el clip) y dividir en el cabezal.

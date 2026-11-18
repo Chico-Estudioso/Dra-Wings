@@ -70,6 +70,8 @@ interface EditorState {
   timelineZoom: number;
   /** Alto de la línea de tiempo elegido por el usuario (null: el predeterminado). */
   timelineHeight: number | null;
+  /** La reproducción no hace sonar la narración (mientras se graba una nueva). */
+  muteNarration: boolean;
   /** Clip de audio seleccionado (excluye la selección de elementos). */
   clipId: string | null;
   /** Marca seleccionada en la regla de la línea de tiempo. */
@@ -93,6 +95,7 @@ interface EditorState {
   setTimelineZoom(z: number): void;
   setTimelineHeight(h: number): void;
   selectClip(id: string | null): void;
+  setMuteNarration(mute: boolean): void;
   selectMarker(id: string | null): void;
   setScene(sceneId: string, layerId: string): void;
   reset(sceneId: string, layerId: string, mode: Mode): void;
@@ -139,6 +142,7 @@ export const useEditor = create<EditorState>()((set) => ({
   timelineHeight: readTimelineHeight(),
   clipId: null,
   markerId: null,
+  muteNarration: false,
 
   setTool: (tool) => set((s) => ({ tool, selection: tool === 'select' ? s.selection : [], editingTextId: null })),
   setOptions: (patch) => set((s) => ({ options: { ...s.options, ...patch } })),
@@ -166,6 +170,7 @@ export const useEditor = create<EditorState>()((set) => ({
     set({ timelineHeight: v });
   },
   selectClip: (id) => set({ clipId: id, markerId: null, selection: [] }),
+  setMuteNarration: (muteNarration) => set({ muteNarration }),
   selectMarker: (id) => set({ markerId: id, clipId: null, selection: [] }),
   setScene: (sceneId, layerId) =>
     set({ sceneId, activeLayerId: layerId, selection: [], playhead: 0, editingTextId: null, markerId: null }),

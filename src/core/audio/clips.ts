@@ -78,3 +78,10 @@ export function pruneAssets(project: Project): Project {
   if (project.assets.every((a) => used.has(a.id))) return project;
   return { ...project, assets: project.assets.filter((a) => used.has(a.id)) };
 }
+
+/** El proyecto tal como debe sonar sin las pistas de narración (para grabar una nueva encima). */
+export function withoutNarration(project: Project): Project {
+  return project.audioTracks.some((t) => t.kind === 'narration')
+    ? { ...project, audioTracks: project.audioTracks.filter((t) => t.kind !== 'narration') }
+    : project;
+}

@@ -1670,3 +1670,81 @@ kbd {
 .record-preview {
   width: 100%;
 }
+
+/* Modo grabación sobre el lienzo: una fila arriba, para que se vea el vídeo */
+.record-panel {
+  position: absolute;
+  left: 50%;
+  top: 10px;
+  z-index: 6;
+  width: min(780px, calc(100% - 20px));
+  transform: translateX(-50%);
+  padding: 6px 8px 6px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid #d9364f;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.record-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+.record-icon {
+  color: #d9364f;
+}
+.record-title {
+  font-size: 13.5px;
+  white-space: nowrap;
+}
+.record-panel .record-status {
+  flex: 1 1 200px;
+  justify-content: flex-start;
+  min-height: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.record-panel .mic-meter {
+  flex: 0 0 110px;
+  height: 8px;
+}
+.record-error {
+  color: var(--danger);
+}
+.record-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 18px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--surface-2);
+}
+.record-options .hint {
+  margin: 0;
+  font-size: 12px;
+}
+.record-dot.is-static {
+  display: inline-block;
+  animation: none;
+}
+.record-blocker {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  cursor: not-allowed;
+}
+.record-countdown-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  font-size: 120px;
+  font-weight: 800;
+  color: var(--accent);
+  text-shadow: 0 2px 12px rgb(0 0 0 / 0.25);
+  pointer-events: none;
+}

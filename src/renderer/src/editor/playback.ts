@@ -3,6 +3,7 @@
 // el reloj de pared para que la vista previa no se congele.
 import { useEffect } from 'react';
 import { scheduleProject, type Scheduled } from '@core/audio/mix';
+import { withoutNarration } from '@core/audio/clips';
 import { locateTime, projectDuration, sceneStart } from '@core/edit/scenes';
 import type { Project } from '@core/model/types';
 import { TICKS_PER_SECOND, type Ticks } from '@core/time/ticks';
@@ -31,7 +32,7 @@ class PlaybackClock {
   private scheduled: Scheduled | null = null;
   private audioClock = false;
   /** Lo que se programó: si cambia el audio del documento o termina una carga, se reprograma. */
-  private key: { tracks: Project['audioTracks']; version: number } | null = null;
+  private key: { tracks: Project['audioTracks']; version: number; mute: boolean } | null = null;
 
   constructor(origin: Ticks) {
     this.origin = origin;
@@ -58,10 +59,12 @@ class PlaybackClock {
   }
 
   /** Programa (o reprograma) el audio desde el instante actual si ha cambiado algo. */
-  sync(project: Project, version: number): void {
-    if (this.key && this.key.tracks === project.audioTracks && this.key.version === version) return;
-    const at = this.key ? this.now() : this.origin;
-    this.key = { tracks: project.audioTracks, version };
+  sync(source: Project, version: number, muteNarration: boolean): void {
+    const k = this.key;
+    if (k && k.tracks === source.audioTracks && k.version === version && k.mute === muteNarration) return;
+    const at = k ? this.now() : this.origin;
+    this.key = { tracks: source.audioTracks, version, mute: muteNarration };
+    const project = muteNarration ? withoutNarration(source) : source;
     this.scheduled?.stop();
     this.scheduled = null;
     if (!hasAudio(project)) {
@@ -110,7 +113,7 @@ export function usePlayback(): void {
       const project = useApp.getState().doc?.project;
       const ed = useEditor.getState();
       if (!project || !ed.playing) return;
-      clock.sync(project, useMediaVersion.getState().v);
+      clock.sync(project, useMediaVersion.getState().v, ed.muteNarration);
       const g = clock.now();
       const total = projectDuration(project);
       const { scene, local } = locateTime(project, Math.min(g, total));
