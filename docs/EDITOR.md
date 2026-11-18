@@ -96,6 +96,7 @@ Ver `docs/LIBRARY.md`: recursos, constructor de personajes, escenas de partida, 
 - **Pistas:** una por capa. Cada elemento es una barra con su aparición (color según el tipo: dibujar, fundido o pop) y una línea fina hasta que desaparece. Arrastrar la barra cambia cuándo aparece (y desplaza sus keyframes); arrastrar su borde derecho cambia la duración. Con la selección se ven sus keyframes (rombos), y un clic en uno lleva el cabezal allí.
 - **Regla:** clic o arrastre para mover el cabezal; activa la vista previa para ver el vídeo en ese instante. Tocar el lienzo vuelve al modo edición.
 - **Animaciones rápidas:** en el panel «Animación» del elemento seleccionado, botones de un clic (entrar, salir, saltar, balancearse, latir, flotar, girar, temblar y crecer) y el selector de suavizado. Ver `docs/ANIMATION_ENGINE.md`.
+- **Copiar y pegar animación:** en el mismo panel. Se copia la de un elemento y se pega en uno o varios seleccionados (por ejemplo, todos los bailarines de un videoclip): cada uno hace el mismo movimiento desde su sitio.
 - **Hoja:** en el mismo menú, lisa, papel con grano, cuaderno de rayas o cuadrícula.
 - **Mano que dibuja:** en el mismo menú del trazo vivo (Sin mano, Rotulador o Lápiz).
 - **Trazo vivo** (icono de pulso en la barra de la línea de tiempo): cuánto tiemblan las líneas al reproducir y en el vídeo (Quieto, Suave, Normal o Marcado). Ver `docs/ANIMATION_ENGINE.md`.

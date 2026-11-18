@@ -1,4 +1,16 @@
-import { ChevronLeft, ChevronRight, Clock, Diamond, Hand, LogIn, LogOut, Video, X } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  ClipboardPaste,
+  Clock,
+  Copy,
+  Diamond,
+  Hand,
+  LogIn,
+  LogOut,
+  Video,
+  X,
+} from 'lucide-react';
 import { keyTimes } from '@core/anim/keyframes';
 import type { Enter, Exit, Item } from '@core/model/types';
 import { formatTimecode, secondsFromTicks, ticksFromSeconds, type Fps } from '@core/time/ticks';
@@ -16,6 +28,7 @@ import {
 import { ValueSlider } from './controls';
 import { useEditor } from './editor-store';
 import { QuickAnimations } from './QuickAnimations';
+import { copySelectionMotion, pasteSelectionMotion, useMotionClipboard } from './motion-actions';
 import { LOOP_LABELS, type LoopKind } from '@core/anim/loop';
 import { hasBeats } from '@core/audio/rhythm';
 import { useApp } from '../state/app-store';
@@ -78,6 +91,7 @@ export function AnimationSection({ items, fps }: { items: Item[]; fps: Fps }) {
   const autoKey = useEditor((s) => s.autoKey);
   const puppet = useEditor((s) => s.puppet);
   const hasMusicBeats = useApp((s) => !!s.doc && hasBeats(s.doc.project));
+  const copiedFrom = useMotionClipboard((s) => (s.motion ? s.from : null));
   const first = items[0];
   if (!first) return null;
   const enter: Enter = first.enter ?? { kind: 'none', duration: 0 };
@@ -218,6 +232,28 @@ export function AnimationSection({ items, fps }: { items: Item[]; fps: Fps }) {
           </button>
         </div>
       )}
+      <div className="button-grid" role="group" aria-label="Copiar y pegar animación">
+        <button
+          className="btn btn-ghost btn-sm"
+          disabled={items.length !== 1}
+          title="Copia el movimiento, la aparición, la salida, la repetición, la vida y la estela"
+          onClick={copySelectionMotion}
+        >
+          <Copy size={14} aria-hidden /> Copiar animación
+        </button>
+        <button
+          className="btn btn-ghost btn-sm"
+          disabled={copiedFrom === null}
+          title={
+            copiedFrom !== null
+              ? `Pega la animación de «${copiedFrom}»: cada elemento se mueve igual desde donde está y desde que aparece`
+              : 'Copia antes la animación de otro elemento'
+          }
+          onClick={pasteSelectionMotion}
+        >
+          <ClipboardPaste size={14} aria-hidden /> Pegar animación
+        </button>
+      </div>
       <div className="anim-life">
         <label className="inline-field">
           <span className="control-label">Vida</span>

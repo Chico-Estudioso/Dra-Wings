@@ -473,3 +473,36 @@ test('la cámara sigue a un elemento', async () => {
   await stubMessageBox(app, 1);
   await app.close();
 });
+
+test('copiar la animación de un elemento y pegarla en otro', async () => {
+  const file = path.join(await tempDir(), 'copiar.dwings');
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Copiar');
+  const c = await center(page);
+  await page.keyboard.press('r');
+  await drag(page, { x: c.x - 200, y: c.y - 30 }, { x: c.x - 120, y: c.y + 30 }, 4);
+  const quick = page.getByRole('group', { name: 'Animaciones rápidas' });
+  await quick.getByRole('button', { name: /^Saltar/ }).click();
+  await page.getByRole('button', { name: 'Copiar animación' }).click();
+  await expect(page.getByText(/Animación de «.+» copiada/)).toBeVisible();
+
+  // Un segundo elemento (queda seleccionado al crearlo) recibe el mismo salto desde donde está.
+  await page.keyboard.press('r');
+  await drag(page, { x: c.x + 120, y: c.y + 20 }, { x: c.x + 200, y: c.y + 90 }, 4);
+  await page.getByRole('button', { name: 'Pegar animación' }).click();
+
+  const p = await saveAndRead(app, page, file);
+  const [a, b] = items(p);
+  const ya = a!.transform.y;
+  const yb = b!.transform.y;
+  if (!('keys' in ya) || !('keys' in yb)) throw new Error('se esperaban keyframes en los dos');
+  expect(yb.keys).toHaveLength(ya.keys.length);
+  yb.keys.forEach((k, i) => {
+    expect(k.t - b!.in).toBe(ya.keys[i]!.t - a!.in);
+    expect(k.v - yb.keys[0]!.v).toBeCloseTo(ya.keys[i]!.v - ya.keys[0]!.v, 6);
+    expect(k.ease).toBe(ya.keys[i]!.ease);
+  });
+  expect(yb.keys[0]!.v).not.toBeCloseTo(ya.keys[0]!.v, 0); // cada uno salta desde su sitio
+  await stubMessageBox(app, 1);
+  await app.close();
+});

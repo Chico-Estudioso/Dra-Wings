@@ -165,6 +165,8 @@ El selector «Suavizado» del panel «Animación» cambia todos los tramos del e
 
 **Animaciones rápidas** (`src/core/anim/presets.ts`, panel «Animación»): entrar o salir por un lado de la hoja, saltar (con un pequeño aplastamiento al aterrizar), balancearse, latir, flotar, girar, temblar y crecer. Crean keyframes normales a partir del cabezal (o de cuando aparece el elemento, si el cabezal está antes), relativos a cómo está el elemento en ese instante, y respetan los keyframes de fuera de su tramo. «Salir» además hace desaparecer el elemento al acabar. Si la animación termina después del final, la escena se alarga.
 
+**Copiar y pegar animación** (`src/core/anim/copy-motion.ts`, panel «Animación»): «Copiar animación» guarda la del elemento seleccionado y «Pegar animación» la aplica a todos los seleccionados, cada uno **desde donde está y desde que aparece**. Las claves se guardan relativas: desplazamiento en posición y giro, factor en escala y valor en opacidad; el tiempo, desde la aparición. Las propiedades que la copia no anima se quedan quietas en su valor actual. También pasan la aparición (salvo la duración de «Dibujarse», que depende de cada dibujo), la salida (el mismo tiempo después de aparecer), la repetición, la vida y la estela. Un solo paso de deshacer; el portapapeles es de la sesión.
+
 ## Animar arrastrando y trayectorias
 
 **Animar arrastrando** (botón del panel «Animación»; con él activo, la herramienta de selección agarra en vez de mover): al arrastrar un elemento, la escena se reproduce desde el cabezal (con su audio) y el elemento sigue al puntero. Se recoge su posición en cada fotograma de la reproducción y, al soltar, el recorrido se convierte en keyframes de posición:
