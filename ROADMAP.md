@@ -72,6 +72,15 @@ Estado: M0 a M7 completados y M8 preparado: falta la aprobación para publicar.
 - Hecho: instalador NSIS con fuses de Electron, asociación de `.dwings`, instancia única, licencias de terceros e icono; el CI empaqueta, instala, arranca y desinstala en Windows (ver `docs/PACKAGING.md`).
 - Pendiente (requiere aprobación o medios externos): firma de código, pruebas en Windows limpio y publicación de la release candidata.
 
+## Mejoras tras el MVP ✅
+Herramientas para que dibujar y animar sea rápido y todo se vea vivo (también para videoclips):
+
+- **Narración y audio:** grabar con el micrófono, también viendo el vídeo; arrastrar imágenes y audio desde el explorador; ritmo de la música detectado solo (golpes en la regla, ajuste magnético, aparecer al ritmo, ajustar la escena al compás, cámara que late); voz de la narración analizada para que los personajes hablen.
+- **Dibujo:** estabilizador, trazo de tinta y formas rápidas; trazo vivo (las líneas tiemblan como en la animación a mano); mano que dibuja.
+- **Animación:** animaciones rápidas de un clic y suavizado; animar arrastrando con trayectorias visibles; vida automática (respirar, balancearse, flotar, latir y al ritmo); elasticidad y estela; repetir movimiento; expresión y postura de los personajes en el tiempo; personajes que hablan; textos que se escriben palabra a palabra, con saltos o al ritmo; transiciones entre escenas.
+- **Aprendizaje:** proyecto de ejemplo que enseña las herramientas; los recursos de la naturaleza nacen con vida.
+- Pendiente (manual): probar el ritmo y el habla con canciones y voces reales, y ajustar el estabilizador y la tinta con ratón y tableta reales.
+
 ## Evolución posterior (no incluida en el MVP)
 - Transcripción automática y sincronización asistida.
 - Herramientas opcionales de IA.
