@@ -58,6 +58,8 @@ const itemBase = {
   out: ticks.optional(),
   enter: enterSchema.optional(),
   exit: exitSchema.optional(),
+  /** Estela: copias tenues del elemento donde estaba hace un instante, al moverse. */
+  trail: z.boolean().optional(),
   /** Vida automática: movimiento de reposo continuo al reproducir y en el vídeo. */
   life: z
     .object({
@@ -275,6 +277,8 @@ export const projectSchema = z.object({
     mode: modeSchema,
     /** «Trazo vivo»: temblor de las líneas al reproducir y en el vídeo (sin valor: quieto). */
     boil: z.enum(['off', 'soft', 'medium', 'strong']).optional(),
+    /** Elasticidad: lo que se mueve deprisa se estira (sin valor: rígido). */
+    elastic: z.enum(['off', 'soft', 'medium', 'strong']).optional(),
   }),
   scenes: z.array(sceneSchema).min(1, 'El proyecto necesita al menos una escena'),
   assets: z.array(assetSchema),

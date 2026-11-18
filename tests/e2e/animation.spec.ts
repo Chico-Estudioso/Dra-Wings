@@ -262,3 +262,22 @@ test('vida automática: el elemento se mueve solo al reproducir, sin keyframes',
   await stubMessageBox(app, 1);
   await app.close();
 });
+
+test('elasticidad del proyecto y estela de un elemento', async () => {
+  const file = path.join(await tempDir(), 'elastico.dwings');
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Elástico');
+  const c = await center(page);
+  await page.keyboard.press('r');
+  await drag(page, { x: c.x - 40, y: c.y - 30 }, { x: c.x + 40, y: c.y + 30 }, 4);
+  await page.getByRole('checkbox', { name: 'Estela al moverse' }).check();
+  await page.getByRole('button', { name: 'Elasticidad: Normal' }).click();
+  await page.getByRole('radio', { name: 'Marcado' }).check();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: 'Elasticidad: Marcado' })).toBeVisible();
+  const p = await saveAndRead(app, page, file);
+  expect(p.settings.elastic).toBe('strong');
+  expect(items(p)[0]!.trail).toBe(true);
+  await stubMessageBox(app, 1);
+  await app.close();
+});

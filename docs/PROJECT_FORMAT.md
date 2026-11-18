@@ -19,7 +19,8 @@ Los picos de la forma de onda no se guardan: se recalculan al abrir.
 Project {
   id: string; name: string; createdAt: string; updatedAt: string   // ISO 8601
   settings: { width: number; height: number; fps: Fps; background: Color; mode: 'guided' | 'mixed' | 'free'
-              boil?: 'off' | 'soft' | 'medium' | 'strong' }   // «trazo vivo»; sin valor = 'off' (archivos anteriores)
+              boil?: 'off' | 'soft' | 'medium' | 'strong'      // «trazo vivo»; sin valor = 'off' (archivos anteriores)
+              elastic?: 'off' | 'soft' | 'medium' | 'strong' } // elasticidad; sin valor = 'off'
   scenes: Scene[]                       // se reproducen en orden
   assets: Asset[]                       // medios usados (imágenes y audio)
   audioTracks: AudioTrack[]
@@ -42,6 +43,7 @@ ItemBase {
   in: Ticks; out?: Ticks                // relativos a la escena
   enter?: { kind: 'none' | 'draw' | 'fade' | 'pop'; duration: Ticks; mode?: 'length' | 'recorded' }
   exit?: { kind: 'none' | 'fade' | 'pop'; duration: Ticks }
+  trail?: boolean                       // estela al moverse
   life?: { kind: 'breathe' | 'sway' | 'float' | 'pulse' | 'beat-pulse' | 'beat-bounce' | 'beat-sway'; amount: number }  // vida automática (0–3)
 }
 

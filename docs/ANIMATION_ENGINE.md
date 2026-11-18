@@ -93,6 +93,14 @@ Movimiento de reposo continuo, sin keyframes (`item.life`, `src/core/anim/life.t
 
 **Al ritmo de la música:** Latir al ritmo (crece de golpe en cada tiempo y vuelve suave), Saltar al ritmo (aterriza en cada golpe aplastándose un poco y sube entre golpes) y Balancearse al ritmo (cambia de lado en cada golpe, desde la base). Siguen los golpes de la música de la escena (`evaluateScene` recibe `beats` en el tiempo de la escena); antes del primer golpe o tras el último se quedan quietos. Sin música con ritmo detectado, siguen un pulso de 120 BPM.
 
+## Elasticidad y estela
+
+**Elasticidad** (`settings.elastic`, `src/core/anim/elastic.ts`): lo que se mueve deprisa se estira en la dirección del movimiento (factor `k` hasta 1,45) y se estrecha de lado (`1/√k`), alrededor de su ancla; al frenar recupera la forma. La velocidad sale de la posición del elemento en el instante y 1/60 s antes, medida como si la hoja tuviera 1920 de ancho (la misma sensación en cualquier formato); por debajo de 40 unidades por segundo no se nota. Niveles Rígido, Suave, Normal y Marcado; los proyectos nuevos empiezan en Normal. Se combina con las animaciones rápidas (por ejemplo, «Entrar» o «Saltar») y con lo grabado con «Animar arrastrando».
+
+**Estela** (`item.trail`, casilla «Estela al moverse»): tres copias tenues (opacidad 0,3, 0,18 y 0,1) donde estaba el elemento 1, 2 y 3 treintavos de segundo antes, solo cuando se mueve.
+
+Ambas se calculan al evaluar la escena en modo reproducción (no al editar) y no se aplican a un elemento mientras se graba su movimiento con «Animar arrastrando».
+
 ## Pruebas obligatorias
 
 - Límites: tick 0, último tick de la escena, `in`/`out` exactos y clips solapados.

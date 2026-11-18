@@ -1,6 +1,7 @@
 // Evaluación de una escena en un instante: lista plana de lo que hay que dibujar (ver ANIMATION_ENGINE.md).
 import { childrenAt } from '../anim/swaps';
 import { lifeMatrix } from '../anim/life';
+import { stretchMatrix, TRAIL } from '../anim/elastic';
 import { valueAt } from '../anim/animated';
 import {
   matrixFrom,
@@ -36,6 +37,10 @@ export interface EvaluateOptions {
   overrides?: ReadonlyMap<string, StaticTransform>;
   /** Golpes de la música en el tiempo de la escena (vida «al ritmo»). */
   beats?: readonly Ticks[];
+  /** Intensidad de la elasticidad (0: rígido). */
+  elastic?: number;
+  /** Ancho de la hoja / 1920: las velocidades se miden igual en cualquier formato. */
+  unit?: number;
   /** Elementos que no se dibujan (por ejemplo, el texto que se está editando). */
   hidden?: ReadonlySet<string>;
 }
@@ -174,9 +179,22 @@ export function evaluateScene(scene: Scene, tick: Ticks, opts: EvaluateOptions):
       }
       const opacity = valueAt(item.opacity, tick) * layer.opacity * a.opacity;
       if (opacity <= 0) continue;
-      const t = opts.overrides?.get(item.id) ?? resolveTransform(item.transform, tick);
+      const override = opts.overrides?.get(item.id);
+      const t = override ?? resolveTransform(item.transform, tick);
       let m = popMatrix(matrixFrom(t), item, a.pop);
       if (opts.mode === 'play' && item.life) m = multiply(m, lifeMatrix(item, tick, opts.beats));
+      if (opts.mode === 'play' && !override) {
+        const unit = opts.unit ?? 1;
+        // Estela: copias tenues donde estaba hace un instante (solo si se mueve).
+        if (item.trail)
+          for (const g of TRAIL) {
+            const past = resolveTransform(item.transform, Math.max(0, tick - g.dt));
+            if (Math.hypot(past.x - t.x, past.y - t.y) / unit < 4) continue;
+            pushItem(out, item, matrixFrom(past), opacity * g.alpha, a.draw, tick);
+          }
+        const stretch = stretchMatrix(item, tick, opts.elastic ?? 0, t.x + t.anchorX, t.y + t.anchorY, unit);
+        if (stretch) m = multiply(stretch, m);
+      }
       pushItem(out, item, m, opacity, a.draw, tick);
     }
   }

@@ -7,6 +7,7 @@ import type { StaticTransform } from '../geometry/matrix';
 import { drawRenderList, type Ctx2D, type ImageSources, type PathCache } from './draw';
 import { cameraMatrix, evaluateScene } from './evaluate';
 import { boilAt } from './boil';
+import { elasticAmount } from '../anim/elastic';
 import { sceneBeats } from '../audio/rhythm';
 
 /**
@@ -31,7 +32,14 @@ export function drawSceneFrame(
   ctx.fillRect(0, 0, settings.width, settings.height);
   ctx.transform(...cameraMatrix(scene, local));
   const boil = boilAt(settings.boil, local, settings.fps);
-  drawRenderList(ctx, evaluateScene(scene, local, { mode: 'play', overrides, beats }), cache, images, boil);
+  const list = evaluateScene(scene, local, {
+    mode: 'play',
+    overrides,
+    beats,
+    elastic: elasticAmount(settings.elastic),
+    unit: settings.width / 1920,
+  });
+  drawRenderList(ctx, list, cache, images, boil);
   ctx.restore();
 }
 

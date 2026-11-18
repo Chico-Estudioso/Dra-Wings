@@ -38,6 +38,7 @@ Registro breve. El detalle de cada una está en su ADR (`docs/decisions/`).
 | 33 | Ayudas al dibujar en el núcleo (`src/core/draw`): el resultado (presión de tinta, afinado, forma limpia) se guarda en el trazo, no se recalcula al dibujar; la presión real de una tableta no se sustituye | Aprobada | `docs/EDITOR.md` |
 | 34 | La vida automática es procedural (se calcula al dibujar, con desfase por id) en vez de generar keyframes: no ensucia la línea de tiempo, se combina con cualquier animación y dura lo que dure el elemento | Aprobada | `docs/ANIMATION_ENGINE.md` |
 | 35 | Detección de ritmo propia (flujo espectral por bandas, autocorrelación y programación dinámica) en un worker, sin dependencias; los golpes se guardan en el medio de audio | Aprobada | `docs/AUDIO_EXPORT.md` |
+| 36 | Elasticidad y estela procedurales a partir de la velocidad (sin keyframes); se estrecha `1/√k` en vez de conservar el área para un efecto más suave | Aprobada | `docs/ANIMATION_ENGINE.md` |
 | 24 | Aviso de `npm audit` en `picomatch` (ReDoS) aceptado: solo lo usan Vite y Vitest al compilar y probar, con patrones propios; no se empaqueta y no hay versión corregida | Aceptada (revisar en M8) | — |
 
 ## Pendientes (se deciden en su fase)

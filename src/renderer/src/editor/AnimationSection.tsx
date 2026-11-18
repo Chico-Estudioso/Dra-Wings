@@ -9,6 +9,7 @@ import {
   setExit,
   setInAtPlayhead,
   setSelectionLife,
+  setSelectionTrail,
 } from './actions';
 import { ValueSlider } from './controls';
 import { useEditor } from './editor-store';
@@ -221,6 +222,10 @@ export function AnimationSection({ items, fps }: { items: Item[]; fps: Fps }) {
           </select>
         )}
       </div>
+      <label className="check-field">
+        <input type="checkbox" checked={!!first.trail} onChange={(e) => setSelectionTrail(e.target.checked)} />
+        Estela al moverse
+      </label>
       {first.life && isBeatLife(first.life.kind) && !hasMusicBeats && (
         <p className="hint">Sigue un pulso de 120 BPM. Importa una canción en la pista de música y seguirá su ritmo.</p>
       )}

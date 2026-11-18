@@ -6,6 +6,7 @@ Los cambios relevantes se registran aquí. Se seguirá una estructura inspirada 
 - Preparación inicial del proyecto y del kit de desarrollo.
 - «Ver un ejemplo» en el inicio: proyecto de tres escenas hecho con la biblioteca, con textos, una salida con fundido y un zoom de cámara, para aprender viéndolo.
 - Arrastrar imágenes (al lienzo) y audio (a la línea de tiempo) desde el explorador; el audio pregunta su pista si no se suelta sobre una.
+- Elasticidad: lo que se mueve deprisa se estira en la dirección del movimiento y recupera su forma al frenar, como en los dibujos animados (Rígido, Suave, Normal o Marcado; Normal en los proyectos nuevos). Estela opcional al moverse por elemento.
 - Al ritmo de la música: al importar una canción se detectan su tempo y sus golpes (en segundo plano), que se ven en la regla y atraen barras, clips y marcas; los elementos pueden latir, saltar o balancearse al ritmo sin keyframes.
 - Vida automática: cualquier elemento puede respirar, balancearse, flotar o latir sin keyframes (panel «Animación», con intensidad), cada uno a su ritmo. Los personajes nacen respirando.
 - Ayudas al dibujar con el lápiz (activas por defecto, botón «Ayudas»): estabilizador para trazos fluidos con ratón, trazo de tinta (grosor según la velocidad y puntas afinadas) y formas rápidas (dibuja un círculo, línea, rectángulo, triángulo o polígono y mantén el puntero quieto: se vuelve una forma limpia con el mismo pincel).

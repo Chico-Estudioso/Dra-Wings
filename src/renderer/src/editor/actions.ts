@@ -26,6 +26,7 @@ import { groupItems, recolorSlot, removeSwap, ungroupItem } from '@core/edit/gro
 import { setCharacterLook, type CharacterOptions } from '@core/library/character';
 import type { BoilLevel } from '@core/render/boil';
 import type { LifeKind } from '@core/anim/life';
+import type { ElasticLevel } from '@core/anim/elastic';
 import { deepClone } from '@core/edit/clone';
 import { newId } from '@core/model/factory';
 import type { Ease, Enter, Exit, Item, Layer, Project, Scene } from '@core/model/types';
@@ -210,6 +211,20 @@ export function commitMotion(sceneId: string, id: string, samples: MotionSample[
 export function setSelectionLife(kind: LifeKind | null, amount = 1): void {
   updateSelected('Vida automática', (it) => {
     it.life = kind ? { kind, amount } : undefined;
+  });
+}
+
+/** Elasticidad del proyecto. */
+export function setElastic(level: ElasticLevel): void {
+  useApp.getState().apply('Elasticidad', (p) => {
+    p.settings.elastic = level;
+  });
+}
+
+/** Estela al moverse en la selección. */
+export function setSelectionTrail(on: boolean): void {
+  updateSelected('Estela', (it) => {
+    it.trail = on || undefined;
   });
 }
 
