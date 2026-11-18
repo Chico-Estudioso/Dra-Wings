@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Clock, Diamond, LogIn, LogOut, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, Diamond, Hand, LogIn, LogOut, X } from 'lucide-react';
 import { keyTimes } from '@core/anim/keyframes';
 import type { Enter, Exit, Item } from '@core/model/types';
 import { formatTimecode, secondsFromTicks, ticksFromSeconds, type Fps } from '@core/time/ticks';
@@ -19,6 +19,7 @@ const EXIT_LABELS: Record<Exit['kind'], string> = { fade: 'Fundido', pop: 'Encog
 export function AnimationSection({ items, fps }: { items: Item[]; fps: Fps }) {
   const playhead = useEditor((s) => s.playhead);
   const autoKey = useEditor((s) => s.autoKey);
+  const puppet = useEditor((s) => s.puppet);
   const first = items[0];
   if (!first) return null;
   const enter: Enter = first.enter ?? { kind: 'none', duration: 0 };
@@ -158,6 +159,21 @@ export function AnimationSection({ items, fps }: { items: Item[]; fps: Fps }) {
             Quitar movimiento
           </button>
         </div>
+      )}
+      <button
+        type="button"
+        className={`btn btn-sm puppet-btn ${puppet ? 'btn-primary' : 'btn-ghost'}`}
+        aria-pressed={puppet}
+        title="Arrastra el elemento en el lienzo: el vídeo avanza y se graba su recorrido"
+        onClick={() => useEditor.getState().setPuppet(!puppet)}
+      >
+        <Hand size={14} aria-hidden /> Animar arrastrando
+      </button>
+      {puppet && (
+        <p className="hint">
+          Arrastra el elemento en el lienzo: el vídeo avanza desde el cabezal y se graba su recorrido. Suelta para
+          terminar (Esc cancela). Puedes seguir desde donde lo dejaste.
+        </p>
       )}
       <QuickAnimations items={items} hasKeys={keys.length > 0} />
       {!autoKey && keys.length === 0 && (

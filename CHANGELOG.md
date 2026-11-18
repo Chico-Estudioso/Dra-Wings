@@ -6,6 +6,7 @@ Los cambios relevantes se registran aquí. Se seguirá una estructura inspirada 
 - Preparación inicial del proyecto y del kit de desarrollo.
 - «Ver un ejemplo» en el inicio: proyecto de tres escenas hecho con la biblioteca, con textos, una salida con fundido y un zoom de cámara, para aprender viéndolo.
 - Arrastrar imágenes (al lienzo) y audio (a la línea de tiempo) desde el explorador; el audio pregunta su pista si no se suelta sobre una.
+- «Animar arrastrando»: con el botón activo, arrastra un personaje u objeto mientras el vídeo avanza (con su audio) y su recorrido se guarda como keyframes editables; se puede encadenar desde donde se soltó y Esc cancela. Los elementos animados muestran su trayectoria en el lienzo.
 - Animaciones rápidas de un clic para cualquier elemento o personaje (entrar o salir por un lado, saltar, balancearse, latir, flotar, girar, temblar y crecer) que crean keyframes editables, y suavizado del movimiento elegible: suave, constante, acelerar, frenar, con impulso, rebote o a saltos.
 - Grabar la narración viendo el vídeo: modo sobre el lienzo (no una ventana) con cuenta atrás, el vídeo reproduciéndose mientras se narra, opción de silenciar la narración que ya hay, la toma colocada al instante y «Escuchar con el vídeo», «Repetir toma» o «Grabar otra». Intro o Esc detienen.
 - Grabar la narración con el micrófono desde la app (menú «Audio»): medidor de nivel y colocación en la pista de narración. Solo se concede el micrófono, nunca la cámara. Los medios importados se identifican ahora por su contenido, no por la extensión.

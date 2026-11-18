@@ -17,6 +17,8 @@ import { keyTimes, removeKeyAt, setValueAt, shiftItemTime } from '@core/anim/key
 import { EASE, valueAt } from '@core/anim/animated';
 import { applyPreset, itemEase, mergeKeys, PRESET_SECONDS, setItemEase } from '@core/anim/presets';
 import { apply } from '@core/geometry/matrix';
+import { samplesToKeys, type MotionSample } from '@core/anim/record';
+import { motionPath } from '@core/anim/motion-path';
 import { makeGroup } from '@core/edit/group';
 import { validateProject } from '@core/model/validate';
 import { TICKS_PER_SECOND, ticksFromSeconds } from '@core/time/ticks';
@@ -325,5 +327,96 @@ describe('suavizado y animaciones rápidas', () => {
     setItemEase(it, 'bounce');
     expect(itemEase(it)).toBe('bounce');
     expect(itemEase(box())).toBeNull();
+  });
+});
+
+describe('animar arrastrando y trayectorias', () => {
+  const fps30 = S / 30;
+  /** Muestras a 30 fps de un recorrido dado por una función del tiempo (segundos). */
+  const sampled = (seconds: number, at: (s: number) => [number, number], t0 = 0): MotionSample[] =>
+    Array.from({ length: Math.round(seconds * 30) + 1 }, (_, i) => {
+      const [x, y] = at(i / 30);
+      return { t: t0 + i * fps30, x, y };
+    });
+
+  it('un movimiento recto a velocidad constante se queda en dos keyframes', () => {
+    const { x, y } = samplesToKeys(sampled(2, (s) => [100 + 200 * s, 50]));
+    expect(x.map((k) => k.v)).toEqual([100, 500]);
+    expect(y.map((k) => k.v)).toEqual([50, 50]);
+    expect(x.map((k) => k.t)).toEqual([0, 2 * S]);
+    expect(x.every((k) => k.ease === 'linear')).toBe(true);
+  });
+
+  it('las esquinas y las pausas se conservan, y el resultado sigue el recorrido', () => {
+    // Derecha 1 s, quieto 1 s, abajo 1 s.
+    const path = (s: number): [number, number] =>
+      s < 1 ? [300 * s, 0] : s < 2 ? [300, 0] : [300, 300 * Math.min(1, s - 2)];
+    const samples = sampled(3, path);
+    const { x, y } = samplesToKeys(samples);
+    expect(x.length).toBeGreaterThanOrEqual(4);
+    expect(x.length).toBeLessThan(samples.length / 10);
+    const item = rect();
+    item.transform.x = { keys: x };
+    item.transform.y = { keys: y };
+    for (const s of samples) {
+      expect(Math.abs(valueAt(item.transform.x, s.t) - s.x)).toBeLessThan(3);
+      expect(Math.abs(valueAt(item.transform.y, s.t) - s.y)).toBeLessThan(3);
+    }
+  });
+
+  it('un recorrido con temblor se simplifica sin perder la forma', () => {
+    const samples = sampled(2, (s) => [400 * s + Math.sin(s * 90) * 0.8, 200 * Math.sin(s * Math.PI)]);
+    const { x, y } = samplesToKeys(samples);
+    expect(x.length).toBeLessThan(25);
+    const item = rect();
+    item.transform.x = { keys: x };
+    item.transform.y = { keys: y };
+    for (const s of samples) expect(Math.abs(valueAt(item.transform.y, s.t) - s.y)).toBeLessThan(4);
+  });
+
+  it('instantes repetidos o desordenados no rompen los keyframes', () => {
+    const { x } = samplesToKeys([
+      { t: 2 * S, x: 20, y: 0 },
+      { t: 0, x: 0, y: 0 },
+      { t: S, x: 5, y: 0 },
+      { t: S, x: 15, y: 0 },
+    ]);
+    expect(x.map((k) => [k.t, k.v])).toEqual([
+      [0, 0],
+      [S, 15],
+      [2 * S, 20],
+    ]);
+    expect(samplesToKeys([])).toEqual({ x: [], y: [] });
+  });
+
+  it('lo grabado sustituye el movimiento de ese tramo y conserva el de fuera', () => {
+    const item = rect();
+    item.transform.x = { keys: [0, 1, 2, 3].map((s) => ({ t: s * S, v: s * 10, ease: 'easeInOut' as const })) };
+    const { x } = samplesToKeys(sampled(1, (s) => [500 + 100 * s, 0], 0.5 * S));
+    item.transform.x = mergeKeys(item.transform.x, x);
+    expect(keyTimes(item)).toEqual([0, 0.5 * S, 1.5 * S, 2 * S, 3 * S]);
+    expect(valueAt(item.transform.x, S)).toBeCloseTo(550);
+    expect(valueAt(item.transform.x, 3 * S)).toBe(30);
+  });
+
+  it('la trayectoria recorre el centro del elemento entre el primer y el último keyframe', () => {
+    const item = rect(); // 100 × 50 en (0, 0): centro en (50, 25)
+    item.transform.x = {
+      keys: [
+        { t: S, v: 0, ease: 'linear' },
+        { t: 3 * S, v: 200, ease: 'linear' },
+      ],
+    };
+    const path = motionPath(item, 0, S / 2)!;
+    expect(path.points).toHaveLength(5);
+    expect(path.points[0]).toEqual({ x: 50, y: 25 });
+    expect(path.points[4]).toEqual({ x: 250, y: 25 });
+    expect(path.keys).toEqual([
+      { x: 50, y: 25 },
+      { x: 250, y: 25 },
+    ]);
+    expect(motionPath(rect(), 0, S)).toBeNull();
+    // Muy largo: se limita el número de tramos.
+    expect(motionPath(item, 0, 1, 50)!.points).toHaveLength(51);
   });
 });

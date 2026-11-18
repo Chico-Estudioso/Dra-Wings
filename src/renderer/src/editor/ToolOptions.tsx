@@ -14,11 +14,15 @@ const pct = (v: number) => `${Math.round(v * 100)} %`;
 const CAMERA_HINT =
   'Arrastra el marco para encuadrar; la esquina inferior derecha hace zoom. Con «Grabar movimiento» crea keyframes en el cabezal.';
 
+const PUPPET_HINT =
+  'Animar arrastrando: arrastra un elemento y el vídeo avanzará grabando su recorrido. Suelta para terminar; Esc cancela.';
+
 export function ToolOptions() {
   const tool = useEditor((s) => s.tool);
   const o = useEditor((s) => s.options);
   const set = useEditor((s) => s.setOptions);
   const hasSelection = useEditor((s) => s.selection.length > 0);
+  const puppet = useEditor((s) => s.puppet);
   const label = TOOLS.find((t) => t.id === tool)?.label;
 
   if (tool === 'camera')
@@ -29,6 +33,17 @@ export function ToolOptions() {
         </span>
         <button className="btn btn-ghost btn-sm" onClick={resetCamera}>
           Restablecer encuadre
+        </button>
+      </div>
+    );
+  if (tool === 'select' && puppet)
+    return (
+      <div className="tool-options" role="note">
+        <span className="tool-hint" title={PUPPET_HINT}>
+          {PUPPET_HINT}
+        </span>
+        <button className="btn btn-ghost btn-sm" onClick={() => useEditor.getState().setPuppet(false)}>
+          Dejar de animar
         </button>
       </div>
     );

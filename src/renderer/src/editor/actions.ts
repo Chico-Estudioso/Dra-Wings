@@ -26,7 +26,8 @@ import { groupItems, recolorSlot, ungroupItem } from '@core/edit/group';
 import { deepClone } from '@core/edit/clone';
 import { newId } from '@core/model/factory';
 import type { Ease, Enter, Exit, Item, Layer, Project, Scene } from '@core/model/types';
-import { applyPreset, PRESET_LABELS, setItemEase, type Direction, type PresetId } from '@core/anim/presets';
+import { applyPreset, mergeKeys, PRESET_LABELS, setItemEase, type Direction, type PresetId } from '@core/anim/presets';
+import { samplesToKeys, type MotionSample } from '@core/anim/record';
 import { resolveTransform } from '@core/geometry/matrix';
 import { useApp } from '../state/app-store';
 import { useEditor } from './editor-store';
@@ -184,6 +185,22 @@ export function applyPresetToSelection(preset: PresetId, direction: Direction): 
     }
     if (end > scene.duration) scene.duration = end;
   });
+}
+
+/**
+ * Guarda el recorrido grabado con «Animar arrastrando» como keyframes de posición (sustituye los que
+ * hubiera en ese tramo). Devuelve si se guardó algo.
+ */
+export function commitMotion(sceneId: string, id: string, samples: MotionSample[]): boolean {
+  const { x, y } = samplesToKeys(samples);
+  if (x.length < 2) return false;
+  useApp.getState().apply('Animar arrastrando', (p) => {
+    const loc = locateItem(findScene(p, sceneId), id);
+    if (!loc) return;
+    loc.item.transform.x = mergeKeys(loc.item.transform.x, x);
+    loc.item.transform.y = mergeKeys(loc.item.transform.y, y);
+  });
+  return true;
 }
 
 export function setSelectionEase(ease: Ease): void {

@@ -1794,3 +1794,6 @@ kbd {
 .quick-btn svg {
   color: var(--accent);
 }
+.puppet-btn {
+  justify-content: center;
+}

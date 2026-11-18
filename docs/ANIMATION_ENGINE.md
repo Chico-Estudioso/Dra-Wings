@@ -89,3 +89,15 @@ El selector «Suavizado» del panel «Animación» cambia todos los tramos del e
 
 **Animaciones rápidas** (`src/core/anim/presets.ts`, panel «Animación»): entrar o salir por un lado de la hoja, saltar (con un pequeño aplastamiento al aterrizar), balancearse, latir, flotar, girar, temblar y crecer. Crean keyframes normales a partir del cabezal (o de cuando aparece el elemento, si el cabezal está antes), relativos a cómo está el elemento en ese instante, y respetan los keyframes de fuera de su tramo. «Salir» además hace desaparecer el elemento al acabar. Si la animación termina después del final, la escena se alarga.
 
+## Animar arrastrando y trayectorias
+
+**Animar arrastrando** (botón del panel «Animación»; con él activo, la herramienta de selección agarra en vez de mover): al arrastrar un elemento, la escena se reproduce desde el cabezal (con su audio) y el elemento sigue al puntero. Se recoge su posición en cada fotograma de la reproducción y, al soltar, el recorrido se convierte en keyframes de posición:
+
+- La conversión (`src/core/anim/record.ts`) simplifica las muestras con Ramer–Douglas–Peucker en tres dimensiones (x, y y tiempo, con 1 s = 300 unidades de la hoja) y una tolerancia de 2 unidades. Así se conservan las esquinas, las pausas y los cambios de velocidad con pocos keyframes, todos lineales, que siguen siendo editables como cualquier otro.
+- Lo grabado sustituye los keyframes de posición de ese tramo y conserva los de fuera (`mergeKeys`). Rotación, escala y opacidad no se tocan. Se deshace de una vez.
+- El movimiento es relativo al puntero y pasa por la cámara del instante: si la cámara se mueve y el puntero se queda quieto, el elemento se queda quieto en pantalla.
+- Termina al soltar, al acabar la escena o al detener la reproducción. Esc cancela sin guardar y devuelve el cabezal al inicio. Si no se ha movido el puntero no se guarda nada (un clic solo selecciona). Tras guardar, el cabezal queda al final de lo grabado para seguir desde ahí.
+- Mientras se graba se dibuja el rastro sobre la vista previa.
+
+**Trayectoria:** con un único elemento seleccionado cuya posición está animada, el lienzo dibuja el recorrido de su centro entre el primer y el último keyframe de posición, con un punto en cada keyframe (`src/core/anim/motion-path.ts`).
+

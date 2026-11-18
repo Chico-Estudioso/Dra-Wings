@@ -4,9 +4,12 @@ import { eraseItems } from '@core/edit/erase';
 import { celAt, locateItem, selectableItems } from '@core/edit/ops';
 import { hitItem, rectsIntersect, unionRects, worldBounds, type Rect } from '@core/geometry/items';
 import { resizeGroup, resizeSingle, rotateGroup, snapAngle, type Handle } from '@core/geometry/manipulate';
-import { matrixFrom, resolveTransform, type Point, type StaticTransform } from '@core/geometry/matrix';
+import { apply, invert, matrixFrom, resolveTransform, type Point, type StaticTransform } from '@core/geometry/matrix';
 import { drawRenderList, outlineToPath, PathCache, type Ctx2D } from '@core/render/draw';
-import { evaluateScene, hasCamera } from '@core/render/evaluate';
+import { cameraMatrix, evaluateScene, hasCamera } from '@core/render/evaluate';
+import { motionPath } from '@core/anim/motion-path';
+import type { MotionSample } from '@core/anim/record';
+import { ticksPerFrame, type Ticks } from '@core/time/ticks';
 import { drawSceneFrame } from '@core/render/frame';
 import { strokeOutline } from '@core/render/stroke-outline';
 import type { Item, Project, Scene } from '@core/model/types';
@@ -14,10 +17,13 @@ import {
   addToActiveLayer,
   commitCamera,
   commitErase,
+  commitMotion,
   commitTransforms,
   currentScene,
+  goToScene,
   writableActiveLayer,
 } from './actions';
+import { useApp } from '../state/app-store';
 import { SHAPE_TOOLS, useEditor, type Tool } from './editor-store';
 import { fontsReady } from './fonts';
 import { cursorForHandle, handlePoint, HANDLES, rotateHandlePoint, selectionGeometry, transformOf } from './selection';
@@ -35,6 +41,31 @@ const HIT_TOLERANCE_PX = 6;
 const SELECTION_COLOR = '#2f6fd6';
 const GUIDE_COLOR = '#e0408a';
 const SNAP_PX = 7;
+const PATH_COLOR = 'rgba(47,111,214,0.75)';
+const TRAIL_COLOR = '#e0408a';
+
+/** «Animar arrastrando»: el elemento sigue al puntero mientras la escena se reproduce. */
+interface PuppetGesture {
+  kind: 'puppet';
+  item: Item;
+  scene: Scene;
+  t0: Ticks;
+  /** Posición (x, y) del elemento al empezar. */
+  base: Point;
+  /** Punto del mundo bajo el puntero al empezar (a través de la cámara). */
+  from: Point;
+  /** Punto de la hoja bajo el puntero ahora, y al empezar. */
+  page: Point;
+  page0: Point;
+  /** Del origen del elemento a su centro (para dibujar el rastro). */
+  pivot: Point;
+  samples: MotionSample[];
+  moved: boolean;
+  unsub: () => void;
+}
+
+/** Punto del mundo que se ve en un punto de la hoja en la vista previa (a través de la cámara). */
+const throughCamera = (scene: Scene, t: Ticks, page: Point) => apply(invert(cameraMatrix(scene, t)), page);
 
 type Gesture =
   | { kind: 'pan'; start: Point; panX: number; panY: number }
@@ -54,7 +85,8 @@ type Gesture =
   | { kind: 'resize'; handle: Handle; ids: string[]; t0: Map<string, StaticTransform> }
   | { kind: 'rotate'; center: Point; startAngle: number; ids: string[]; t0: Map<string, StaticTransform> }
   | { kind: 'marquee'; start: Point; current: Point; base: string[] }
-  | { kind: 'camera'; start: Point; mode: 'move' | 'zoom'; cam0: { x: number; y: number; zoom: number } };
+  | { kind: 'camera'; start: Point; mode: 'move' | 'zoom'; cam0: { x: number; y: number; zoom: number } }
+  | PuppetGesture;
 
 function isEditableTarget(t: EventTarget | null) {
   return t instanceof HTMLElement && (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName));
@@ -100,10 +132,11 @@ export function CanvasView({ project }: { project: Project }) {
   const playMode = useEditor((s) => s.preview || s.playing);
   const onion = useEditor((s) => s.onion);
   const activeLayerId = useEditor((s) => s.activeLayerId);
+  const puppet = useEditor((s) => s.puppet);
   const mediaVersion = useMediaVersion((s) => s.v);
   const [cameraOverride, setCameraOverride] = useState<{ x: number; y: number; zoom: number } | null>(null);
   const scene = project.scenes.find((s) => s.id === sceneId) ?? project.scenes[0]!;
-  const { width: docW, height: docH, background } = project.settings;
+  const { width: docW, height: docH, background, fps } = project.settings;
 
   const redraw = useCallback(() => setTick((t) => t + 1), []);
 
@@ -149,7 +182,7 @@ export function CanvasView({ project }: { project: Project }) {
 
     if (playMode) {
       // Vista previa: lo que saldrá en el vídeo en el instante del cabezal, a través de la cámara.
-      drawSceneFrame(ctx, project.settings, scene, playhead, cache.current, images);
+      drawSceneFrame(ctx, project.settings, scene, playhead, cache.current, images, overrides.current);
       return;
     }
 
@@ -267,6 +300,46 @@ export function CanvasView({ project }: { project: Project }) {
       ctx.strokeRect(x, y, Math.abs(g.current.x - g.start.x), Math.abs(g.current.y - g.start.y));
     }
 
+    if (g?.kind === 'puppet' && g.samples.length > 1) {
+      // Rastro de lo que se va grabando (en la vista previa, a través de la cámara).
+      const cam = cameraMatrix(scene, playhead);
+      ctx.save();
+      ctx.strokeStyle = TRAIL_COLOR;
+      ctx.lineWidth = 2.5 * px;
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      g.samples.forEach((s, i) => {
+        const q = apply(cam, { x: s.x + g.pivot.x, y: s.y + g.pivot.y });
+        if (i) ctx.lineTo(q.x, q.y);
+        else ctx.moveTo(q.x, q.y);
+      });
+      ctx.stroke();
+      ctx.restore();
+    }
+    if (!g && !playMode && !editingTextId && selection.length === 1) {
+      // Trayectoria del elemento seleccionado si su posición está animada.
+      const it = locateItem(scene, selection[0]!)?.item;
+      const path = it && motionPath(it, playhead, ticksPerFrame(fps));
+      if (path) {
+        ctx.save();
+        ctx.strokeStyle = PATH_COLOR;
+        ctx.lineWidth = 1.5 * px;
+        ctx.setLineDash([5 * px, 4 * px]);
+        ctx.beginPath();
+        path.points.forEach((q, i) => (i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)));
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#ffffff';
+        for (const k of path.keys) {
+          ctx.beginPath();
+          ctx.arc(k.x, k.y, 3.5 * px, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+    }
+
     if (g?.kind === 'move' && (guides.current.x.length || guides.current.y.length)) {
       ctx.strokeStyle = GUIDE_COLOR;
       ctx.lineWidth = px;
@@ -317,7 +390,7 @@ export function CanvasView({ project }: { project: Project }) {
       geo.corners.forEach((c, i) => (i ? ctx.lineTo(c.x, c.y) : ctx.moveTo(c.x, c.y)));
       ctx.closePath();
       ctx.stroke();
-      if (tool === 'select' && (!g || g.kind === 'resize' || g.kind === 'rotate')) {
+      if (tool === 'select' && !puppet && (!g || g.kind === 'resize' || g.kind === 'rotate')) {
         const rot = rotateHandlePoint(geo.corners, ROTATE_OFFSET_PX * px);
         const top = handlePoint(geo.corners, 'n');
         ctx.beginPath();
@@ -358,6 +431,8 @@ export function CanvasView({ project }: { project: Project }) {
     playMode,
     playhead,
     cameraOverride,
+    puppet,
+    fps,
   ]);
 
   const scenePoint = (e: { clientX: number; clientY: number }): Point => {
@@ -366,8 +441,8 @@ export function CanvasView({ project }: { project: Project }) {
   };
 
   const hitHandle = (p: Point): Handle | 'rotate' | null => {
-    const { selection: sel, tool: t, view: v } = useEditor.getState();
-    if (t !== 'select' || !sel.length) return null;
+    const { selection: sel, tool: t, view: v, puppet: grabbing } = useEditor.getState();
+    if (t !== 'select' || grabbing || !sel.length) return null;
     const geo = selectionGeometry(scene, sel, undefined, useEditor.getState().playhead);
     if (!geo) return null;
     const tol = (HANDLE_PX / 2 + 3) / v.zoom;
@@ -398,8 +473,96 @@ export function CanvasView({ project }: { project: Project }) {
     return t0;
   };
 
+  /** Lo que se agarra al animar arrastrando: lo que hay bajo el puntero o el seleccionado (por dentro de su caja). */
+  const puppetTarget = (p: Point): Item | null => {
+    const { selection: sel, playhead: t } = useEditor.getState();
+    const selected = sel.length === 1 ? locateItem(scene, sel[0]!)?.item : undefined;
+    return (
+      topItemAt(p) ?? (selected && rectsIntersect(worldBounds(selected, t), { ...p, w: 0, h: 0 }) ? selected : null)
+    );
+  };
+
+  /** Recoge la posición del elemento en `t` según el puntero y la muestra en vivo. */
+  const samplePuppet = (g: PuppetGesture, t: Ticks) => {
+    const w = throughCamera(g.scene, t, g.page);
+    const x = g.base.x + w.x - g.from.x;
+    const y = g.base.y + w.y - g.from.y;
+    g.samples.push({ t, x, y });
+    overrides.current = new Map([[g.item.id, { ...transformOf(g.item, undefined, t), x, y }]]);
+  };
+
+  /** Termina «Animar arrastrando»: guarda el recorrido (si hubo movimiento) o lo descarta. */
+  const endPuppet = (g: PuppetGesture, commit: boolean) => {
+    if (gesture.current !== g) return;
+    gesture.current = null;
+    g.unsub();
+    overrides.current = new Map();
+    const ed = useEditor.getState();
+    ed.setPreview(false);
+    if (ed.sceneId !== g.scene.id) goToScene(g.scene.id);
+    const saved = commit && g.moved && commitMotion(g.scene.id, g.item.id, g.samples);
+    // Si se guardó, el cabezal queda al final: se puede seguir grabando desde ahí.
+    useEditor.getState().setPlayhead(saved ? g.samples[g.samples.length - 1]!.t : g.t0);
+    useEditor.getState().select([g.item.id]);
+    redraw();
+  };
+
+  const startPuppet = (e: React.PointerEvent): boolean => {
+    const ed = useEditor.getState();
+    const sc = currentScene();
+    if (!sc) return false;
+    const page = scenePoint(e);
+    const t0 = ed.playhead;
+    const hit = puppetTarget(ed.preview || ed.playing ? throughCamera(sc, t0, page) : page);
+    if (!hit) return false;
+    if (ed.playing) ed.setPlaying(false);
+    ed.select([hit.id]);
+    if (t0 >= sc.duration - ticksPerFrame(fps)) {
+      useApp.getState().notify({
+        kind: 'info',
+        text: 'El cabezal está al final de la escena. Llévalo antes (o alarga la escena) para animar arrastrando.',
+      });
+      return true;
+    }
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const base = transformOf(hit, undefined, t0);
+    const box = worldBounds(hit, t0);
+    const g: PuppetGesture = {
+      kind: 'puppet',
+      item: hit,
+      scene: sc,
+      t0,
+      base: { x: base.x, y: base.y },
+      from: throughCamera(sc, t0, page),
+      page,
+      page0: page,
+      pivot: { x: box.x + box.w / 2 - base.x, y: box.y + box.h / 2 - base.y },
+      samples: [{ t: t0, x: base.x, y: base.y }],
+      moved: false,
+      unsub: () => undefined,
+    };
+    gesture.current = g;
+    setCursor('grabbing');
+    ed.setPreview(true);
+    ed.setPlaying(true);
+    g.unsub = useEditor.subscribe((s, prev) => {
+      if (gesture.current !== g) return;
+      if (s.sceneId !== g.scene.id || !s.playing) {
+        // Se acabó la escena (o el vídeo, o se detuvo): el recorrido se cierra ahí.
+        if (s.sceneId !== g.scene.id) samplePuppet(g, g.scene.duration);
+        queueMicrotask(() => endPuppetRef.current(g, true));
+        return;
+      }
+      if (s.playhead !== prev.playhead) samplePuppet(g, s.playhead);
+    });
+    redraw();
+    return true;
+  };
+
   const onPointerDown = (e: React.PointerEvent) => {
     if (gesture.current || textTarget) return;
+    const ed0 = useEditor.getState();
+    if (ed0.puppet && ed0.tool === 'select' && e.button === 0 && !spaceHeld.current && startPuppet(e)) return;
     // Interactuar con el lienzo vuelve al modo edición.
     if (useEditor.getState().preview || useEditor.getState().playing) useEditor.getState().setPreview(false);
     const p = scenePoint(e);
@@ -535,7 +698,8 @@ export function CanvasView({ project }: { project: Project }) {
     const g = gesture.current;
     const ed = useEditor.getState();
     if (!g) {
-      if (ed.tool === 'select') {
+      if (ed.tool === 'select' && ed.puppet) setCursor(!playMode && puppetTarget(p) ? 'grab' : 'default');
+      else if (ed.tool === 'select') {
         const h = hitHandle(p);
         const geo = h && selectionGeometry(scene, ed.selection, undefined, ed.playhead);
         setCursor(
@@ -551,6 +715,11 @@ export function CanvasView({ project }: { project: Project }) {
       return;
     }
     switch (g.kind) {
+      case 'puppet':
+        // La posición se recoge en cada fotograma de la reproducción.
+        g.page = p;
+        if (Math.hypot(p.x - g.page0.x, p.y - g.page0.y) * ed.view.zoom > 2) g.moved = true;
+        return;
       case 'pan':
         ed.setView({ panX: g.panX + e.clientX - g.start.x, panY: g.panY + e.clientY - g.start.y, fit: false });
         return;
@@ -665,6 +834,7 @@ export function CanvasView({ project }: { project: Project }) {
 
   const finishGesture = () => {
     const g = gesture.current;
+    if (g?.kind === 'puppet') return endPuppet(g, true);
     gesture.current = null;
     if (!g) return;
     const ed = useEditor.getState();
@@ -723,6 +893,27 @@ export function CanvasView({ project }: { project: Project }) {
     guides.current = { x: [], y: [] };
     redraw();
   };
+
+  // Esc cancela «Animar arrastrando» (sin guardar nada); al desmontar se suelta la suscripción.
+  const endPuppetRef = useRef(endPuppet);
+  useEffect(() => {
+    endPuppetRef.current = endPuppet;
+  });
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const g = gesture.current;
+      if (g?.kind !== 'puppet' || e.key !== 'Escape') return;
+      e.preventDefault();
+      e.stopPropagation();
+      endPuppetRef.current(g, false);
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => {
+      window.removeEventListener('keydown', onKey, true);
+      const g = gesture.current;
+      if (g?.kind === 'puppet') g.unsub();
+    };
+  }, []);
 
   // Rueda: Ctrl + rueda para zoom alrededor del cursor; sin modificador, desplazar.
   useEffect(() => {

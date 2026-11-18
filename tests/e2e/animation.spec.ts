@@ -144,3 +144,54 @@ test('animaciones rápidas de un clic y suavizado del movimiento', async () => {
   await stubMessageBox(app, 1);
   await app.close();
 });
+
+test('animar arrastrando graba el recorrido mientras avanza el vídeo', async () => {
+  const file = path.join(await tempDir(), 'arrastrar.dwings');
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Arrastrar');
+  const c = await center(page);
+  await page.keyboard.press('r');
+  await drag(page, { x: c.x - 40, y: c.y - 30 }, { x: c.x + 40, y: c.y + 30 }, 4);
+  const toggle = page.getByRole('button', { name: 'Animar arrastrando' });
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  const keys = page.getByRole('button', { name: /^Keyframe en / });
+
+  // Esc cancela: no se guarda nada y el cabezal vuelve a donde estaba.
+  await page.mouse.move(c.x, c.y);
+  await page.mouse.down();
+  await page.mouse.move(c.x + 60, c.y, { steps: 3 });
+  await expect(page.getByTestId('timeline-time')).not.toContainText('00:00:00 /');
+  await page.keyboard.press('Escape');
+  await page.mouse.up();
+  await expect(page.getByTestId('timeline-time')).toContainText('00:00:00 /');
+  await expect(keys).toHaveCount(0);
+
+  // Recorrido en L mientras se reproduce la escena.
+  await page.mouse.move(c.x, c.y);
+  await page.mouse.down();
+  for (let i = 1; i <= 8; i++) {
+    await page.mouse.move(c.x + i * 20, c.y);
+    await page.waitForTimeout(70);
+  }
+  for (let i = 1; i <= 8; i++) {
+    await page.mouse.move(c.x + 160, c.y + i * 12);
+    await page.waitForTimeout(70);
+  }
+  await page.mouse.up();
+  // El cabezal queda al final de lo grabado, para seguir desde ahí.
+  await expect(page.getByTestId('timeline-time')).not.toContainText('00:00:00 /');
+  expect(await keys.count()).toBeGreaterThanOrEqual(3);
+
+  const p = await saveAndRead(app, page, file);
+  const { x, y } = items(p)[0]!.transform;
+  if (!('keys' in x) || !('keys' in y)) throw new Error('la posición debería estar animada');
+  expect(x.keys[0]!.t).toBe(0);
+  expect(x.keys[x.keys.length - 1]!.v - x.keys[0]!.v).toBeGreaterThan(200);
+  expect(y.keys[y.keys.length - 1]!.v - y.keys[0]!.v).toBeGreaterThan(150);
+  // Se deshace de una vez.
+  await page.keyboard.press('Control+z');
+  await expect(keys).toHaveCount(0);
+  await stubMessageBox(app, 1);
+  await app.close();
+});

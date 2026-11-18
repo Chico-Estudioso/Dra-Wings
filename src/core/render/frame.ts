@@ -3,6 +3,7 @@
 import { locateTime } from '../edit/scenes';
 import type { Project, Scene } from '../model/types';
 import type { Ticks } from '../time/ticks';
+import type { StaticTransform } from '../geometry/matrix';
 import { drawRenderList, type Ctx2D, type ImageSources, type PathCache } from './draw';
 import { cameraMatrix, evaluateScene } from './evaluate';
 
@@ -17,6 +18,7 @@ export function drawSceneFrame(
   local: Ticks,
   cache: PathCache,
   images?: ImageSources,
+  overrides?: ReadonlyMap<string, StaticTransform>,
 ): void {
   ctx.save();
   ctx.beginPath();
@@ -25,7 +27,7 @@ export function drawSceneFrame(
   ctx.fillStyle = settings.background;
   ctx.fillRect(0, 0, settings.width, settings.height);
   ctx.transform(...cameraMatrix(scene, local));
-  drawRenderList(ctx, evaluateScene(scene, local, { mode: 'play' }), cache, images);
+  drawRenderList(ctx, evaluateScene(scene, local, { mode: 'play', overrides }), cache, images);
   ctx.restore();
 }
 

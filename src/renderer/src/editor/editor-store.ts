@@ -76,6 +76,8 @@ interface EditorState {
   clipId: string | null;
   /** Marca seleccionada en la regla de la línea de tiempo. */
   markerId: string | null;
+  /** «Animar arrastrando»: arrastrar un elemento reproduce la escena y graba su recorrido. */
+  puppet: boolean;
 
   setTool(tool: Tool): void;
   setOptions(patch: Partial<ToolOptions>): void;
@@ -97,6 +99,7 @@ interface EditorState {
   selectClip(id: string | null): void;
   setMuteNarration(mute: boolean): void;
   selectMarker(id: string | null): void;
+  setPuppet(on: boolean): void;
   setScene(sceneId: string, layerId: string): void;
   reset(sceneId: string, layerId: string, mode: Mode): void;
 }
@@ -143,6 +146,7 @@ export const useEditor = create<EditorState>()((set) => ({
   clipId: null,
   markerId: null,
   muteNarration: false,
+  puppet: false,
 
   setTool: (tool) => set((s) => ({ tool, selection: tool === 'select' ? s.selection : [], editingTextId: null })),
   setOptions: (patch) => set((s) => ({ options: { ...s.options, ...patch } })),
@@ -172,6 +176,7 @@ export const useEditor = create<EditorState>()((set) => ({
   selectClip: (id) => set({ clipId: id, markerId: null, selection: [] }),
   setMuteNarration: (muteNarration) => set({ muteNarration }),
   selectMarker: (id) => set({ markerId: id, clipId: null, selection: [] }),
+  setPuppet: (puppet) => set((s) => ({ puppet, tool: puppet ? 'select' : s.tool })),
   setScene: (sceneId, layerId) =>
     set({ sceneId, activeLayerId: layerId, selection: [], playhead: 0, editingTextId: null, markerId: null }),
   reset: (sceneId, layerId, mode) =>
