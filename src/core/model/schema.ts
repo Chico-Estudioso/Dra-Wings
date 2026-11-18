@@ -75,6 +75,8 @@ export const strokeSchema = z.object({
     smoothing: unit,
     streamline: unit,
     opacity: unit,
+    /** Afinado de las puntas (distancia en unidades locales); sin valor, puntas redondas. */
+    taper: z.number().nonnegative().max(10_000).optional(),
   }),
 });
 

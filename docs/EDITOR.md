@@ -59,8 +59,17 @@ Al crear una forma se activa Seleccionar con la forma ya seleccionada, lista par
 ## Presión de tableta
 
 - Con un lápiz (`pointerType === 'pen'`) se guarda `PointerEvent.pressure` y se usan los eventos agrupados (`getCoalescedEvents`) para no perder muestras.
-- Con ratón o táctil se guarda presión `-1` (desconocida) y el grosor es constante. **No se simula presión.**
+- Con ratón o táctil se guarda presión `-1` (desconocida) y el grosor es constante, salvo con «Trazo de tinta» activo (ver abajo): entonces la presión se calcula a partir de la velocidad y se guarda en los puntos. La presión real de una tableta nunca se sustituye.
 - En Windows, Chromium recibe la presión a través de Windows Ink. Las tabletas configuradas solo en modo WinTab no la reportan: en los controladores de Wacom, Huion o XP-Pen hay que activar Windows Ink. Pendiente de validación manual con tableta real.
+
+## Ayudas al dibujar (lápiz)
+
+Botón «Ayudas» en las opciones del lápiz (`src/core/draw/`). Están activas por defecto y se recuerdan durante la sesión.
+
+- **Estabilizador** (Sin, Bajo, Medio, Alto): «pincel con cuerda» (`LazyBrush`). El trazo sigue al puntero a 6, 12 o 22 píxeles de pantalla y solo avanza cuando el puntero se aleja más que eso, así que el temblor de la mano no llega a la línea. Al soltar, el trazo alcanza el punto donde se soltó.
+- **Trazo de tinta:** con ratón o táctil, la presión sale de la velocidad en píxeles de pantalla (deprisa, más fino; despacio, más grueso), suavizada, y las puntas se afinan (`style.taper`, hasta 2,5 veces el grosor y como mucho el 22 % del largo). Se guarda en el trazo, así que se ve igual en todas partes.
+- **Formas rápidas:** si el puntero se queda quieto 0,45 s mientras se dibuja, el trazo se reconoce (`recognizeShape`) y, si encaja, se sustituye por la forma limpia con una etiqueta junto al puntero: línea (exacta si está casi a 0°, 45° o 90°), círculo, elipse, rectángulo (recto si casi lo está), triángulo o polígono de hasta 8 lados. Sigue siendo un trazo del mismo pincel: se dibuja progresivamente y tiembla con el trazo vivo. Moverse claramente vuelve a la mano alzada. Garabatos, curvas abiertas y espirales no se convierten.
+  - Reconocimiento: el recorrido se remuestrea por longitud; se ajusta una elipse (ejes principales) y un polígono (Ramer–Douglas–Peucker cerrado desde el punto más alejado del centro), y se comparan sus errores medios en unidades de la escena. Un polígono de 3 o 4 lados gana si encaja claramente mejor; uno de 5 a 8, solo si encaja mucho mejor (si no, es una curva).
 
 ## Biblioteca y guías
 

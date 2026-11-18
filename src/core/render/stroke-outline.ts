@@ -71,5 +71,6 @@ export function strokeOutline(stroke: Stroke, progress = 1, boil?: Boil | null):
     streamline: stroke.style.streamline,
     simulatePressure: false,
     last: progress >= 1,
+    ...(stroke.style.taper ? { start: { taper: stroke.style.taper }, end: { taper: stroke.style.taper } } : {}),
   });
 }

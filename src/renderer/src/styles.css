@@ -1848,3 +1848,23 @@ kbd {
 .boil-hint {
   margin: 4px 8px 6px;
 }
+
+/* Ayudas al dibujar */
+.assist-popover {
+  max-width: 290px;
+}
+.assist-levels {
+  display: flex;
+  gap: 4px;
+  padding: 2px 8px 0;
+}
+.assist-levels .chip {
+  cursor: pointer;
+}
+.assist-levels .chip:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.assist-hint {
+  margin: 2px 8px 6px;
+}

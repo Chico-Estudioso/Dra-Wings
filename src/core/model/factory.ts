@@ -80,6 +80,7 @@ export interface StrokeStyleInput {
   thinning?: number;
   smoothing?: number;
   streamline?: number;
+  taper?: number;
 }
 
 /** `points` empaquetados [x, y, presión, tMs, ...] en coordenadas de escena. */
@@ -111,6 +112,7 @@ export function createStroke(points: number[], style: StrokeStyleInput): Stroke 
       thinning: style.thinning ?? 0.55,
       smoothing: style.smoothing ?? 0.5,
       streamline: style.streamline ?? 0.45,
+      ...(style.taper ? { taper: style.taper } : {}),
     },
   };
 }

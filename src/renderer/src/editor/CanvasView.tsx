@@ -24,7 +24,9 @@ import {
   writableActiveLayer,
 } from './actions';
 import { useApp } from '../state/app-store';
-import { SHAPE_TOOLS, useEditor, type Tool } from './editor-store';
+import { SHAPE_TOOLS, useEditor, type Tool, type ToolOptions } from './editor-store';
+import { finishFreehand, LazyBrush, packShape, STABILIZER_PX } from '@core/draw/assist';
+import { recognizeShape, SHAPE_LABELS, type Recognized } from '@core/draw/recognize';
 import { fontsReady } from './fonts';
 import { cursorForHandle, handlePoint, HANDLES, rotateHandlePoint, selectionGeometry, transformOf } from './selection';
 import { fitView, toScene, zoomAt } from './view';
@@ -42,6 +44,10 @@ const SELECTION_COLOR = '#2f6fd6';
 const GUIDE_COLOR = '#e0408a';
 const SNAP_PX = 7;
 const PATH_COLOR = 'rgba(47,111,214,0.75)';
+/** Tiempo con el puntero quieto al final de un trazo para convertirlo en forma. */
+const HOLD_MS = 450;
+/** Moverse más que esto (píxeles de pantalla) cuenta como seguir dibujando. */
+const HOLD_SLOP_PX = 5;
 const TRAIL_COLOR = '#e0408a';
 
 /** «Animar arrastrando»: el elemento sigue al puntero mientras la escena se reproduce. */
@@ -67,9 +73,43 @@ interface PuppetGesture {
 /** Punto del mundo que se ve en un punto de la hoja en la vista previa (a través de la cámara). */
 const throughCamera = (scene: Scene, t: Ticks, page: Point) => apply(invert(cameraMatrix(scene, t)), page);
 
+/**
+ * Trazo del lápiz tal como queda: la forma reconocida o la mano alzada estabilizada (con tinta si
+ * está activa). `final` añade el tramo hasta donde se soltó el puntero.
+ */
+function drawnStroke(g: Extract<Gesture, { kind: 'draw' }>, options: ToolOptions, zoom: number, final = false) {
+  if (g.snapped) {
+    const duration = g.points[g.points.length - 1]!;
+    // Las formas cerradas no afinan las puntas (se notaría la unión).
+    return createStroke(packShape(g.snapped.points, duration), { ...options, streamline: 0.1, smoothing: 0.3 });
+  }
+  let points = g.points;
+  if (final) {
+    const t = points[points.length - 1]!;
+    const tail = g.brush.catchUp(g.last.x, g.last.y, Math.max(1, options.size / 4));
+    const pressure = points[points.length - 2]!;
+    points = [...points, ...tail.flatMap((q) => [q.x, q.y, pressure, t])];
+  }
+  const done = finishFreehand(points, { ink: options.assist.ink, pen: g.pen, zoom, size: options.size });
+  return createStroke(done.points, { ...options, taper: done.taper });
+}
+
 type Gesture =
   | { kind: 'pan'; start: Point; panX: number; panY: number }
-  | { kind: 'draw'; points: number[]; t0: number; pen: boolean }
+  | {
+      kind: 'draw';
+      points: number[];
+      t0: number;
+      pen: boolean;
+      /** Estabilizador: el trazo sigue a este pincel, no directamente al puntero. */
+      brush: LazyBrush;
+      /** Último punto real del puntero (el trazo lo alcanza al soltar). */
+      last: Point;
+      /** Dónde se quedó quieto el puntero (para las formas rápidas). */
+      holdAt: Point;
+      /** Forma reconocida al mantener quieto el puntero. */
+      snapped: Recognized | null;
+    }
   | { kind: 'erase'; last: Point; working: Map<string, Item[]> }
   | { kind: 'shape'; start: Point; current: Point }
   | {
@@ -270,11 +310,17 @@ export function CanvasView({ project }: { project: Project }) {
     const g = gesture.current;
 
     if (g?.kind === 'draw' && g.points.length) {
-      const live = createStroke(g.points, options);
+      const live = drawnStroke(g, options, view.zoom);
       ctx.globalAlpha = options.opacity;
       ctx.fillStyle = options.color;
       ctx.fill(outlineToPath(strokeOutline(live)));
       ctx.globalAlpha = 1;
+      if (g.snapped) {
+        // Qué forma se ha reconocido, junto al puntero.
+        ctx.font = `600 ${13 * px}px sans-serif`;
+        ctx.fillStyle = SELECTION_COLOR;
+        ctx.fillText(SHAPE_LABELS[g.snapped.kind], g.holdAt.x + 12 * px, g.holdAt.y - 12 * px);
+      }
     }
     if (g?.kind === 'shape') {
       const shape = SHAPE_TOOLS[tool]!;
@@ -473,6 +519,23 @@ export function CanvasView({ project }: { project: Project }) {
     return t0;
   };
 
+  // Formas rápidas: si el puntero se queda quieto un momento mientras se dibuja, se intenta
+  // reconocer la forma del trazo.
+  const holdTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const armHold = () => {
+    clearTimeout(holdTimer.current);
+    if (!useEditor.getState().options.assist.quickShapes) return;
+    holdTimer.current = setTimeout(() => {
+      const g = gesture.current;
+      if (g?.kind !== 'draw' || g.snapped) return;
+      const pts: Point[] = [];
+      for (let i = 0; i < g.points.length; i += 4) pts.push({ x: g.points[i]!, y: g.points[i + 1]! });
+      pts.push(g.last);
+      g.snapped = recognizeShape(pts);
+      if (g.snapped) redraw();
+    }, HOLD_MS);
+  };
+
   /** Lo que se agarra al animar arrastrando: lo que hay bajo el puntero o el seleccionado (por dentro de su caja). */
   const puppetTarget = (p: Point): Item | null => {
     const { selection: sel, playhead: t } = useEditor.getState();
@@ -588,12 +651,19 @@ export function CanvasView({ project }: { project: Project }) {
       case 'pencil': {
         if (!writableActiveLayer()) return;
         const pen = e.pointerType === 'pen';
+        const brush = new LazyBrush(STABILIZER_PX[ed.options.assist.stabilizer] / ed.view.zoom);
+        brush.update(p.x, p.y);
         gesture.current = {
           kind: 'draw',
           points: [p.x, p.y, pen ? Math.max(0.05, e.pressure) : -1, 0],
           t0: e.timeStamp,
           pen,
+          brush,
+          last: p,
+          holdAt: p,
+          snapped: null,
         };
+        armHold();
         break;
       }
       case 'eraser':
@@ -724,10 +794,20 @@ export function CanvasView({ project }: { project: Project }) {
         ed.setView({ panX: g.panX + e.clientX - g.start.x, panY: g.panY + e.clientY - g.start.y, fit: false });
         return;
       case 'draw': {
+        const moved = Math.hypot(p.x - g.holdAt.x, p.y - g.holdAt.y) * ed.view.zoom > HOLD_SLOP_PX;
+        // Con una forma reconocida, solo un movimiento claro vuelve a la mano alzada.
+        if (g.snapped && Math.hypot(p.x - g.holdAt.x, p.y - g.holdAt.y) * ed.view.zoom < HOLD_SLOP_PX * 4) return;
+        if (moved || g.snapped) {
+          g.snapped = null;
+          g.holdAt = p;
+          armHold();
+        }
         const events = e.nativeEvent.getCoalescedEvents?.() ?? [e.nativeEvent];
         for (const ev of events.length ? events : [e.nativeEvent]) {
           const q = scenePoint(ev);
-          g.points.push(q.x, q.y, g.pen ? Math.max(0.05, ev.pressure) : -1, Math.round(ev.timeStamp - g.t0));
+          g.last = q;
+          const b = g.brush.update(q.x, q.y);
+          if (b) g.points.push(b.x, b.y, g.pen ? Math.max(0.05, ev.pressure) : -1, Math.round(ev.timeStamp - g.t0));
         }
         break;
       }
@@ -843,7 +923,8 @@ export function CanvasView({ project }: { project: Project }) {
         setPanning(false);
         break;
       case 'draw':
-        addToActiveLayer(createStroke(g.points, ed.options), 'Dibujar');
+        clearTimeout(holdTimer.current);
+        addToActiveLayer(drawnStroke(g, ed.options, ed.view.zoom, true), g.snapped ? 'Dibujar forma' : 'Dibujar');
         break;
       case 'erase':
         commitErase(g.working);

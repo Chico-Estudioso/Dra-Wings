@@ -127,3 +127,62 @@ test('zoom con los controles y ajuste a la ventana', async () => {
   await stubMessageBox(app, 1);
   await app.close();
 });
+
+test('ayudas al dibujar: forma rápida al mantener quieto y trazo de tinta', async () => {
+  const file = path.join(await tempDir(), 'ayudas.dwings');
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Ayudas');
+  const c = await center(page);
+  const strokes = (p: Project) => p.scenes[0]!.layers.flatMap((l) => l.items ?? []).filter((i) => i.type === 'stroke');
+
+  /** Un círculo «a mano» de 90 px de radio; con `hold`, se mantiene quieto al final. */
+  async function circle(cx: number, cy: number, hold: boolean) {
+    await page.mouse.move(cx, cy - 90);
+    await page.mouse.down();
+    for (let i = 1; i <= 44; i++) {
+      const a = -Math.PI / 2 + (2 * Math.PI * 1.03 * i) / 44;
+      const r = 90 + (i % 3) - 1;
+      await page.mouse.move(cx + r * Math.cos(a), cy + r * Math.sin(a));
+    }
+    if (hold) await page.waitForTimeout(800);
+    await page.mouse.up();
+  }
+
+  // Con el puntero quieto al final: un círculo limpio (mismo pincel, pocas variaciones de radio).
+  await circle(c.x - 150, c.y, true);
+  await expect.poll(() => itemCount(page)).toBe(1);
+  // Sin mantenerlo: se queda a mano alzada.
+  await circle(c.x + 150, c.y, false);
+  await expect.poll(() => itemCount(page)).toBe(2);
+  // Un trazo rápido: tinta (presión según la velocidad y puntas afinadas).
+  await drag(page, { x: c.x - 200, y: c.y + 140 }, { x: c.x + 200, y: c.y + 150 }, 8);
+  await expect.poll(() => itemCount(page)).toBe(3);
+  // Sin formas rápidas, mantener quieto no convierte.
+  await page.getByRole('button', { name: 'Ayudas' }).click();
+  await page.getByRole('checkbox', { name: 'Formas rápidas' }).uncheck();
+  await page.keyboard.press('Escape');
+  await circle(c.x, c.y, true);
+  await expect.poll(() => itemCount(page)).toBe(4);
+
+  const p = await saveAndRead(app, page, file);
+  const [snapped, free, ink, noSnap] = strokes(p);
+  const radii = (pts: number[]) => {
+    const xs: number[] = [];
+    const ys: number[] = [];
+    for (let i = 0; i < pts.length - 4; i += 4) (xs.push(pts[i]!), ys.push(pts[i + 1]!));
+    const cx = xs.reduce((a, b) => a + b, 0) / xs.length;
+    const cy = ys.reduce((a, b) => a + b, 0) / ys.length;
+    const r = xs.map((x, i) => Math.hypot(x - cx, ys[i]! - cy));
+    const mean = r.reduce((a, b) => a + b, 0) / r.length;
+    return Math.max(...r.map((v) => Math.abs(v - mean))) / mean;
+  };
+  expect(snapped!.style.streamline).toBe(0.1);
+  expect(radii(snapped!.points)).toBeLessThan(0.01);
+  expect(snapped!.style.taper).toBeUndefined();
+  expect(free!.style.streamline).not.toBe(0.1);
+  expect(noSnap!.style.streamline).not.toBe(0.1);
+  expect(ink!.style.taper).toBeGreaterThan(0);
+  expect(ink!.points.filter((_, i) => i % 4 === 2).every((v) => v > 0 && v <= 1)).toBe(true);
+  await stubMessageBox(app, 1);
+  await app.close();
+});

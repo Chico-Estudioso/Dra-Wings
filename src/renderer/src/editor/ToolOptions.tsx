@@ -4,6 +4,7 @@ import { useEditor } from './editor-store';
 import { resetCamera } from './actions';
 import { FONT_LABELS } from './fonts';
 import { TOOLS } from './Toolbar';
+import { DrawAssistPopover } from './DrawAssistPopover';
 
 const pct = (v: number) => `${Math.round(v * 100)} %`;
 
@@ -80,6 +81,7 @@ export function ToolOptions() {
             format={pct}
             onChange={(v) => set({ opacity: v })}
           />
+          <DrawAssistPopover />
         </>
       )}
       {(tool === 'rect' || tool === 'ellipse' || tool === 'line' || tool === 'arrow') && (

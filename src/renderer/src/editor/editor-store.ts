@@ -1,5 +1,6 @@
 // Estado de edición que no forma parte del documento (no se guarda ni se deshace):
 // herramienta, opciones, selección, capa activa y vista.
+import { DEFAULT_ASSIST, type DrawAssist } from '@core/draw/assist';
 import { create } from 'zustand';
 import type { FontId, Mode, Shape } from '@core/model/types';
 import type { Ticks } from '@core/time/ticks';
@@ -22,6 +23,8 @@ export interface ToolOptions {
   strokeWidth: number;
   font: FontId;
   fontSize: number;
+  /** Ayudas al dibujar con el lápiz. */
+  assist: DrawAssist;
 }
 
 export interface View {
@@ -127,6 +130,7 @@ export const useEditor = create<EditorState>()((set) => ({
     strokeWidth: 6,
     font: 'hand',
     fontSize: 64,
+    assist: DEFAULT_ASSIST,
   },
   selection: [],
   sceneId: null,
