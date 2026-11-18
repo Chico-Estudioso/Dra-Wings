@@ -1,4 +1,5 @@
 // Cálculos de audio puros: ventanas de reproducción de clips, fundidos y medios usados.
+import { childLists } from '../anim/swaps';
 import type { AudioClip, AudioTrack, Item, Project } from '../model/types';
 import type { Ticks } from '../time/ticks';
 
@@ -56,7 +57,7 @@ export function audioEnd(project: Project): Ticks {
 function collectImageAssets(items: Item[], into: Set<string>) {
   for (const it of items) {
     if (it.type === 'image') into.add(it.assetId);
-    if (it.type === 'group') collectImageAssets(it.children, into);
+    if (it.type === 'group') for (const list of childLists(it)) collectImageAssets(list, into);
   }
 }
 

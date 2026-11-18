@@ -28,6 +28,7 @@ import {
   updateSelected,
 } from './actions';
 import { AnimationSection } from './AnimationSection';
+import { CharacterLook } from './CharacterLook';
 import { ColorPicker, ValueSlider } from './controls';
 import { useEditor } from './editor-store';
 import { FONT_LABELS, fontsReady } from './fonts';
@@ -158,6 +159,7 @@ export function PropertiesPanel({
                 onChange={setColor}
               />
             )}
+        {singleGroup && <CharacterLook group={singleGroup} fps={fps} />}
         {allShapes && first.type === 'shape' && (first.shape === 'rect' || first.shape === 'ellipse') && (
           <ColorPicker
             label="Relleno"

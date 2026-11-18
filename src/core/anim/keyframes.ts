@@ -73,6 +73,8 @@ export function shiftItemTime(item: Item, dt: Ticks): void {
   if (item.out !== undefined) item.out = Math.max(item.in + 1, item.out + dt);
   for (const p of ANIMATABLE) item.transform[p] = shiftKeys(item.transform[p], dt);
   item.opacity = shiftKeys(item.opacity, dt);
+  if (item.type === 'group' && item.swaps)
+    item.swaps = item.swaps.map((s) => ({ ...s, t: Math.max(item.in + 1, s.t + dt) }));
 }
 
 /** Convierte las propiedades animadas en constantes con el valor del instante `t`. */

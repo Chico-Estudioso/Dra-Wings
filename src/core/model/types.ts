@@ -41,6 +41,7 @@ export type Shape = z.infer<typeof shapeSchema>;
 export type TextItem = z.infer<typeof textSchema>;
 export type FontId = TextItem['font'];
 export type Group = GroupItem;
+export type { GroupSwap } from './schema';
 export type ColorSlot = z.infer<typeof colorSlotSchema>;
 export type Enter = NonNullable<Item['enter']>;
 export type Exit = NonNullable<Item['exit']>;

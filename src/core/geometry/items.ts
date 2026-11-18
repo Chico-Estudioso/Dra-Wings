@@ -1,4 +1,5 @@
 // Cajas, esquinas y detección de impacto de los elementos, en espacio local y de escena.
+import { childrenAt } from '../anim/swaps';
 import type { Item, Shape, Stroke } from '../model/types';
 import { apply, invert, matrixFrom, meanScale, resolveTransform, type Mat, type Point } from './matrix';
 
@@ -184,7 +185,7 @@ export function hitItem(item: Item, p: Point, tol: number, tick = 0): boolean {
     }
     case 'group':
       // Un grupo se toca si se toca alguno de sus elementos (no su caja vacía).
-      return item.children.some((child) => hitItem(child, local, localTol, tick));
+      return childrenAt(item, tick).some((child) => hitItem(child, local, localTol, tick));
   }
 }
 

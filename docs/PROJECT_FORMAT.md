@@ -67,7 +67,12 @@ Group extends ItemBase {
   w: number; h: number
   source?: { kind: 'library' | 'character'; id: string }   // informativo
   slots?: { id: string; label: string; color: Color }[]    // ranuras de color recoloreables
+  swaps?: { t: Ticks; children: Item[]; variant?: string }[]  // cambios de dibujo en el tiempo, ordenados por t
 }
+// Desde cada `swaps[i].t` (y hasta el siguiente) el grupo se dibuja con esos hijos, en las mismas
+// coordenadas locales; antes del primero, con `children`. En personajes, `variant` y `source.id`
+// valen `pelo/expresión/postura`. La caja (w, h) abarca todos los dibujos. Campo opcional añadido
+// en v1 antes de la primera versión pública: los archivos anteriores siguen siendo válidos.
 // ItemBase.slot?: string → ranura a la que pertenece una pieza dentro de un grupo
 
 Image extends ItemBase {

@@ -138,6 +138,16 @@ export interface GroupItem extends ItemBase {
   /** Origen en la biblioteca (informativo: el grupo es autosuficiente). */
   source?: { kind: 'library' | 'character'; id: string };
   slots?: z.infer<typeof colorSlotSchema>[];
+  /** Cambios de dibujo en el tiempo (por ejemplo, otra expresión o postura), ordenados por `t`. */
+  swaps?: GroupSwap[];
+}
+
+/** Desde el instante `t` (de la escena), el grupo se dibuja con estos hijos (mismas coordenadas locales). */
+export interface GroupSwap {
+  t: number;
+  children: AnyItem[];
+  /** Aspecto que representa (en personajes, `pelo/expresión/postura`). */
+  variant?: string;
 }
 
 export type AnyItem =
@@ -157,6 +167,17 @@ export const groupSchema = z.object({
   h: z.number().nonnegative().max(100_000),
   source: z.object({ kind: z.enum(['library', 'character']), id: z.string().max(80) }).optional(),
   slots: z.array(colorSlotSchema).max(20).optional(),
+  get swaps(): z.ZodOptional<z.ZodArray<z.ZodType<GroupSwap>>> {
+    return z.array(swapSchema).max(200).optional();
+  },
+});
+
+export const swapSchema: z.ZodType<GroupSwap> = z.object({
+  t: ticks,
+  get children(): z.ZodArray<z.ZodType<AnyItem>> {
+    return z.array(itemSchema).max(5000);
+  },
+  variant: z.string().max(80).optional(),
 });
 
 export const itemSchema: z.ZodType<AnyItem> = z.discriminatedUnion('type', [

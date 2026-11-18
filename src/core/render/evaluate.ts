@@ -1,4 +1,5 @@
 // Evaluación de una escena en un instante: lista plana de lo que hay que dibujar (ver ANIMATION_ENGINE.md).
+import { childrenAt } from '../anim/swaps';
 import { valueAt } from '../anim/animated';
 import {
   matrixFrom,
@@ -97,7 +98,7 @@ interface Leaf {
 }
 
 function leaves(group: Extract<Item, { type: 'group' }>, m: Mat, opacity: number, tick: Ticks, out: Leaf[]): Leaf[] {
-  for (const child of group.children) {
+  for (const child of childrenAt(group, tick)) {
     const o = opacity * valueAt(child.opacity, tick);
     if (o <= 0) continue;
     const cm = multiply(m, matrixFrom(resolveTransform(child.transform, tick)));

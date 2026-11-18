@@ -1,6 +1,10 @@
 // Constructor de personajes original, estilo Draw My Life: cabeza y torso con contorno de tinta,
 // extremidades de trazo grueso y piezas intercambiables. Todo es vectorial y recoloreable.
 import type { Group } from '../model/types';
+import type { Ticks } from '../time/ticks';
+import { valueAt } from '../anim/animated';
+import { variantAt } from '../anim/swaps';
+import { setChildrenFrom, shiftItem } from '../edit/group';
 import { ellipsePoints, INK, Sketch, type Pt } from './sketch';
 
 export const HAIR_STYLES = {
@@ -263,7 +267,21 @@ function drawFace(s: Sketch, e: Expression) {
   }
 }
 
+/** Identificador del aspecto de un personaje: `pelo/expresión/postura`. */
+export const lookId = (o: Pick<CharacterOptions, 'hair' | 'expression' | 'pose'>) =>
+  `${o.hair}/${o.expression}/${o.pose}`;
+
 export function buildCharacter(o: CharacterOptions, seed = 'personaje'): Group {
+  return drawCharacter(o, seed).toGroup({ kind: 'character', id: lookId(o) }, 'Personaje', [
+    { id: 'skin', label: 'Piel', color: o.skin },
+    { id: 'hair', label: o.hair === 'gorra' ? 'Gorra' : 'Pelo', color: o.hairColor },
+    { id: 'shirt', label: 'Camiseta', color: o.shirt },
+    { id: 'pants', label: 'Pantalón', color: o.pants },
+  ]);
+}
+
+/** Dibuja el personaje en las coordenadas del dibujo (sin agrupar). */
+function drawCharacter(o: CharacterOptions, seed = 'personaje'): Sketch {
   const s = new Sketch(`${seed}:${o.hair}:${o.expression}:${o.pose}`);
   const limbs = POSE_LIMBS[o.pose];
   const { cx, cy, rx, ry } = HEAD;
@@ -326,13 +344,50 @@ export function buildCharacter(o: CharacterOptions, seed = 'personaje'): Group {
 
   drawFace(s, o.expression);
   drawHairFront(s, o);
+  return s;
+}
 
-  return s.toGroup({ kind: 'character', id: `${o.hair}/${o.expression}/${o.pose}` }, 'Personaje', [
-    { id: 'skin', label: 'Piel', color: o.skin },
-    { id: 'hair', label: o.hair === 'gorra' ? 'Gorra' : 'Pelo', color: o.hairColor },
-    { id: 'shirt', label: 'Camiseta', color: o.shirt },
-    { id: 'pants', label: 'Pantalón', color: o.pants },
-  ]);
+/**
+ * Opciones del personaje tal como se ve en `t` (aspecto del instante y colores actuales de sus
+ * ranuras). Null si el grupo no es un personaje del constructor.
+ */
+export function characterOptions(group: Group, t: Ticks): CharacterOptions | null {
+  if (group.source?.kind !== 'character') return null;
+  const [hair, expression, pose] = (variantAt(group, t) ?? '').split('/');
+  if (!(hair! in HAIR_STYLES) || !(expression! in EXPRESSIONS) || !(pose! in POSES)) return null;
+  const color = (slot: string, fallback: string) => group.slots?.find((s) => s.id === slot)?.color ?? fallback;
+  return {
+    hair: hair as HairStyle,
+    expression: expression as Expression,
+    pose: pose as Pose,
+    skin: color('skin', DEFAULT_CHARACTER.skin),
+    hairColor: color('hair', DEFAULT_CHARACTER.hairColor),
+    shirt: color('shirt', DEFAULT_CHARACTER.shirt),
+    pants: color('pants', DEFAULT_CHARACTER.pants),
+  };
+}
+
+/**
+ * Cambia la expresión o la postura del personaje desde `t` (hasta su siguiente cambio; en su
+ * aparición o antes, desde el principio). El dibujo nuevo se coloca con el mismo encuadre que el
+ * original. Devuelve si se pudo.
+ */
+export function setCharacterLook(
+  group: Group,
+  t: Ticks,
+  look: Partial<Pick<CharacterOptions, 'expression' | 'pose'>>,
+): boolean {
+  const current = characterOptions(group, t);
+  // Todos los trazos del dibujo nacen en el origen: su posición dice dónde está el origen del dibujo.
+  const stroke = group.children.find((c) => c.type === 'stroke');
+  if (!current || !stroke) return false;
+  const dx = valueAt(stroke.transform.x, 0);
+  const dy = valueAt(stroke.transform.y, 0);
+  const next = { ...current, ...look };
+  const children = drawCharacter(next).items;
+  for (const c of children) shiftItem(c, dx, dy);
+  setChildrenFrom(group, Math.max(t, group.in), children, lookId(next));
+  return true;
 }
 
 export const CHARACTER_PRESETS: { id: string; name: string; options: CharacterOptions }[] = [

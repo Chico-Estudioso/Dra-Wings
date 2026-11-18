@@ -2,7 +2,10 @@
 import { fixed, offset } from '../anim/animated';
 import { identityTransform, newId } from '../model/factory';
 import type { ColorSlot, Group, Item, Scene } from '../model/types';
-import { itemMatrix, itemsBounds, POINT_STRIDE } from '../geometry/items';
+import type { GroupSwap } from '../model/schema';
+import { itemMatrix, itemsBounds, POINT_STRIDE, unionRects } from '../geometry/items';
+import { childLists } from '../anim/swaps';
+import type { Ticks } from '../time/ticks';
 import { apply, matrixFrom, meanScale, multiply, resolveTransform, type Mat } from '../geometry/matrix';
 import { deepClone } from './clone';
 import { locateItem } from './ops';
@@ -127,7 +130,7 @@ export function ungroupItem(scene: Scene, id: string): string[] {
 
 function recolorItem(item: Item, slot: string, color: string): void {
   if (item.type === 'group') {
-    for (const c of item.children) recolorItem(c, slot, color);
+    for (const list of childLists(item)) for (const c of list) recolorItem(c, slot, color);
     return;
   }
   if (item.slot !== slot) return;
@@ -143,5 +146,58 @@ function recolorItem(item: Item, slot: string, color: string): void {
 export function recolorSlot(group: Group, slotId: string, color: string): void {
   const slot = group.slots?.find((s: ColorSlot) => s.id === slotId);
   if (slot) slot.color = color;
-  for (const c of group.children) recolorItem(c, slotId, color);
+  for (const list of childLists(group)) for (const c of list) recolorItem(c, slotId, color);
+}
+
+/**
+ * Ajusta la caja del grupo a todo su contenido (original y cambios) sin moverlo en pantalla: si algo
+ * sobresale por arriba o por la izquierda, desplaza el contenido y compensa la posición y el ancla.
+ */
+export function fitGroupBox(group: Group): void {
+  const lists = childLists(group);
+  const b = unionRects(lists.map((l) => itemsBounds(l)).filter((r): r is NonNullable<typeof r> => !!r));
+  if (!b) return;
+  if (b.x !== 0 || b.y !== 0) {
+    for (const list of lists) for (const c of list) shiftItem(c, -b.x, -b.y);
+    group.transform.anchorX -= b.x;
+    group.transform.anchorY -= b.y;
+    group.transform.x = offset(group.transform.x, b.x);
+    group.transform.y = offset(group.transform.y, b.y);
+  }
+  group.w = b.w;
+  group.h = b.h;
+}
+
+/**
+ * El grupo se dibuja con `children` desde `t` hasta el siguiente cambio. En su aparición (o antes) se
+ * cambia el dibujo original. Si queda igual que lo anterior, el cambio sobra y se quita.
+ */
+export function setChildrenFrom(group: Group, t: Ticks, children: Item[], variant?: string): void {
+  if (t <= group.in) {
+    group.children = children;
+    if (variant && group.source) group.source = { ...group.source, id: variant };
+  } else {
+    group.swaps = [...(group.swaps ?? []).filter((s) => s.t !== t), { t, children, variant }].sort((a, b) => a.t - b.t);
+  }
+  dropRedundantSwaps(group);
+  fitGroupBox(group);
+}
+
+/** Quita los cambios que dejan el grupo con el mismo aspecto que ya tenía. */
+function dropRedundantSwaps(group: Group): void {
+  const kept: GroupSwap[] = [];
+  let shown = group.source?.id;
+  for (const s of group.swaps ?? []) {
+    if (s.variant && s.variant === shown) continue;
+    kept.push(s);
+    shown = s.variant;
+  }
+  group.swaps = kept.length ? kept : undefined;
+}
+
+/** Quita el cambio de dibujo del instante `t`. */
+export function removeSwap(group: Group, t: Ticks): void {
+  const swaps = (group.swaps ?? []).filter((s) => s.t !== t);
+  group.swaps = swaps.length ? swaps : undefined;
+  fitGroupBox(group);
 }

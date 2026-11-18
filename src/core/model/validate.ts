@@ -1,5 +1,6 @@
 import type { z } from 'zod';
 import { projectSchema } from './schema';
+import { childLists } from '../anim/swaps';
 import type { Item, Project } from './types';
 
 export type ValidationResult = { ok: true; project: Project } | { ok: false; issues: string[] };
@@ -47,7 +48,7 @@ export function checkReferences(project: Project): string[] {
     items.forEach((it) => {
       if (it.type === 'image' && !assetIds.has(it.assetId))
         problems.push(`La imagen «${it.id}» apunta a un medio inexistente`);
-      if (it.type === 'group') imageRefs(it.children);
+      if (it.type === 'group') childLists(it).forEach(imageRefs);
     });
   for (const s of project.scenes)
     for (const l of s.layers) {

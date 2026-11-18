@@ -124,3 +124,40 @@ test('el proyecto de ejemplo se abre desde el inicio con sus tres escenas', asyn
   await stubMessageBox(app, 1);
   await app.close();
 });
+
+test('un personaje cambia de expresión y de postura a mitad de escena', async () => {
+  const file = path.join(await tempDir(), 'expresiones.dwings');
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Expresiones', 'Guiado');
+  await page.getByRole('button', { name: 'Añadir Alex' }).click();
+  await expect.poll(() => itemCount(page)).toBe(1);
+  const look = page.getByRole('group', { name: 'Expresión y postura' });
+  await expect(look.getByLabel('Expresión')).toHaveValue('feliz');
+
+  // Cabezal a 2 s (80 px por segundo en la línea de tiempo): triste y saludando desde ahí.
+  const ruler = (await page.getByTestId('timeline-scroll').boundingBox())!;
+  await page.mouse.click(ruler.x + 2 * 80 + 1, ruler.y + 10);
+  await expect(page.getByTestId('timeline-time')).toContainText('00:02:00');
+  await look.getByLabel('Expresión').selectOption({ label: 'Triste' });
+  await look.getByLabel('Postura').selectOption({ label: 'Saludando' });
+  await expect(look.getByRole('listitem')).toHaveCount(1);
+  await expect(look.getByRole('listitem')).toContainText('Triste, saludando');
+  await expect(page.getByRole('button', { name: 'Cambio de aspecto en 00:02:00' })).toBeVisible();
+
+  // Antes del cambio sigue como estaba.
+  await page.mouse.click(ruler.x + 0.5 * 80 + 1, ruler.y + 10);
+  await expect(look.getByLabel('Expresión')).toHaveValue('feliz');
+  await expect(look.getByLabel('Postura')).toHaveValue('de-pie');
+
+  const p = await saveAndRead(app, page, file);
+  const alex = items(p)[0] as Group;
+  expect(alex.source?.id).toBe('corto/feliz/de-pie');
+  expect(alex.swaps).toHaveLength(1);
+  expect(alex.swaps![0]).toMatchObject({ t: 2 * 705_600_000, variant: 'corto/triste/saludando' });
+
+  // Quitar el cambio desde la lista.
+  await look.getByRole('button', { name: 'Quitar el cambio de 00:02:00' }).click();
+  await expect(look.getByRole('listitem')).toHaveCount(0);
+  await stubMessageBox(app, 1);
+  await app.close();
+});

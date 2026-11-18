@@ -22,7 +22,8 @@ import { appendTiming, fitSceneDuration } from '@core/anim/timing';
 import { ANIMATABLE, clearAnimation, keyTimes, removeKeyAt, setValueAt, shiftItemTime } from '@core/anim/keyframes';
 import { addScene, duplicateScene, moveScene, removeScene } from '@core/edit/scenes';
 import { ticksPerFrame } from '@core/time/ticks';
-import { groupItems, recolorSlot, ungroupItem } from '@core/edit/group';
+import { groupItems, recolorSlot, removeSwap, ungroupItem } from '@core/edit/group';
+import { setCharacterLook, type CharacterOptions } from '@core/library/character';
 import { deepClone } from '@core/edit/clone';
 import { newId } from '@core/model/factory';
 import type { Ease, Enter, Exit, Item, Layer, Project, Scene } from '@core/model/types';
@@ -201,6 +202,21 @@ export function commitMotion(sceneId: string, id: string, samples: MotionSample[
     loc.item.transform.y = mergeKeys(loc.item.transform.y, y);
   });
   return true;
+}
+
+/** Cambia la expresión o la postura del personaje seleccionado desde el cabezal. */
+export function setLookAtPlayhead(look: Partial<Pick<CharacterOptions, 'expression' | 'pose'>>): void {
+  const t = playhead();
+  updateSelected(look.pose ? 'Cambiar postura' : 'Cambiar expresión', (it) => {
+    if (it.type === 'group') setCharacterLook(it, t, look);
+  });
+}
+
+/** Quita el cambio de aspecto del instante `t` del personaje seleccionado. */
+export function removeLookChange(t: number): void {
+  updateSelected('Quitar cambio de aspecto', (it) => {
+    if (it.type === 'group') removeSwap(it, t);
+  });
 }
 
 export function setSelectionEase(ease: Ease): void {

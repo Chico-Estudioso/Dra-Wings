@@ -99,5 +99,7 @@ El selector «Suavizado» del panel «Animación» cambia todos los tramos del e
 - Termina al soltar, al acabar la escena o al detener la reproducción. Esc cancela sin guardar y devuelve el cabezal al inicio. Si no se ha movido el puntero no se guarda nada (un clic solo selecciona). Tras guardar, el cabezal queda al final de lo grabado para seguir desde ahí.
 - Mientras se graba se dibuja el rastro sobre la vista previa.
 
+**Cambios de dibujo** (`src/core/anim/swaps.ts`): un grupo puede cambiar de hijos desde ciertos instantes (`swaps`); el render, la selección y el toque usan `childrenAt(grupo, t)`. Lo usan los personajes para cambiar de expresión o de postura (ver `docs/LIBRARY.md`). Los cambios se desplazan con el elemento al moverlo en el tiempo.
+
 **Trayectoria:** con un único elemento seleccionado cuya posición está animada, el lienzo dibuja el recorrido de su centro entre el primer y el último keyframe de posición, con un punto en cada keyframe (`src/core/anim/motion-path.ts`).
 

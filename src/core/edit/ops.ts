@@ -1,5 +1,6 @@
 // Operaciones puras sobre escenas (se usan dentro de recetas Immer; mutan el borrador recibido).
 // Una capa vectorial tiene una lista de elementos; una capa de fotogramas, una lista por fotograma (cel).
+import { childLists } from '../anim/swaps';
 import { offset } from '../anim/animated';
 import { deepClone } from './clone';
 import { createLayer, newId } from '../model/factory';
@@ -123,7 +124,7 @@ export function duplicateItems(scene: Scene, ids: string[], dx = 24, dy = 24): s
 /** Asigna ids nuevos a un elemento y a todo su contenido (para copias). */
 export function withNewIds<T extends Item>(item: T): T {
   item.id = newId();
-  if (item.type === 'group') item.children.forEach((c) => withNewIds(c));
+  if (item.type === 'group') childLists(item).forEach((list) => list.forEach((c) => withNewIds(c)));
   return item;
 }
 

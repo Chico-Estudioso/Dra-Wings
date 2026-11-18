@@ -234,11 +234,23 @@ function PlayheadLine({ pxPerTick }: { pxPerTick: number }) {
   return <div className="tl-playhead" style={{ left: playhead * pxPerTick }} />;
 }
 
-function KeyButton({ t, label, style, camera }: { t: Ticks; label: string; style: CSSProperties; camera?: boolean }) {
+function KeyButton({
+  t,
+  label,
+  style,
+  camera,
+  swap,
+}: {
+  t: Ticks;
+  label: string;
+  style: CSSProperties;
+  camera?: boolean;
+  swap?: boolean;
+}) {
   const current = useEditor((s) => s.playhead === t);
   return (
     <button
-      className={`tl-key ${camera ? 'tl-key-camera' : ''} ${current ? 'is-current' : ''}`}
+      className={`tl-key ${camera ? 'tl-key-camera' : ''} ${swap ? 'tl-key-swap' : ''} ${current ? 'is-current' : ''}`}
       style={style}
       aria-label={label}
       onPointerDown={(e) => e.stopPropagation()}
@@ -487,6 +499,17 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
                     t={k}
                     style={{ left: (k - b.start) * pxPerTick }}
                     label={`Keyframe en ${formatTimecode(k, fps)}`}
+                  />
+                ))}
+              {isSel &&
+                b.item.type === 'group' &&
+                b.item.swaps?.map((s) => (
+                  <KeyButton
+                    key={`swap-${s.t}`}
+                    t={s.t}
+                    swap
+                    style={{ left: (s.t - b.start) * pxPerTick }}
+                    label={`Cambio de aspecto en ${formatTimecode(s.t, fps)}`}
                   />
                 ))}
             </div>
