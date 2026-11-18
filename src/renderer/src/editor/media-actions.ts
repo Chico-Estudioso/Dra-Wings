@@ -67,32 +67,34 @@ export async function importImage(at?: { x: number; y: number }): Promise<void> 
 const ceilToFrame = (t: Ticks, p: Project) =>
   Math.ceil(t / ticksPerFrame(p.settings.fps)) * ticksPerFrame(p.settings.fps);
 
+type StoredMedia = { hash: string; mime: string; name: string; size: number };
+
 /**
- * Importa un audio en la pista del tipo indicado, en el cabezal. La narración alarga la última
- * escena si hace falta para que se oiga entera; la música y los efectos se cortan al final del vídeo.
+ * Coloca un audio ya guardado en la caché en la pista del tipo indicado, en el instante global `at`
+ * (por defecto, el cabezal). La narración alarga la última escena si hace falta para que se oiga
+ * entera; la música y los efectos se cortan al final del vídeo.
  */
-export async function importAudio(kind: TrackKind): Promise<void> {
-  const r = await window.dw.importMedia('audio');
-  if (r.status === 'canceled') return;
-  if (r.status === 'error') return fail(r.message);
+export async function addAudio(
+  kind: TrackKind,
+  r: StoredMedia,
+  label = `Importar ${TRACK_NAMES[kind].toLowerCase()}`,
+  at = globalPlayhead(),
+): Promise<boolean> {
   let duration: Ticks;
   try {
     duration = ticksFromSeconds((await loadAudio(r)).duration);
   } catch {
-    return fail('No se pudo leer el audio. Prueba con un archivo MP3, WAV u OGG.');
+    fail('No se pudo leer el audio. Prueba con un archivo MP3, WAV u OGG.');
+    return false;
   }
-  if (duration <= 0) return fail('El audio está vacío.');
-  const at = globalPlayhead();
+  if (duration <= 0) {
+    fail('El audio está vacío.');
+    return false;
+  }
   let clipId: string | null = null;
   let extended: string | null = null;
-  app().apply(`Importar ${TRACK_NAMES[kind].toLowerCase()}`, (draft) => {
-    const asset = upsertAsset(draft, {
-      hash: r.hash,
-      mime: r.mime,
-      name: r.name,
-      size: r.size,
-      durationTicks: duration,
-    });
+  app().apply(label, (draft) => {
+    const asset = upsertAsset(draft, { ...r, durationTicks: duration });
     const clip = addClip(trackFor(draft, kind), asset.id, at, duration);
     clipId = clip.id;
     const missing = clipEnd(clip) - projectDuration(draft);
@@ -105,6 +107,15 @@ export async function importAudio(kind: TrackKind): Promise<void> {
   if (clipId) useEditor.getState().selectClip(clipId);
   if (extended)
     app().notify({ kind: 'info', text: `La escena «${extended}» se ha alargado para que se oiga toda la narración.` });
+  return true;
+}
+
+/** Importa un audio con el diálogo nativo en la pista del tipo indicado, en el cabezal. */
+export async function importAudio(kind: TrackKind): Promise<void> {
+  const r = await window.dw.importMedia('audio');
+  if (r.status === 'canceled') return;
+  if (r.status === 'error') return fail(r.message);
+  await addAudio(kind, r);
 }
 
 function editAudio(label: string, fn: (p: Project) => void) {

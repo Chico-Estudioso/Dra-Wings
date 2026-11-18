@@ -51,6 +51,7 @@ import { TIMELINE_MIN_H, useEditor } from './editor-store';
 import { itemName } from './item-names';
 import { addMarkerAtPlayhead, importAudio, moveClipTo, moveMarkerTo, trimClipBy, updateTrack } from './media-actions';
 import { togglePlay } from './playback';
+import { openRecordDialog } from './RecordDialog';
 import { Waveform } from './Waveform';
 
 const NAME_W = 150;
@@ -618,12 +619,18 @@ export function Timeline({ project, scene }: { project: Project; scene: Scene })
         )}
         <Popover.Root>
           <Popover.Trigger asChild>
-            <button className="btn btn-ghost btn-sm" title="Importar audio en el cabezal">
+            <button className="btn btn-ghost btn-sm" title="Grabar o importar audio en el cabezal">
               <Music size={14} aria-hidden /> Audio
             </button>
           </Popover.Trigger>
           <Popover.Portal>
-            <Popover.Content className="menu-popover" sideOffset={4} align="end" aria-label="Importar audio">
+            <Popover.Content className="menu-popover" sideOffset={4} align="end" aria-label="Añadir audio">
+              <Popover.Close asChild>
+                <button className="menu-item" onClick={openRecordDialog}>
+                  <Circle size={15} fill="currentColor" className="menu-rec" aria-hidden /> Grabar narración…
+                </button>
+              </Popover.Close>
+              <span className="menu-label">Importar archivo</span>
               {IMPORT_OPTIONS.map(({ kind, label }) => {
                 const Icon = TRACK_ICONS[kind];
                 return (

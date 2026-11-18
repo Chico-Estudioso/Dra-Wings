@@ -76,6 +76,7 @@ Ver `docs/LIBRARY.md`: recursos, constructor de personajes, escenas de partida, 
 
 ## Audio y marcas
 
+- **Grabar:** botón «Audio» de la línea de tiempo → «Grabar narración…». Ver `docs/AUDIO_EXPORT.md`.
 - **Importar:** botón «Audio» de la línea de tiempo → Narración (voz), Música o Efecto de sonido. El clip se coloca en el cabezal, en la pista de ese tipo (se crea si no existe).
 - **Pistas de audio:** debajo de las capas, con su forma de onda. El altavoz de cada pista la silencia.
 - **Clips:** arrastrar para moverlos; arrastrar sus bordes para recortarlos. Al seleccionar uno, el panel lateral muestra su volumen, la entrada y salida suaves (fundidos), el volumen de la pista, «Dividir en el cabezal» y «Eliminar».

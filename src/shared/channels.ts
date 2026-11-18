@@ -14,6 +14,7 @@ export const CH = {
   menuAction: 'menu:action',
   requestSaveAndClose: 'window:request-save-and-close',
   mediaImport: 'media:import',
+  mediaImportBytes: 'media:import-bytes',
   exportBegin: 'export:begin',
   exportWrite: 'export:write',
   exportFinish: 'export:finish',

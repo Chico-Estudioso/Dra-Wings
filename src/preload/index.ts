@@ -14,6 +14,7 @@ const api: DwApi = {
   restoreRecovery: (projectId) => ipcRenderer.invoke(CH.recoveryRestore, projectId),
   discardRecovery: (projectId) => ipcRenderer.invoke(CH.recoveryDiscard, projectId),
   importMedia: (kind) => ipcRenderer.invoke(CH.mediaImport, kind),
+  importMediaBytes: (kind, name, bytes) => ipcRenderer.invoke(CH.mediaImportBytes, kind, name, bytes),
   exportBegin: () => ipcRenderer.invoke(CH.exportBegin),
   exportWrite: (id, position, data) => ipcRenderer.invoke(CH.exportWrite, id, position, data),
   exportFinish: (id) => ipcRenderer.invoke(CH.exportFinish, id),

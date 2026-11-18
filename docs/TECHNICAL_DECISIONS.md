@@ -30,6 +30,8 @@ Registro breve. El detalle de cada una está en su ADR (`docs/decisions/`).
 | 25 | Instalador NSIS por usuario (sin administrador) con electron-builder; sin actualización automática en el MVP | Aprobada | `docs/PACKAGING.md` |
 | 26 | Fuses de Electron: sin RunAsNode, NODE_OPTIONS ni --inspect; solo `app.asar` con integridad; sin privilegios de `file://` | Aprobada | `docs/PACKAGING.md` |
 | 27 | El CI verifica el instalador (instalar, arrancar, desinstalar) pero no lo sube: publicar requiere aprobación | Aprobada | `docs/PACKAGING.md` |
+| 28 | Grabación de narración en la app: permiso solo de micrófono y solo para la propia interfaz; se guarda como WAV a 48 kHz | Aprobada | `docs/AUDIO_EXPORT.md` |
+| 29 | El tipo de cada medio se decide por su firma; el renderer puede enviar bytes (nunca rutas) por un canal validado | Aprobada | `docs/AUDIO_EXPORT.md` |
 | 24 | Aviso de `npm audit` en `picomatch` (ReDoS) aceptado: solo lo usan Vite y Vitest al compilar y probar, con patrones propios; no se empaqueta y no hay versión corregida | Aceptada (revisar en M8) | — |
 
 ## Pendientes (se deciden en su fase)

@@ -34,6 +34,7 @@ import { PropertiesPanel } from '../editor/PropertiesPanel';
 import { AudioClipPanel, MarkerPanel } from '../editor/AudioPanel';
 import { ExportDialog, openExportDialog } from '../export/ExportDialog';
 import { openShortcuts, ShortcutsDialog } from '../editor/ShortcutsDialog';
+import { RecordDialog } from '../editor/RecordDialog';
 import { useEditorShortcuts } from '../editor/shortcuts';
 import { zoomAt } from '../editor/view';
 
@@ -303,6 +304,7 @@ export function Editor() {
         </button>
       </footer>
       <ShortcutsDialog />
+      <RecordDialog />
     </div>
   );
 }

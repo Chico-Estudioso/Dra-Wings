@@ -59,6 +59,7 @@ La previsualización y la exportación llaman a `evaluateScene` + `drawRenderLis
 - La interfaz se carga desde `app://`, no desde `file://`. CSP estricta, sin orígenes remotos.
 - `app://dra-wings/media/<sha256>.<ext>` sirve medios solo de la caché local, validando el nombre con una expresión estricta. Nunca acepta rutas arbitrarias. Al abrir un proyecto, cada medio se verifica contra su hash antes de entrar en la caché.
 - `setWindowOpenHandler` → `deny`. `will-navigate` bloqueado. Los enlaces externos se abren con `shell.openExternal` solo tras validarlos (https).
+- Permisos: todo denegado salvo el micrófono (solo audio y solo para la propia interfaz) para grabar la narración.
 - Cada canal IPC tiene un esquema zod. Las rutas de archivo solo salen de diálogos nativos o de la lista de recientes guardada por el proceso principal.
 - No se ejecutan procesos externos en el MVP.
 - Al empaquetar: fuses de Electron (sin `RunAsNode`, `NODE_OPTIONS` ni `--inspect`, solo `app.asar` con integridad, sin privilegios de `file://`). Ver `docs/PACKAGING.md`.

@@ -389,6 +389,27 @@ function registerIpc() {
     }
   });
 
+  ipcMain.handle(
+    CH.mediaImportBytes,
+    async (_e, kind: unknown, name: unknown, bytes: unknown): Promise<MediaImportResult> => {
+      if ((kind !== 'image' && kind !== 'audio') || typeof name !== 'string' || !(bytes instanceof Uint8Array))
+        return { status: 'error', message: 'Datos de medio no válidos.' };
+      try {
+        const m = await media.importBytes(bytes, kind, name);
+        return {
+          status: 'ok',
+          hash: m.hash,
+          mime: m.mime,
+          name: m.name,
+          size: m.size,
+          url: `${APP_ORIGIN}/media/${media.fileName(m.hash, m.mime)}`,
+        };
+      } catch (e) {
+        return { status: 'error', message: e instanceof MediaError ? e.message : 'No se pudo guardar el medio.' };
+      }
+    },
+  );
+
   ipcMain.handle(CH.exportBegin, async (): Promise<ExportBeginResult> => {
     if (exports.active) return { status: 'error', message: 'Ya hay una exportación en curso.' };
     const folder = app.getPath('videos');
@@ -489,8 +510,29 @@ function registerIpc() {
   });
 }
 
+/** ¿La petición viene de la propia interfaz (app:// o, en desarrollo, el servidor de Vite)? */
+function isOwnOrigin(url: string | undefined): boolean {
+  return (
+    !!url &&
+    (url.startsWith(`${APP_ORIGIN}/`) || url === APP_ORIGIN || (!!DEV_URL && url.startsWith(new URL(DEV_URL).origin)))
+  );
+}
+
 function hardenSessions() {
-  session.defaultSession.setPermissionRequestHandler((_wc, _permission, cb) => cb(false));
+  // Todo denegado salvo el micrófono (nunca la cámara) para grabar la narración desde la propia app.
+  session.defaultSession.setPermissionRequestHandler((_wc, permission, cb, details) => {
+    const media = details as Electron.MediaAccessPermissionRequest;
+    cb(
+      permission === 'media' &&
+        isOwnOrigin(media.securityOrigin ?? media.requestingUrl) &&
+        (media.mediaTypes ?? []).length > 0 &&
+        (media.mediaTypes ?? []).every((t) => t === 'audio'),
+    );
+  });
+  session.defaultSession.setPermissionCheckHandler(
+    (_wc, permission, origin, details) =>
+      permission === 'media' && details.mediaType === 'audio' && isOwnOrigin(origin),
+  );
   app.on('web-contents-created', (_e, contents) => {
     contents.setWindowOpenHandler(({ url }) => {
       if (url.startsWith('https://')) void shell.openExternal(url);

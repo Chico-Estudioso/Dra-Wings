@@ -77,6 +77,11 @@ export interface DwApi {
   discardRecovery(projectId: string): Promise<void>;
   /** Importa una imagen o un audio con el diálogo nativo y lo copia a la caché de medios. */
   importMedia(kind: 'image' | 'audio'): Promise<MediaImportResult>;
+  /**
+   * Guarda un medio que ya tiene el renderer (una grabación o un archivo soltado en la ventana).
+   * El proceso principal decide el tipo por el contenido; `name` solo es informativo.
+   */
+  importMediaBytes(kind: 'image' | 'audio', name: string, bytes: Uint8Array): Promise<MediaImportResult>;
   /** Pide el destino del vídeo con el diálogo nativo y abre un temporal. Devuelve un id opaco. */
   exportBegin(): Promise<ExportBeginResult>;
   /** Escribe un trozo del vídeo en la posición dada del temporal. */

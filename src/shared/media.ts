@@ -14,10 +14,11 @@ export const MEDIA_EXT_BY_MIME: Readonly<Record<string, string>> = {
   'audio/ogg': 'ogg',
   'audio/mp4': 'm4a',
   'audio/flac': 'flac',
+  'audio/aac': 'aac',
 };
 
 /** Nombre de un medio dentro del proyecto y de la caché: `<sha256>.<ext>`. */
-export const MEDIA_NAME = /^([0-9a-f]{64})\.(png|jpg|webp|gif|mp3|wav|ogg|m4a|flac)$/;
+export const MEDIA_NAME = /^([0-9a-f]{64})\.(png|jpg|webp|gif|mp3|wav|ogg|m4a|flac|aac)$/;
 
 export function mediaFileName(hash: string, mime: string): string | null {
   const ext = MEDIA_EXT_BY_MIME[mime];

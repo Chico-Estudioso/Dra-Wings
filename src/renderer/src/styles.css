@@ -1604,3 +1604,69 @@ kbd {
 .steps strong {
   color: var(--text);
 }
+
+/* Grabar narración */
+.menu-label {
+  padding: 6px 10px 2px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.menu-rec {
+  color: #d9364f;
+}
+.mic-meter {
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-2);
+}
+.mic-meter > span {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: #3f8f4f;
+  transition: width 60ms linear;
+}
+.check-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+}
+.record-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  margin: 0;
+  font-size: 15px;
+}
+.record-countdown {
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.record-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #d9364f;
+  animation: record-blink 1s steps(2, start) infinite;
+}
+@keyframes record-blink {
+  to {
+    visibility: hidden;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .record-dot {
+    animation: none;
+  }
+}
+.record-preview {
+  width: 100%;
+}

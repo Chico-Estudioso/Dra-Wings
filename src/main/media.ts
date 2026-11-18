@@ -9,20 +9,62 @@ export { MEDIA_NAME };
 
 export type MediaKind = 'image' | 'audio';
 
-export const MEDIA_TYPES: Record<string, { mime: string; kind: MediaKind; ext: string }> = {
-  png: { mime: 'image/png', kind: 'image', ext: 'png' },
-  jpg: { mime: 'image/jpeg', kind: 'image', ext: 'jpg' },
-  jpeg: { mime: 'image/jpeg', kind: 'image', ext: 'jpg' },
-  webp: { mime: 'image/webp', kind: 'image', ext: 'webp' },
-  gif: { mime: 'image/gif', kind: 'image', ext: 'gif' },
-  mp3: { mime: 'audio/mpeg', kind: 'audio', ext: 'mp3' },
-  wav: { mime: 'audio/wav', kind: 'audio', ext: 'wav' },
-  ogg: { mime: 'audio/ogg', kind: 'audio', ext: 'ogg' },
-  opus: { mime: 'audio/ogg', kind: 'audio', ext: 'ogg' },
-  m4a: { mime: 'audio/mp4', kind: 'audio', ext: 'm4a' },
-  aac: { mime: 'audio/mp4', kind: 'audio', ext: 'm4a' },
-  flac: { mime: 'audio/flac', kind: 'audio', ext: 'flac' },
+type MediaType = { mime: string; kind: MediaKind; ext: string };
+
+const PNG: MediaType = { mime: 'image/png', kind: 'image', ext: 'png' };
+const JPG: MediaType = { mime: 'image/jpeg', kind: 'image', ext: 'jpg' };
+const WEBP: MediaType = { mime: 'image/webp', kind: 'image', ext: 'webp' };
+const GIF: MediaType = { mime: 'image/gif', kind: 'image', ext: 'gif' };
+const MP3: MediaType = { mime: 'audio/mpeg', kind: 'audio', ext: 'mp3' };
+const WAV: MediaType = { mime: 'audio/wav', kind: 'audio', ext: 'wav' };
+const OGG: MediaType = { mime: 'audio/ogg', kind: 'audio', ext: 'ogg' };
+const M4A: MediaType = { mime: 'audio/mp4', kind: 'audio', ext: 'm4a' };
+const FLAC: MediaType = { mime: 'audio/flac', kind: 'audio', ext: 'flac' };
+const AAC: MediaType = { mime: 'audio/aac', kind: 'audio', ext: 'aac' };
+
+/** Extensiones admitidas en los diálogos de importación. */
+export const MEDIA_TYPES: Record<string, MediaType> = {
+  png: PNG,
+  jpg: JPG,
+  jpeg: JPG,
+  webp: WEBP,
+  gif: GIF,
+  mp3: MP3,
+  wav: WAV,
+  ogg: OGG,
+  opus: OGG,
+  m4a: M4A,
+  aac: AAC,
+  flac: FLAC,
 };
+
+/**
+ * Tipo real de un medio por su firma (no por su extensión ni por lo que diga el renderer).
+ * Devuelve null si no es ninguno de los formatos admitidos.
+ */
+export function sniffMedia(b: Uint8Array): MediaType | null {
+  if (b.length < 12) return null;
+  const ascii = (at: number, n: number) => String.fromCharCode(...b.subarray(at, at + n));
+  if (b[0] === 0x89 && ascii(1, 3) === 'PNG') return PNG;
+  if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return JPG;
+  if (ascii(0, 4) === 'GIF8') return GIF;
+  if (ascii(0, 4) === 'RIFF' && ascii(8, 4) === 'WEBP') return WEBP;
+  if (ascii(0, 4) === 'RIFF' && ascii(8, 4) === 'WAVE') return WAV;
+  if (ascii(0, 4) === 'OggS') return OGG;
+  if (ascii(0, 4) === 'fLaC') return FLAC;
+  if (ascii(4, 4) === 'ftyp') return M4A;
+  if (ascii(0, 3) === 'ID3') return MP3;
+  // Sincronía de trama MPEG: capa III → MP3; capa «00» → AAC en ADTS.
+  if (b[0] === 0xff && (b[1]! & 0xe0) === 0xe0) return ((b[1]! >> 1) & 3) === 0 ? AAC : MP3;
+  return null;
+}
+
+const unsupported = (kind: MediaKind) =>
+  new MediaError(
+    kind === 'image'
+      ? 'Formato de imagen no admitido. Usa PNG, JPG, WEBP o GIF.'
+      : 'Formato de audio no admitido. Usa MP3, WAV, OGG, M4A, AAC o FLAC.',
+  );
 
 export const MAX_BYTES: Record<MediaKind, number> = { image: 50 * 1024 ** 2, audio: 500 * 1024 ** 2 };
 
@@ -61,23 +103,27 @@ export class MediaStore {
     );
   }
 
-  /** Copia un archivo del usuario a la caché. Valida extensión, tipo esperado y tamaño. */
+  /** Copia un archivo del usuario (elegido con el diálogo) a la caché. */
   async import(filePath: string, expected: MediaKind): Promise<ImportedMedia> {
-    const ext = path.extname(filePath).slice(1).toLowerCase();
-    const type = MEDIA_TYPES[ext];
-    if (!type || type.kind !== expected)
-      throw new MediaError(
-        expected === 'image'
-          ? 'Formato de imagen no admitido. Usa PNG, JPG, WEBP o GIF.'
-          : 'Formato de audio no admitido. Usa MP3, WAV, OGG, M4A o FLAC.',
-      );
-    const size = (await stat(filePath)).size;
-    if (size > MAX_BYTES[expected]) throw new MediaError('El archivo es demasiado grande.');
-    const bytes = await readFile(filePath);
+    const type = MEDIA_TYPES[path.extname(filePath).slice(1).toLowerCase()];
+    if (!type || type.kind !== expected) throw unsupported(expected);
+    if ((await stat(filePath)).size > MAX_BYTES[expected]) throw new MediaError('El archivo es demasiado grande.');
+    return this.importBytes(await readFile(filePath), expected, path.basename(filePath));
+  }
+
+  /**
+   * Guarda un medio recibido como bytes (grabación, archivo soltado en la ventana). El tipo se decide
+   * por el contenido; el nombre solo es informativo.
+   */
+  async importBytes(bytes: Uint8Array, expected: MediaKind, name: string): Promise<ImportedMedia> {
+    if (bytes.byteLength > MAX_BYTES[expected]) throw new MediaError('El archivo es demasiado grande.');
+    const type = sniffMedia(bytes);
+    if (!type || type.kind !== expected) throw unsupported(expected);
     const hash = sha256(bytes);
-    const name = `${hash}.${type.ext}`;
-    await this.write(name, bytes);
-    return { hash, mime: type.mime, name: path.basename(filePath).slice(0, 260), size, kind: expected };
+    await this.write(`${hash}.${type.ext}`, bytes);
+    // eslint-disable-next-line no-control-regex -- sin caracteres de control en el nombre mostrado
+    const clean = name.replace(/[\u0000-\u001f]/g, '').slice(0, 260) || 'Medio';
+    return { hash, mime: type.mime, name: clean, size: bytes.byteLength, kind: expected };
   }
 
   async read(name: string): Promise<Uint8Array> {
