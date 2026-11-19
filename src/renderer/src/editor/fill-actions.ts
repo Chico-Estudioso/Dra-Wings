@@ -46,6 +46,7 @@ export function fillAt(p: Point): void {
   const ed = useEditor.getState();
   if (!project || !scene) return;
   const { width, height } = project.settings;
+  // Fondo liso aunque sea un degradado: el fondo nunca hace de borde y así no corta el relleno.
   const background = sceneBackground(project.settings, scene);
   if (p.x < 0 || p.y < 0 || p.x >= width || p.y >= height) return notify('Haz clic dentro de la hoja para rellenar.');
   const color = ed.options.bucket;

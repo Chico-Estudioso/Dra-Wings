@@ -16,9 +16,31 @@ import { sceneVoice } from '../audio/voice';
 import { barPulse, beatsOrPulse } from '../edit/beat-sync';
 import { transitionAt } from './transition';
 
-/** Color de fondo de una escena: el suyo o, si no tiene, el del proyecto. */
+/** Color de fondo de una escena: el suyo o, si no tiene, el del proyecto (arriba, si es degradado). */
 export function sceneBackground(settings: Pick<Project['settings'], 'background'>, scene: Pick<Scene, 'background'>) {
   return scene.background ?? settings.background;
+}
+
+/** Color de abajo del degradado del fondo de una escena, o null si es liso. */
+export function sceneGradient(settings: Pick<Project['settings'], 'gradient'>, scene: Pick<Scene, 'gradient'>) {
+  return scene.gradient === undefined ? (settings.gradient ?? null) : scene.gradient;
+}
+
+/** Pinta el fondo de la escena en la hoja (0,0)-(w,h): liso o en degradado vertical. */
+export function fillSceneBackground(
+  ctx: Ctx2D,
+  settings: Pick<Project['settings'], 'background' | 'gradient' | 'width' | 'height'>,
+  scene: Pick<Scene, 'background' | 'gradient'>,
+): void {
+  const top = sceneBackground(settings, scene);
+  const bottom = sceneGradient(settings, scene);
+  if (bottom) {
+    const g = ctx.createLinearGradient(0, 0, 0, settings.height);
+    g.addColorStop(0, top);
+    g.addColorStop(1, bottom);
+    ctx.fillStyle = g;
+  } else ctx.fillStyle = top;
+  ctx.fillRect(0, 0, settings.width, settings.height);
 }
 
 /**
@@ -40,8 +62,7 @@ export function drawSceneFrame(
   ctx.beginPath();
   ctx.rect(0, 0, settings.width, settings.height);
   ctx.clip();
-  ctx.fillStyle = sceneBackground(settings, scene);
-  ctx.fillRect(0, 0, settings.width, settings.height);
+  fillSceneBackground(ctx, settings, scene);
   if (scene.beatPulse) {
     // Cámara que late: zoom breve hacia el centro al empezar cada compás.
     const z = barPulse(beatsOrPulse(beats ?? [], scene.duration), local);

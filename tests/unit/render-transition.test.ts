@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { transitionAt } from '@core/render/transition';
-import { drawSceneInProject } from '@core/render/frame';
+import { drawSceneInProject, sceneGradient } from '@core/render/frame';
 import { PathCache, type Ctx2D } from '@core/render/draw';
 import { addScene } from '@core/edit/scenes';
 import { createProject } from '@core/model/factory';
@@ -102,5 +102,53 @@ describe('color de fondo por escena', () => {
     drawSceneInProject(ctx, p, b, S / 4, new PathCache());
     // Fondo de la escena anterior (blanco) y, encima, el velo del color de la que entra.
     expect(fills.map((f) => f.style)).toEqual(['#ffffff', '#2b2d42']);
+  });
+});
+
+describe('fondo degradado', () => {
+  it('de arriba (el fondo) a abajo (el degradado), a todo el alto de la hoja', () => {
+    const p = twoScenes();
+    p.settings.paper = 'plain';
+    const scene = p.scenes[0]!;
+    scene.background = '#fff3b0';
+    scene.gradient = '#fde2e4';
+    expect(validateProject(p).ok).toBe(true);
+    const stops: [number, string][] = [];
+    let line: number[] = [];
+    const grad = { addColorStop: (o: number, c: string) => stops.push([o, c]) };
+    const fills: unknown[] = [];
+    const state: Record<string, unknown> = { globalAlpha: 1, fillStyle: '' };
+    const ctx = new Proxy(state, {
+      get(target, prop) {
+        if (prop in target) return target[prop as string];
+        if (prop === 'createLinearGradient')
+          return (...a: number[]) => {
+            line = a;
+            return grad;
+          };
+        if (prop === 'fillRect') return () => fills.push(state.fillStyle);
+        return () => undefined;
+      },
+      set(target, prop, value) {
+        target[prop as string] = value;
+        return true;
+      },
+    }) as unknown as Ctx2D;
+    drawSceneInProject(ctx, p, scene, 0, new PathCache());
+    expect(line).toEqual([0, 0, 0, p.settings.height]);
+    expect(stops).toEqual([
+      [0, '#fff3b0'],
+      [1, '#fde2e4'],
+    ]);
+    expect(fills[0]).toBe(grad);
+  });
+});
+
+describe('degradado del proyecto y de cada escena', () => {
+  it('la escena usa el del proyecto, el suyo o ninguno (null)', () => {
+    expect(sceneGradient({}, {})).toBeNull();
+    expect(sceneGradient({ gradient: '#2b2d42' }, {})).toBe('#2b2d42');
+    expect(sceneGradient({ gradient: '#2b2d42' }, { gradient: '#fde2e4' })).toBe('#fde2e4');
+    expect(sceneGradient({ gradient: '#2b2d42' }, { gradient: null })).toBeNull();
   });
 });

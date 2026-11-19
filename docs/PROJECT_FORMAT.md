@@ -18,7 +18,7 @@ Los picos de la forma de onda no se guardan: se recalculan al abrir.
 ```ts
 Project {
   id: string; name: string; createdAt: string; updatedAt: string   // ISO 8601
-  settings: { width: number; height: number; fps: Fps; background: Color; mode: 'guided' | 'mixed' | 'free'
+  settings: { width: number; height: number; fps: Fps; background: Color; gradient?: Color; mode: 'guided' | 'mixed' | 'free'
               boil?: 'off' | 'soft' | 'medium' | 'strong'      // «trazo vivo»; sin valor = 'off' (archivos anteriores)
               elastic?: 'off' | 'soft' | 'medium' | 'strong'   // elasticidad; sin valor = 'off'
               hand?: 'none' | 'marker' | 'pencil'             // mano que dibuja; sin valor = 'none'
@@ -33,6 +33,7 @@ Project {
 Scene { id; name; duration: Ticks; layers: Layer[]; camera: AnimatedTransform    // cámara: x, y = esquina del encuadre; scaleX = zoom
         beatPulse?: boolean                // cámara que late al empezar cada compás
         background?: Color                 // fondo de esta escena (sin valor: settings.background)
+        gradient?: Color | null            // color de abajo del degradado; null: liso aunque el proyecto lo tenga
         follow?: { id: string; zoom: number }  // la cámara sigue a este elemento (zoom 1–4)
         transition?: { kind: 'cut' | 'fade' | 'dip' | 'slide' | 'zoom' | 'wipe' | 'iris'; duration: Ticks } }  // entrada desde la escena anterior
 

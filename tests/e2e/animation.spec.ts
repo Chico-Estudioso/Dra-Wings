@@ -613,3 +613,45 @@ test('pegar la animación en varios en ola, de izquierda a derecha', async () =>
   await stubMessageBox(app, 1);
   await app.close();
 });
+
+test('fondo degradado: de arriba a abajo, y para todas las escenas', async () => {
+  const file = path.join(await tempDir(), 'degradado.dwings');
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Degradado');
+  const lum = (where: 'top' | 'bottom') =>
+    page.evaluate((w) => {
+      const cv = document.querySelector<HTMLCanvasElement>('[data-testid="scene-canvas"]')!;
+      const host = document.querySelector('[data-testid="canvas-host"]')!.getBoundingClientRect();
+      const b = cv.getBoundingClientRect();
+      const k = cv.width / b.width;
+      // Centro horizontal; cerca del borde superior o inferior de la hoja (centrada en el lienzo).
+      const x = (host.left + host.width / 2 - b.left) * k;
+      const y = (host.top + host.height / 2 - b.top + (w === 'top' ? -60 : 60)) * k;
+      const d = cv.getContext('2d')!.getImageData(Math.round(x), Math.round(y), 1, 1).data;
+      return d[0]! + d[1]! + d[2]!;
+    }, where);
+
+  await page.getByRole('button', { name: 'Fondo de la escena' }).click();
+  await page.getByRole('checkbox', { name: 'Degradado' }).check();
+  await page.getByRole('group', { name: 'Abajo' }).getByRole('button', { name: 'Color #2b2d42' }).click();
+  await page.getByRole('button', { name: 'Usar en todas las escenas' }).click();
+  await page.keyboard.press('Escape');
+  // Más claro arriba que abajo.
+  await expect.poll(async () => (await lum('top')) - (await lum('bottom'))).toBeGreaterThan(60);
+
+  // Las escenas nuevas también lo tienen (es el fondo del proyecto)…
+  await page.getByRole('button', { name: 'Nueva escena' }).click();
+  await expect.poll(async () => (await lum('top')) - (await lum('bottom'))).toBeGreaterThan(60);
+  // …y una escena puede quitárselo.
+  await page.getByRole('button', { name: 'Fondo de la escena' }).click();
+  await page.getByRole('checkbox', { name: 'Degradado' }).uncheck();
+  await page.keyboard.press('Escape');
+  await expect.poll(async () => Math.abs((await lum('top')) - (await lum('bottom')))).toBeLessThan(5);
+
+  const p = await saveAndRead(app, page, file);
+  expect(p.settings.gradient).toBe('#2b2d42');
+  expect(p.scenes[0]!.gradient).toBeUndefined();
+  expect(p.scenes[1]!.gradient).toBeNull();
+  await stubMessageBox(app, 1);
+  await app.close();
+});

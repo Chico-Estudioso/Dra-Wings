@@ -251,6 +251,8 @@ export const sceneSchema = z.object({
   beatPulse: z.boolean().optional(),
   /** Color de fondo de esta escena (sin valor: el del proyecto). */
   background: color.optional(),
+  /** Degradado vertical del fondo: el color de abajo (arriba, el fondo). null: liso aunque el proyecto lo tenga. */
+  gradient: color.nullable().optional(),
   /** Cómo entra esta escena desde la anterior (sin valor: corte). */
   transition: z
     .object({
@@ -317,6 +319,8 @@ export const projectSchema = z.object({
     height: z.number().int().min(16).max(7680),
     fps: fpsSchema,
     background: color,
+    /** Degradado vertical del fondo de todas las escenas: el color de abajo (sin valor: liso). */
+    gradient: color.optional(),
     mode: modeSchema,
     /** «Trazo vivo»: temblor de las líneas al reproducir y en el vídeo (sin valor: quieto). */
     boil: z.enum(['off', 'soft', 'medium', 'strong']).optional(),

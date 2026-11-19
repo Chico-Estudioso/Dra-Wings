@@ -10,7 +10,7 @@ import { cameraMatrix, cameraRect, evaluateScene, hasCamera } from '@core/render
 import { motionPath } from '@core/anim/motion-path';
 import type { MotionSample } from '@core/anim/record';
 import { ticksPerFrame, type Ticks } from '@core/time/ticks';
-import { drawSceneInProject, sceneBackground } from '@core/render/frame';
+import { drawSceneInProject, fillSceneBackground, sceneBackground } from '@core/render/frame';
 import { brushFill } from '@core/render/brush';
 import { drawPaper } from '@core/render/paper';
 import { strokeOutline } from '@core/render/stroke-outline';
@@ -243,8 +243,7 @@ export function CanvasView({ project }: { project: Project }) {
     ctx.beginPath();
     ctx.rect(0, 0, docW, docH);
     ctx.clip();
-    ctx.fillStyle = background;
-    ctx.fillRect(0, 0, docW, docH);
+    fillSceneBackground(ctx, project.settings, scene);
     drawPaper(ctx, project.settings.paper, docW, docH);
     // Papel cebolla: fotogramas anterior y siguiente de la capa de fotogramas activa.
     const active = scene.layers.find((l) => l.id === activeLayerId);
