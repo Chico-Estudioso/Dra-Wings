@@ -19,3 +19,19 @@ test('en una ventana pequeña el lienzo no invade la línea de tiempo', async ()
   await stubMessageBox(app, 1);
   await app.close();
 });
+
+test('a 1024 px las opciones de cada herramienta caben sin desplazarse', async () => {
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Opciones');
+  const overflow = () =>
+    page.evaluate(() => {
+      const el = document.querySelector('.tool-options')!;
+      return el.scrollWidth - el.clientWidth;
+    });
+  for (const key of ['b', 'e', 'g', 'r', 'l', 't']) {
+    await page.keyboard.press(key);
+    await expect.poll(overflow, { message: `herramienta ${key}` }).toBeLessThanOrEqual(0);
+  }
+  await stubMessageBox(app, 1);
+  await app.close();
+});

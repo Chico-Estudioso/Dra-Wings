@@ -240,7 +240,10 @@ test('bote de pintura: rellena un dibujo cerrado debajo de su línea y cierra hu
   expect(await pixel(page, { x: c.x, y: c.y - 120 })).not.toEqual([0xe0, 0xa5, 0x26]);
 
   // Sobre un relleno, cambia su color.
+  // A 1024 px la paleta de la barra se abre desde el botón del color actual.
+  await page.getByRole('button', { name: 'Color: #e0a526' }).click();
   await page.getByRole('group', { name: 'Color' }).getByRole('button', { name: 'Color #2f6fd6' }).click();
+  await page.keyboard.press('Escape');
   await page.mouse.click(left.x, left.y);
   await expect.poll(() => pixel(page, left)).toEqual([0x2f, 0x6f, 0xd6]);
 
@@ -310,6 +313,25 @@ test('pinceles: el trazo guarda su pincel y se puede cambiar después', async ()
   const [s] = p.scenes[0]!.layers[0]!.items!;
   if (s?.type !== 'stroke') throw new Error('se esperaba un trazo');
   expect(s.style.brush).toBe('chalk');
+  await stubMessageBox(app, 1);
+  await app.close();
+});
+
+test('colores recientes: un color personalizado aparece en todas las paletas', async () => {
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Recientes');
+  await page.getByRole('button', { name: 'Color: #1d1d1f' }).click();
+  await page.getByLabel('Color: otro color').fill('#ff00aa');
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: 'Color: #ff00aa' })).toBeVisible();
+  // Se recuerda al dejar de moverlo; también en la paleta de otra herramienta.
+  await page.waitForTimeout(900);
+  await page.keyboard.press('g');
+  await page.getByRole('button', { name: 'Color: #e0a526' }).click();
+  await expect(page.getByRole('button', { name: 'Color reciente #ff00aa' })).toBeVisible();
+  await page.getByRole('button', { name: 'Color reciente #ff00aa' }).click();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: 'Color: #ff00aa' })).toBeVisible();
   await stubMessageBox(app, 1);
   await app.close();
 });

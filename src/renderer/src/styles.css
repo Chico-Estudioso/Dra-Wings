@@ -721,6 +721,9 @@ select {
   background: var(--surface);
   color: var(--text-muted);
 }
+.swatch-recent {
+  border-style: dashed;
+}
 .swatch-custom {
   background: conic-gradient(#c23b4e, #e0a526, #3f8f4f, #2f6fd6, #7b4bb7, #c23b4e);
   overflow: hidden;
@@ -1948,4 +1951,37 @@ kbd {
   flex-wrap: wrap;
   gap: 4px;
   margin-top: 6px;
+}
+
+/* Color en la barra de opciones (estrecha: botón con el color actual que abre la paleta). */
+.tool-options .color-picker {
+  flex-wrap: nowrap;
+}
+.color-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  border-radius: var(--radius);
+  flex: none;
+}
+.color-button:hover {
+  background: var(--surface-2, rgb(0 0 0 / 0.05));
+}
+.color-popover .color-picker {
+  max-width: 280px;
+}
+@media (max-width: 1439px) {
+  /* Barra de opciones compacta: todo cabe en el ancho del lienzo a 1024 px. */
+  .tool-options {
+    gap: 8px 12px;
+    scrollbar-width: thin;
+  }
+  .tool-options .value-slider {
+    min-width: 130px;
+    grid-template-columns: auto minmax(50px, 1fr) 2.8em;
+  }
 }

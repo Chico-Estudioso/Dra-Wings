@@ -1,6 +1,6 @@
 import { BRUSH_LABELS, type BrushKind } from '@core/render/brush';
 import type { FontId } from '@core/model/types';
-import { ColorPicker, ValueSlider } from './controls';
+import { ToolColor, ValueSlider } from './controls';
 import { useEditor } from './editor-store';
 import { resetCamera, setFollow } from './actions';
 import { useApp } from '../state/app-store';
@@ -92,13 +92,13 @@ export function ToolOptions() {
         <ValueSlider label="Tamaño" value={o.eraserSize} min={4} max={200} onChange={(v) => set({ eraserSize: v })} />
       ) : tool === 'fill' ? (
         <>
-          <ColorPicker label="Color" value={o.bucket} onChange={(c) => c && set({ bucket: c })} />
+          <ToolColor label="Color" value={o.bucket} onChange={(c) => c && set({ bucket: c })} />
           <span className="tool-hint" title={FILL_HINT}>
             {FILL_HINT}
           </span>
         </>
       ) : (
-        <ColorPicker label="Color" value={o.color} onChange={(c) => c && set({ color: c })} />
+        <ToolColor label="Color" value={o.color} onChange={(c) => c && set({ color: c })} />
       )}
       {tool === 'pencil' && (
         <>
@@ -140,7 +140,7 @@ export function ToolOptions() {
             onChange={(v) => set({ strokeWidth: v })}
           />
           {(tool === 'rect' || tool === 'ellipse') && (
-            <ColorPicker label="Relleno" value={o.fill} allowNone onChange={(c) => set({ fill: c })} />
+            <ToolColor label="Relleno" value={o.fill} allowNone onChange={(c) => set({ fill: c })} />
           )}
         </>
       )}
