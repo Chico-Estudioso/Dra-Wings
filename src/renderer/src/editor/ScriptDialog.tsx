@@ -15,9 +15,10 @@ export function ScriptDialog({ open, onOpenChange }: { open: boolean; onOpenChan
   const [text, setText] = useState('');
   const [split, setSplit] = useState<ScriptSplit>('paragraph');
   const [reveal, setReveal] = useState<TextReveal>('words');
+  const [outlined, setOutlined] = useState(false);
   const blocks = splitScript(text, split);
   const create = async () => {
-    await createScenesFromScript(blocks, reveal);
+    await createScenesFromScript(blocks, reveal, { outlined });
     setText('');
     onOpenChange(false);
   };
@@ -76,6 +77,10 @@ export function ScriptDialog({ open, onOpenChange }: { open: boolean; onOpenChan
                   </option>
                 ))}
               </select>
+            </label>
+            <label className="check-field">
+              <input type="checkbox" checked={outlined} onChange={(e) => setOutlined(e.target.checked)} />
+              Letras con contorno blanco y sombra (se leen sobre cualquier fondo)
             </label>
           </div>
           <div className="dialog-actions">

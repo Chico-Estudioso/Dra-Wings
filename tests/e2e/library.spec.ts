@@ -243,3 +243,30 @@ test('guion rápido: una escena por párrafo con el texto escribiéndose', async
   await stubMessageBox(app, 1);
   await app.close();
 });
+
+test('letras con contorno y sombra: desde el guion y en las propiedades del texto', async () => {
+  const file = path.join(await tempDir(), 'letras.dwings');
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Letras', 'Guiado');
+  await page.getByRole('tab', { name: 'Escenas' }).click();
+  await page.getByRole('button', { name: 'Crear escenas desde un guion…' }).click();
+  await page.getByRole('textbox', { name: 'Guion', exact: true }).fill('Bailando bajo la lluvia');
+  await page.getByRole('checkbox', { name: /contorno blanco y sombra/ }).check();
+  await page.getByRole('button', { name: 'Crear escenas' }).click();
+  await expect.poll(() => itemCount(page)).toBe(1);
+
+  // En las propiedades: contorno negro grueso y sin sombra.
+  await page.keyboard.press('v');
+  await page.keyboard.press('Control+a');
+  await page.getByRole('group', { name: 'Contorno' }).getByRole('button', { name: 'Color #1d1d1f' }).click();
+  await page.getByLabel('Grosor del contorno').selectOption({ label: 'Grueso' });
+  await page.getByRole('checkbox', { name: 'Sombra' }).uncheck();
+
+  const p = await saveAndRead(app, page, file);
+  const [t] = p.scenes[0]!.layers.flatMap((l) => l.items ?? []);
+  if (t?.type !== 'text') throw new Error('se esperaba un texto');
+  expect(t.outline).toEqual({ color: '#1d1d1f', width: 0.14 });
+  expect(t.shadow).toBeUndefined();
+  await stubMessageBox(app, 1);
+  await app.close();
+});

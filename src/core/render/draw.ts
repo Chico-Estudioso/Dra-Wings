@@ -140,6 +140,42 @@ function drawShape(ctx: Ctx2D, s: Shape, progress = 1, fillProgress = 1) {
   ctx.setLineDash([]);
 }
 
+/** Color de la sombra de los textos. */
+export const TEXT_SHADOW = 'rgba(0,0,0,0.35)';
+/** Desplazamiento de la sombra, en fracción del tamaño de letra. */
+export const TEXT_SHADOW_OFFSET = 0.07;
+
+/**
+ * Pinta un trozo de texto con su sombra (desplazada, en las unidades del texto: sale igual a
+ * cualquier zoom y en el vídeo) y su contorno por fuera de las letras.
+ */
+function paintText(ctx: Ctx2D, t: TextItem, s: string, x: number, y: number) {
+  const outline = t.outline;
+  const lineWidth = outline ? outline.width * t.size * 2 : 0;
+  if (t.shadow) {
+    const d = t.size * TEXT_SHADOW_OFFSET;
+    ctx.save();
+    ctx.fillStyle = TEXT_SHADOW;
+    if (outline) {
+      ctx.strokeStyle = TEXT_SHADOW;
+      ctx.lineWidth = lineWidth;
+      ctx.lineJoin = 'round';
+      ctx.strokeText(s, x + d, y + d);
+    }
+    ctx.fillText(s, x + d, y + d);
+    ctx.restore();
+  }
+  if (outline) {
+    ctx.save();
+    ctx.strokeStyle = outline.color;
+    ctx.lineWidth = lineWidth;
+    ctx.lineJoin = 'round';
+    ctx.strokeText(s, x, y);
+    ctx.restore();
+  }
+  ctx.fillText(s, x, y);
+}
+
 /** Escritura por piezas (palabras o letras), cada una en su sitio final y con su propia entrada. */
 function drawTokens(ctx: Ctx2D, t: TextItem, progress: number, reveal: TextReveal) {
   ctx.textAlign = 'left';
@@ -155,7 +191,7 @@ function drawTokens(ctx: Ctx2D, t: TextItem, progress: number, reveal: TextRevea
     const x = x0 + tok.x;
     const y = tok.line * t.size * t.lineHeight;
     if (u >= 1) {
-      ctx.fillText(tok.text, x, y);
+      paintText(ctx, t, tok.text, x, y);
       continue;
     }
     // Entra creciendo desde su base con un pequeño rebote.
@@ -166,7 +202,7 @@ function drawTokens(ctx: Ctx2D, t: TextItem, progress: number, reveal: TextRevea
     ctx.globalAlpha = alpha * Math.min(1, u * 2);
     ctx.translate(cx, base);
     ctx.scale(k, k);
-    ctx.fillText(tok.text, x - cx, y - base);
+    paintText(ctx, t, tok.text, x - cx, y - base);
     ctx.restore();
   }
 }
@@ -189,7 +225,7 @@ export function drawText(ctx: Ctx2D, t: TextItem, progress = 1) {
     const chars = [...line];
     const visible = chars.length <= remaining ? line : chars.slice(0, remaining).join('');
     remaining -= chars.length;
-    ctx.fillText(visible, x, i * t.size * t.lineHeight);
+    paintText(ctx, t, visible, x, i * t.size * t.lineHeight);
   });
 }
 

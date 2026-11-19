@@ -6,6 +6,7 @@ Los cambios relevantes se registran aquí. Se seguirá una estructura inspirada 
 - Preparación inicial del proyecto y del kit de desarrollo.
 - «Ver un ejemplo» en el inicio: proyecto de tres escenas hecho con la biblioteca, con textos, una salida con fundido y un zoom de cámara, para aprender viéndolo.
 - Arrastrar imágenes (al lienzo) y audio (a la línea de tiempo) desde el explorador; el audio pregunta su pista si no se suelta sobre una.
+- Textos con contorno y sombra (también al escribirse palabra a palabra), y opción en el guion rápido para que las letras se lean sobre cualquier fondo.
 - Pegar animación en ola: con varios elementos, cada uno empieza un poco después que el anterior (de izquierda a derecha) o en el golpe siguiente de la música.
 - Pinceles con textura: rotulador, lápiz (grafito con grano) y tiza (con huecos), también para cambiar trazos ya dibujados. Los rellenos de polígono se pueden recolorear desde sus propiedades.
 - Repetir la escena al reproducir (bucle con su audio) para pulirla al ritmo.

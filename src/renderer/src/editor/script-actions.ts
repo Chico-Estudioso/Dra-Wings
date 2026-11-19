@@ -15,7 +15,11 @@ import { fontsReady } from './fonts';
 const LINE_HEIGHT = 1.25;
 const INK = '#1d1d1f';
 
-export async function createScenesFromScript(blocks: string[], reveal: TextReveal): Promise<void> {
+export async function createScenesFromScript(
+  blocks: string[],
+  reveal: TextReveal,
+  { outlined = false }: { outlined?: boolean } = {},
+): Promise<void> {
   const app = useApp.getState();
   const project = app.doc?.project;
   const currentId = useEditor.getState().sceneId;
@@ -62,6 +66,11 @@ export async function createScenesFromScript(blocks: string[], reveal: TextRevea
       t.in = Math.round(0.3 * TICKS_PER_SECOND);
       t.enter = { kind: 'draw', duration: writingDuration(d.text) };
       if (reveal !== 'letters') t.reveal = reveal;
+      if (outlined) {
+        // Letras que se leen sobre cualquier fondo o dibujo.
+        t.outline = { color: '#ffffff', width: 0.08 };
+        t.shadow = true;
+      }
       const layer = scene.layers.find((l) => l.kind === 'vector') ?? scene.layers[0]!;
       (layer.items ??= []).push(t);
       const end = t.in + scriptSceneDuration(d.text, reveal === 'beat-words', beat);

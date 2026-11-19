@@ -254,6 +254,7 @@ export function PropertiesPanel({
             </select>
           </label>
         )}
+        {allTexts && first.type === 'text' && <TextStyleControls text={first} />}
         <ValueSlider
           label="Opacidad"
           value={opacity.value}
@@ -318,5 +319,68 @@ export function PropertiesPanel({
         <AnimationSection items={items} fps={fps} />
       </div>
     </section>
+  );
+}
+
+const OUTLINE_WIDTHS = [
+  { label: 'Fino', width: 0.05 },
+  { label: 'Medio', width: 0.08 },
+  { label: 'Grueso', width: 0.14 },
+];
+
+/** Contorno y sombra de los textos seleccionados (para que se lean sobre cualquier fondo). */
+function TextStyleControls({ text }: { text: TextItem }) {
+  const width = text.outline?.width ?? 0.08;
+  return (
+    <>
+      <ColorPicker
+        label="Contorno"
+        value={text.outline?.color ?? null}
+        allowNone
+        onChange={(c) =>
+          updateSelected('Contorno del texto', (it) => {
+            if (it.type !== 'text') return;
+            if (c) it.outline = { color: c, width: it.outline?.width ?? width };
+            else delete it.outline;
+          })
+        }
+      />
+      {text.outline && (
+        <label className="inline-field">
+          <span className="control-label">Grosor del contorno</span>
+          <select
+            className="input input-sm"
+            aria-label="Grosor del contorno"
+            value={OUTLINE_WIDTHS.find((o) => o.width === width)?.label ?? 'Medio'}
+            onChange={(e) => {
+              const w = OUTLINE_WIDTHS.find((o) => o.label === e.target.value)!.width;
+              updateSelected('Grosor del contorno', (it) => {
+                if (it.type === 'text' && it.outline) it.outline.width = w;
+              });
+            }}
+          >
+            {OUTLINE_WIDTHS.map((o) => (
+              <option key={o.label} value={o.label}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      <label className="check-field">
+        <input
+          type="checkbox"
+          checked={!!text.shadow}
+          onChange={(e) =>
+            updateSelected('Sombra del texto', (it) => {
+              if (it.type !== 'text') return;
+              if (e.target.checked) it.shadow = true;
+              else delete it.shadow;
+            })
+          }
+        />
+        Sombra
+      </label>
+    </>
   );
 }

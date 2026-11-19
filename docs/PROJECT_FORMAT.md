@@ -74,6 +74,8 @@ Text extends ItemBase {
   type: 'text'; text: string; font: 'hand' | 'script' | 'rounded'; size: number; color: Color
   align: 'left' | 'center' | 'right'; lineHeight: number
   reveal?: 'letters' | 'words' | 'bounce' | 'beat-words'   // cómo se escribe al dibujarse (sin valor: letra a letra)
+  outline?: { color: Color; width: number }               // contorno por fuera; width = fracción del tamaño de letra (0,01–0,4)
+  shadow?: boolean                                        // sombra desplazada (negro al 35 %, 7 % del tamaño)
   w: number; h: number                  // caja medida al editar
 }
 
