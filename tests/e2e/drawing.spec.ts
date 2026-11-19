@@ -335,3 +335,33 @@ test('colores recientes: un color personalizado aparece en todas las paletas', a
   await stubMessageBox(app, 1);
   await app.close();
 });
+
+test('el eje del espejo se arrastra y las copias se reflejan en su nueva posición', async () => {
+  const file = path.join(await tempDir(), 'eje.dwings');
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Eje');
+  const c = await center(page);
+  await page.getByRole('button', { name: 'Ayudas' }).click();
+  await page.getByRole('radiogroup', { name: 'Espejo' }).getByText('Izquierda y derecha').click();
+  await page.keyboard.press('Escape');
+  // El tirador está en el centro de la hoja: se arrastra 100 px a la derecha (no dibuja).
+  await drag(page, c, { x: c.x + 100, y: c.y }, 6);
+  await expect.poll(() => itemCount(page)).toBe(0);
+  await drag(page, { x: c.x - 60, y: c.y - 80 }, { x: c.x + 20, y: c.y + 40 }, 10);
+  await expect.poll(() => itemCount(page)).toBe(2);
+
+  const p = await saveAndRead(app, page, file);
+  const [a, b] = p.scenes[0]!.layers[0]!.items!;
+  if (a?.type !== 'stroke' || b?.type !== 'stroke') throw new Error('se esperaban dos trazos');
+  // a + b = 2·eje en cada punto: el eje ya no es el centro de la hoja (está más a la derecha).
+  const axis = (a.points[0]! + b.points[0]!) / 2;
+  for (let i = 0; i < a.points.length; i += 4) expect((a.points[i]! + b.points[i]!) / 2).toBeCloseTo(axis, 6);
+  expect(axis).toBeGreaterThan(p.settings.width / 2 + 100);
+
+  // Volver el eje al centro desde Ayudas.
+  await page.getByRole('button', { name: 'Ayudas' }).click();
+  await page.getByRole('button', { name: 'Volver el eje al centro' }).click();
+  await expect(page.getByRole('button', { name: 'Volver el eje al centro' })).toHaveCount(0);
+  await stubMessageBox(app, 1);
+  await app.close();
+});

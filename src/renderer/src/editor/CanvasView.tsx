@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createShape, createStroke } from '@core/model/factory';
 import { eraseItems } from '@core/edit/erase';
 import { celAt, locateItem, selectableItems } from '@core/edit/ops';
@@ -74,6 +74,9 @@ interface PuppetGesture {
   unsub: () => void;
 }
 
+/** Radio del tirador del eje del espejo (píxeles de pantalla). */
+const AXIS_HANDLE_PX = 7;
+
 /** Punto del mundo que se ve en un punto de la hoja en la vista previa (a través de la cámara). */
 const throughCamera = (scene: Scene, t: Ticks, page: Point, size: { width: number; height: number }) =>
   apply(invert(cameraMatrix(scene, t, size)), page);
@@ -101,6 +104,7 @@ function drawnStroke(g: Extract<Gesture, { kind: 'draw' }>, options: ToolOptions
 
 type Gesture =
   | { kind: 'pan'; start: Point; panX: number; panY: number }
+  | { kind: 'axis' }
   | {
       kind: 'draw';
       points: number[];
@@ -178,10 +182,14 @@ export function CanvasView({ project }: { project: Project }) {
   const onion = useEditor((s) => s.onion);
   const activeLayerId = useEditor((s) => s.activeLayerId);
   const puppet = useEditor((s) => s.puppet);
+  const mirrorAxis = useEditor((s) => s.mirrorAxis);
+  const [axisHover, setAxisHover] = useState(false);
   const mediaVersion = useMediaVersion((s) => s.v);
   const [cameraOverride, setCameraOverride] = useState<{ x: number; y: number; zoom: number } | null>(null);
   const scene = project.scenes.find((s) => s.id === sceneId) ?? project.scenes[0]!;
   const { width: docW, height: docH, fps } = project.settings;
+  /** Por dónde pasan los ejes del espejo. */
+  const axis = useMemo(() => mirrorAxis ?? { x: docW / 2, y: docH / 2 }, [mirrorAxis, docW, docH]);
   const background = sceneBackground(project.settings, scene);
 
   const redraw = useCallback(() => setTick((t) => t + 1), []);
@@ -323,12 +331,21 @@ export function CanvasView({ project }: { project: Project }) {
       ctx.lineWidth = px;
       ctx.setLineDash([6 * px, 5 * px]);
       ctx.beginPath();
-      ctx.moveTo(docW / 2, 0);
-      ctx.lineTo(docW / 2, docH);
+      ctx.moveTo(axis.x, 0);
+      ctx.lineTo(axis.x, docH);
       if (mirror === 'xy') {
-        ctx.moveTo(0, docH / 2);
-        ctx.lineTo(docW, docH / 2);
+        ctx.moveTo(0, axis.y);
+        ctx.lineTo(docW, axis.y);
       }
+      ctx.stroke();
+      // Tirador para mover el eje.
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = SELECTION_COLOR;
+      ctx.lineWidth = 2 * px;
+      ctx.beginPath();
+      ctx.arc(axis.x, axis.y, AXIS_HANDLE_PX * px, 0, Math.PI * 2);
+      ctx.fill();
       ctx.stroke();
       ctx.restore();
     }
@@ -337,7 +354,7 @@ export function CanvasView({ project }: { project: Project }) {
       ctx.globalAlpha = options.opacity;
       ctx.fillStyle = brushFill(ctx, options.color, options.brush);
       ctx.fill(outlineToPath(strokeOutline(live)));
-      for (const points of mirrorPoints(live.points, mirror, { x: docW / 2, y: docH / 2 }))
+      for (const points of mirrorPoints(live.points, mirror, axis))
         ctx.fill(outlineToPath(strokeOutline({ ...live, points })));
       ctx.globalAlpha = 1;
       if (g.snapped) {
@@ -504,7 +521,16 @@ export function CanvasView({ project }: { project: Project }) {
     puppet,
     fps,
     project.settings,
+    axis,
   ]);
+
+  /** ¿Está el punto sobre el tirador del eje del espejo? */
+  const nearAxis = (p: Point) => {
+    const ed = useEditor.getState();
+    return (
+      ed.options.assist.mirror !== 'off' && Math.hypot(p.x - axis.x, p.y - axis.y) * ed.view.zoom <= AXIS_HANDLE_PX + 4
+    );
+  };
 
   const scenePoint = (e: { clientX: number; clientY: number }): Point => {
     const r = overlayRef.current!.getBoundingClientRect();
@@ -674,6 +700,11 @@ export function CanvasView({ project }: { project: Project }) {
         break;
       }
       case 'pencil': {
+        // El tirador del eje del espejo se arrastra en vez de dibujar.
+        if (nearAxis(p)) {
+          gesture.current = { kind: 'axis' };
+          return;
+        }
         if (!writableActiveLayer()) return;
         const pen = e.pointerType === 'pen';
         const brush = new LazyBrush(STABILIZER_PX[ed.options.assist.stabilizer] / ed.view.zoom);
@@ -810,9 +841,19 @@ export function CanvasView({ project }: { project: Project }) {
                 : 'default',
         );
       } else if (ed.tool === 'eraser') redraw();
+      else if (ed.tool === 'pencil') setAxisHover(nearAxis(p));
       return;
     }
     switch (g.kind) {
+      case 'axis': {
+        // Dentro de la hoja, con imán al centro.
+        const snap = (v: number, c: number) => (Math.abs(v - c) * ed.view.zoom < 8 ? c : v);
+        ed.setMirrorAxis({
+          x: snap(Math.min(docW, Math.max(0, p.x)), docW / 2),
+          y: snap(Math.min(docH, Math.max(0, p.y)), docH / 2),
+        });
+        return;
+      }
       case 'puppet':
         // La posición se recoge en cada fotograma de la reproducción.
         g.page = p;
@@ -947,14 +988,16 @@ export function CanvasView({ project }: { project: Project }) {
     if (!g) return;
     const ed = useEditor.getState();
     switch (g.kind) {
+      case 'axis':
+        break;
       case 'pan':
         setPanning(false);
         break;
       case 'draw': {
         clearTimeout(holdTimer.current);
         const stroke = drawnStroke(g, ed.options, ed.view.zoom, true);
-        const copies = mirrorPoints(stroke.points, ed.options.assist.mirror, { x: docW / 2, y: docH / 2 }).map(
-          (points) => createStroke(points, stroke.style),
+        const copies = mirrorPoints(stroke.points, ed.options.assist.mirror, axis).map((points) =>
+          createStroke(points, stroke.style),
         );
         addWithCopies(stroke, copies, g.snapped ? 'Dibujar forma' : 'Dibujar');
         break;
@@ -1084,7 +1127,13 @@ export function CanvasView({ project }: { project: Project }) {
     hand: 'grab',
     camera: 'move',
   };
-  const effectiveCursor = panning ? 'grabbing' : spaceDown ? 'grab' : toolCursor[tool];
+  const effectiveCursor = panning
+    ? 'grabbing'
+    : spaceDown
+      ? 'grab'
+      : tool === 'pencil' && axisHover && options.assist.mirror !== 'off'
+        ? 'move'
+        : toolCursor[tool];
 
   // Teclado: con el lienzo enfocado, Tab y Mayús+Tab recorren los elementos seleccionables. Al pasar
   // del último (o del primero hacia atrás) el foco sale del lienzo con normalidad.

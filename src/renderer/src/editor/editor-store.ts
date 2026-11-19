@@ -89,6 +89,8 @@ interface EditorState {
   markerId: string | null;
   /** «Animar arrastrando»: arrastrar un elemento reproduce la escena y graba su recorrido. */
   puppet: boolean;
+  /** Punto por el que pasan los ejes del dibujo en espejo (null: el centro de la hoja). */
+  mirrorAxis: { x: number; y: number } | null;
 
   setTool(tool: Tool): void;
   setOptions(patch: Partial<ToolOptions>): void;
@@ -112,6 +114,7 @@ interface EditorState {
   setMuteNarration(mute: boolean): void;
   selectMarker(id: string | null): void;
   setPuppet(on: boolean): void;
+  setMirrorAxis(p: { x: number; y: number } | null): void;
   setScene(sceneId: string, layerId: string): void;
   reset(sceneId: string, layerId: string, mode: Mode): void;
 }
@@ -163,6 +166,7 @@ export const useEditor = create<EditorState>()((set) => ({
   markerId: null,
   muteNarration: false,
   puppet: false,
+  mirrorAxis: null,
 
   setTool: (tool) => set((s) => ({ tool, selection: tool === 'select' ? s.selection : [], editingTextId: null })),
   setOptions: (patch) => set((s) => ({ options: { ...s.options, ...patch } })),
@@ -194,6 +198,7 @@ export const useEditor = create<EditorState>()((set) => ({
   setMuteNarration: (muteNarration) => set({ muteNarration }),
   selectMarker: (id) => set({ markerId: id, clipId: null, selection: [] }),
   setPuppet: (puppet) => set((s) => ({ puppet, tool: puppet ? 'select' : s.tool })),
+  setMirrorAxis: (mirrorAxis) => set({ mirrorAxis }),
   setScene: (sceneId, layerId) =>
     set({ sceneId, activeLayerId: layerId, selection: [], playhead: 0, editingTextId: null, markerId: null }),
   reset: (sceneId, layerId, mode) =>

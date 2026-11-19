@@ -15,6 +15,7 @@ const MIRRORS = Object.keys(MIRROR_LABELS) as MirrorMode[];
 
 export function DrawAssistPopover() {
   const assist = useEditor((s) => s.options.assist);
+  const axisMoved = useEditor((s) => s.mirrorAxis !== null);
   const set = (patch: Partial<DrawAssist>) =>
     useEditor.getState().setOptions({ assist: { ...useEditor.getState().options.assist, ...patch } });
   const active = assist.stabilizer !== 'off' || assist.ink || assist.quickShapes || assist.mirror !== 'off';
@@ -84,9 +85,14 @@ export function DrawAssistPopover() {
             ))}
           </div>
           <p className="hint assist-hint">
-            Lo que dibujas se repite reflejado en el centro de la hoja (caras, mariposas, edificios…). En el vídeo se
-            dibujan a la vez.
+            Lo que dibujas se repite reflejado (caras, mariposas, edificios…). En el vídeo se dibujan a la vez. Arrastra
+            el punto del eje en el lienzo para moverlo.
           </p>
+          {axisMoved && assist.mirror !== 'off' && (
+            <button className="btn btn-ghost btn-sm" onClick={() => useEditor.getState().setMirrorAxis(null)}>
+              Volver el eje al centro
+            </button>
+          )}
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>
