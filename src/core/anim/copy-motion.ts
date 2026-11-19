@@ -3,6 +3,8 @@
 // factor en escala y valor en opacidad; el tiempo, desde la aparición del elemento.
 import type { AnimatedNumber, Ease, Enter, Exit, Item } from '../model/types';
 import type { Ticks } from '../time/ticks';
+import type { Beat } from '../audio/rhythm';
+import { staggerTimes } from '../edit/beat-sync';
 import { valueAt } from './animated';
 
 type TransformProp = 'x' | 'y' | 'rotation' | 'scaleX' | 'scaleY';
@@ -71,9 +73,10 @@ export function hasMotion(m: CopiedMotion): boolean {
 /**
  * Pega la animación en `item`: sus keyframes (los que tuviera en esas propiedades se sustituyen)
  * parten de su valor actual al aparecer, y aparición, salida, repetición, vida y estela pasan tal cual
- * (salvo la duración de «Dibujarse», que depende de cada dibujo).
+ * (salvo la duración de «Dibujarse», que depende de cada dibujo). `start` es cuándo empieza el
+ * movimiento (por defecto, cuando aparece el elemento).
  */
-export function pasteMotion(item: Item, m: CopiedMotion): void {
+export function pasteMotion(item: Item, m: CopiedMotion, start: Ticks = item.in): void {
   for (const p of [...TRANSFORM_PROPS, 'opacity'] as Prop[]) {
     const rel = m.keys[p];
     const current = animatedOf(item, p);
@@ -85,7 +88,7 @@ export function pasteMotion(item: Item, m: CopiedMotion): void {
     const base = valueAt(current, item.in);
     const out: { t: Ticks; v: number; ease: Ease }[] = [];
     for (const k of rel) {
-      const t = Math.max(0, item.in + k.dt);
+      const t = Math.max(0, start + k.dt);
       const v = p === 'opacity' ? k.v : isScale(p) ? base * k.v : base + k.v;
       // Claves que caerían antes del principio de la escena se juntan en la primera.
       if (out.length && t <= out[out.length - 1]!.t)
@@ -110,4 +113,16 @@ export function pasteMotion(item: Item, m: CopiedMotion): void {
   else delete item.life;
   if (m.trail) item.trail = true;
   else delete item.trail;
+}
+
+/**
+ * Cuándo empieza el movimiento de cada elemento al pegar en varios (en el orden dado, por cuándo
+ * aparece cada uno). Sin desfase, cada uno cuando aparece; en ola, el primero cuando ya han aparecido
+ * todos y los demás cada `step` o, con `beats`, en los golpes siguientes de la música.
+ */
+export function waveStarts(ins: readonly Ticks[], wave: { step: Ticks } | { beats: readonly Beat[] } | null): Ticks[] {
+  if (!wave || ins.length < 2) return [...ins];
+  const t0 = Math.max(...ins);
+  if ('beats' in wave) return staggerTimes(wave.beats, t0, ins.length, false);
+  return ins.map((_, k) => t0 + k * wave.step);
 }

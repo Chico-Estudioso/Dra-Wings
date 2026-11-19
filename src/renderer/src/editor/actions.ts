@@ -243,7 +243,7 @@ export function setSelectionLife(kind: LifeKind | null, amount = 1): void {
 }
 
 /** Golpes de la escena actual (o el pulso de 120 BPM). */
-function currentBeats(scene: Scene): Beat[] {
+export function currentBeats(scene: Scene): Beat[] {
   const project = useApp.getState().doc!.project;
   return beatsOrPulse(sceneBeats(project, scene.id, scene.duration), scene.duration);
 }

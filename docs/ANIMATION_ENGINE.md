@@ -170,6 +170,8 @@ El selector «Suavizado» del panel «Animación» cambia todos los tramos del e
 
 **Copiar y pegar animación** (`src/core/anim/copy-motion.ts`, panel «Animación»): «Copiar animación» guarda la del elemento seleccionado y «Pegar animación» la aplica a todos los seleccionados, cada uno **desde donde está y desde que aparece**. Las claves se guardan relativas: desplazamiento en posición y giro, factor en escala y valor en opacidad; el tiempo, desde la aparición. Las propiedades que la copia no anima se quedan quietas en su valor actual. También pasan la aparición (salvo la duración de «Dibujarse», que depende de cada dibujo), la salida (el mismo tiempo después de aparecer), la repetición, la vida y la estela. Un solo paso de deshacer; el portapapeles es de la sesión.
 
+**Pegar en ola** (selector «Al pegar», con varios seleccionados): todos a la vez (cada uno cuando aparece), en ola rápida, normal o lenta (0,1, 0,25 o 0,5 s entre uno y el siguiente) o uno en cada golpe de la música. En ola, el orden es de izquierda a derecha y el primero empieza cuando ya han aparecido todos (`waveStarts`). Si la ola acaba después del final, la escena se alarga.
+
 ## Animar arrastrando y trayectorias
 
 **Animar arrastrando** (botón del panel «Animación»; con él activo, la herramienta de selección agarra en vez de mover): al arrastrar un elemento, la escena se reproduce desde el cabezal (con su audio) y el elemento sigue al puntero. Se recoge su posición en cada fotograma de la reproducción y, al soltar, el recorrido se convierte en keyframes de posición:

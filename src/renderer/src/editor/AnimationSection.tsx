@@ -28,7 +28,13 @@ import {
 import { ValueSlider } from './controls';
 import { useEditor } from './editor-store';
 import { QuickAnimations } from './QuickAnimations';
-import { copySelectionMotion, pasteSelectionMotion, useMotionClipboard } from './motion-actions';
+import {
+  copySelectionMotion,
+  pasteSelectionMotion,
+  STAGGER_LABELS,
+  useMotionClipboard,
+  type Stagger,
+} from './motion-actions';
 import { LOOP_LABELS, type LoopKind } from '@core/anim/loop';
 import { hasBeats } from '@core/audio/rhythm';
 import { useApp } from '../state/app-store';
@@ -92,6 +98,7 @@ export function AnimationSection({ items, fps }: { items: Item[]; fps: Fps }) {
   const puppet = useEditor((s) => s.puppet);
   const hasMusicBeats = useApp((s) => !!s.doc && hasBeats(s.doc.project));
   const copiedFrom = useMotionClipboard((s) => (s.motion ? s.from : null));
+  const stagger = useMotionClipboard((s) => s.stagger);
   const first = items[0];
   if (!first) return null;
   const enter: Enter = first.enter ?? { kind: 'none', duration: 0 };
@@ -254,6 +261,24 @@ export function AnimationSection({ items, fps }: { items: Item[]; fps: Fps }) {
           <ClipboardPaste size={14} aria-hidden /> Pegar animación
         </button>
       </div>
+      {items.length > 1 && copiedFrom !== null && (
+        <label className="inline-field">
+          <span className="control-label">Al pegar</span>
+          <select
+            className="input input-sm"
+            aria-label="Desfase al pegar"
+            title="Con desfase, cada uno empieza un poco después que el anterior, de izquierda a derecha"
+            value={stagger}
+            onChange={(e) => useMotionClipboard.setState({ stagger: e.target.value as Stagger })}
+          >
+            {(Object.keys(STAGGER_LABELS) as Stagger[]).map((k) => (
+              <option key={k} value={k}>
+                {STAGGER_LABELS[k]}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <div className="anim-life">
         <label className="inline-field">
           <span className="control-label">Vida</span>

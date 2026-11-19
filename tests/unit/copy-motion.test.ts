@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { copyMotion, hasMotion, pasteMotion } from '@core/anim/copy-motion';
+import { copyMotion, hasMotion, pasteMotion, waveStarts } from '@core/anim/copy-motion';
 import { createShape } from '@core/model/factory';
 import { validateProject } from '@core/model/validate';
 import { createProject } from '@core/model/factory';
@@ -123,5 +123,26 @@ describe('copiar y pegar animación', () => {
     const keys = (target.transform.x as { keys: { t: number; v: number }[] }).keys;
     expect(keys.map((k) => k.t)).toEqual([0]);
     expect(keys[0]!.v).toBe(200);
+  });
+});
+
+describe('pegar en ola', () => {
+  it('sin desfase, cada uno cuando aparece', () => {
+    expect(waveStarts([0, S, 2 * S], null)).toEqual([0, S, 2 * S]);
+  });
+
+  it('en ola, desde que han aparecido todos y a intervalos fijos', () => {
+    expect(waveStarts([0, 2 * S, S], { step: S / 4 })).toEqual([2 * S, 2.25 * S, 2.5 * S]);
+  });
+
+  it('al ritmo, en los golpes siguientes', () => {
+    const beats = [0, 0.5, 1, 1.5, 2, 2.5].map((t, i) => ({ t: t * S, bar: i % 4 === 0 }));
+    expect(waveStarts([0, 0.8 * S, 0], { beats })).toEqual([S, 1.5 * S, 2 * S]);
+  });
+
+  it('el movimiento pegado empieza en el instante indicado', () => {
+    const target = createShape('rect', 500, 50, 80, 80, style);
+    pasteMotion(target, copyMotion(dancer()), 2 * S);
+    expect((target.transform.x as { keys: { t: number }[] }).keys.map((k) => k.t)).toEqual([2 * S, 3 * S]);
   });
 });

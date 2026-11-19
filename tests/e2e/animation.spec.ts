@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import path from 'node:path';
 import type { Project } from '../../src/core/model/types';
+import { TICKS_PER_SECOND } from '../../src/core/time/ticks';
 import {
   center,
   drag,
@@ -568,6 +569,47 @@ test('repetir la escena vuelve a su principio en vez de pasar a la siguiente', a
   await page.getByRole('button', { name: 'Ir al inicio' }).click();
   await page.getByRole('button', { name: 'Reproducir' }).click();
   await expect(page.getByRole('tab', { name: 'Escena 2' })).toHaveAttribute('aria-selected', 'true', { timeout: 4000 });
+  await stubMessageBox(app, 1);
+  await app.close();
+});
+
+test('pegar la animación en varios en ola, de izquierda a derecha', async () => {
+  const file = path.join(await tempDir(), 'ola.dwings');
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Ola');
+  const c = await center(page);
+  // Tres elementos; el del centro se crea primero y es el que salta.
+  for (const dx of [0, 160, -160]) {
+    await page.keyboard.press('r');
+    await drag(page, { x: c.x + dx - 30, y: c.y - 30 }, { x: c.x + dx + 30, y: c.y + 30 }, 4);
+    if (dx === 0) {
+      await page
+        .getByRole('group', { name: 'Animaciones rápidas' })
+        .getByRole('button', { name: /^Saltar/ })
+        .click();
+      await page.getByRole('button', { name: 'Copiar animación' }).click();
+    }
+  }
+  await page.keyboard.press('v');
+  await page.keyboard.press('Control+a');
+  await page.getByLabel('Desfase al pegar').selectOption({ label: 'En ola (0,25 s)' });
+  await page.getByRole('button', { name: 'Pegar animación' }).click();
+
+  const p = await saveAndRead(app, page, file);
+  const firstKey = (i: ReturnType<typeof items>[number]) => {
+    const y = i.transform.y;
+    if (!('keys' in y)) throw new Error('sin keyframes');
+    return y.keys[0]!.t;
+  };
+  // De izquierda a derecha: el creado a la izquierda, el del centro y el de la derecha.
+  const byX = [...items(p)].sort((a, b) => {
+    const ax = 'value' in a.transform.x ? a.transform.x.value : 0;
+    const bx = 'value' in b.transform.x ? b.transform.x.value : 0;
+    return ax - bx;
+  });
+  const starts = byX.map(firstKey);
+  expect(starts[1]! - starts[0]!).toBe(TICKS_PER_SECOND / 4);
+  expect(starts[2]! - starts[1]!).toBe(TICKS_PER_SECOND / 4);
   await stubMessageBox(app, 1);
   await app.close();
 });
