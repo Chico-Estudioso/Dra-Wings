@@ -18,9 +18,9 @@ Los modos comparten el mismo formato de proyecto.
 
 M0 a M7 completados: arquitectura, proyectos con guardado y recuperación, lienzo y dibujo, biblioteca con modo guiado, animación con línea de tiempo, audio con narración e imágenes importadas, exportación a MP4, y una fase de calidad (rendimiento, accesibilidad y robustez). M8 (empaquetado para Windows) está preparado; publicar una versión requiere aprobación. Ver `docs/PACKAGING.md`.
 
-Después del MVP se han añadido herramientas para que todo quede vivo y se haga rápido: trazo vivo y mano que dibuja, ayudas al dibujar (estabilizador, tinta y formas rápidas), animaciones de un clic, animar arrastrando, vida automática, elasticidad, transiciones, personajes que cambian de expresión y hablan con la narración, textos que se escriben al ritmo y detección del ritmo de la música para videoclips.
+Después del MVP se han añadido herramientas para que todo quede vivo y se haga rápido: trazo vivo y mano que dibuja, ayudas al dibujar (estabilizador, tinta, formas rápidas y espejo), bote de pintura, pinceles de lápiz y tiza, animaciones de un clic, animar arrastrando, copiar y pegar animación (también en ola), vida automática, elasticidad, transiciones, cámara que sigue, fondos por escena (lisos o en degradado), personajes que cambian de expresión y hablan con la narración, textos que se escriben al ritmo con contorno y sombra, guion rápido, efectos de sonido, detección del ritmo de la música y escenas que se ajustan a las marcas para videoclips.
 
-Ver `ROADMAP.md`, `docs/EDITOR.md`, `docs/ANIMATION_ENGINE.md`, `docs/LIBRARY.md` y `docs/AUDIO_EXPORT.md`.
+Ver `ROADMAP.md`, `docs/EDITOR.md`, `docs/ANIMATION_ENGINE.md`, `docs/LIBRARY.md` y `docs/AUDIO_EXPORT.md`. Para instalar una versión de prueba y saber qué probar: `docs/PROBAR.md`.
 
 ## Principios
 

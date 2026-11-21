@@ -47,6 +47,19 @@ Se puede comprobar con `npx @electron/fuses read --app <ejecutable>`.
 - Desinstalar no borra los datos del usuario (`%APPDATA%\Dra-Wings`: recientes, recuperación y caché
   de medios).
 
+## Versión portable de prueba
+
+Sin instalador: la carpeta `dist/win-unpacked` comprimida en un zip (`Dra-Wings-<versión>-win-x64.zip`)
+que se descomprime y se abre con `Dra-Wings.exe`. Se puede generar también desde Linux, porque no
+necesita Wine (el icono y los datos de versión del `.exe` se aplican sin él):
+
+```bash
+npm run build && npm run licenses && npx electron-builder --win --dir --publish never
+```
+
+El instalador NSIS, en cambio, necesita Windows (o Wine) para generar el desinstalador. Ni la versión
+portable ni el instalador se publican sin aprobación; para probar, ver `docs/PROBAR.md`.
+
 ## Verificación automática (CI)
 
 El job `package-windows` de `validate.yml` empaqueta en Windows, instala en silencio, arranca la

@@ -195,6 +195,17 @@ describe('proyecto de ejemplo', () => {
     expect(checkReferences(p)).toEqual([]);
     expect(p.settings.mode).toBe('guided');
     expect(p.scenes.map((s) => s.name)).toEqual(['Había una vez', 'Un día en la ciudad', 'Ahora tú']);
+    // Enseña las novedades: fondos en degradado, letras con contorno y sombra, y un salto en ola.
+    expect(p.scenes[0]!.gradient).toBeTruthy();
+    expect(p.scenes[2]!.gradient).toBeTruthy();
+    const title = p.scenes[2]!.layers[0]!.items!.find((i) => i.type === 'text');
+    expect(title).toMatchObject({ outline: { color: '#ffffff' }, shadow: true });
+    const jumps = p.scenes[2]!.layers[0]!.items!.filter((i) => i.type === 'group').map((g) => {
+      const y = g.transform.y;
+      return 'keys' in y ? y.keys[0]!.t : null;
+    });
+    expect(jumps[1]! - jumps[0]!).toBe(TICKS_PER_SECOND / 4);
+    expect(jumps[2]! - jumps[1]!).toBe(TICKS_PER_SECOND / 4);
     for (const s of p.scenes) {
       const items = s.layers[0]!.items!;
       expect(items.length).toBeGreaterThan(1);

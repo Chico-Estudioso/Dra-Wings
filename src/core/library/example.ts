@@ -1,13 +1,14 @@
 // Proyecto de ejemplo para aprender viéndolo: tres escenas hechas con la biblioteca, textos que se
-// escriben solos (palabra a palabra o con letras que saltan), tiempos automáticos, un zoom de
-// cámara, transiciones, un personaje que cambia de expresión y salta, y recursos con vida propia.
-// Todo es editable.
+// escriben solos (palabra a palabra o con letras que saltan, con contorno y sombra), tiempos
+// automáticos, un zoom de cámara, transiciones, fondos en degradado, un personaje que cambia de
+// expresión y salta, elementos que saltan en ola y recursos con vida propia. Todo es editable.
 import { setValueAt } from '../anim/keyframes';
 import { appendTiming, fitSceneDuration } from '../anim/timing';
 import { addScene } from '../edit/scenes';
 import { createProject, createText } from '../model/factory';
 import type { FontId, Item, Project, Scene, TextItem } from '../model/types';
 import { applyPreset } from '../anim/presets';
+import { waveStarts } from '../anim/copy-motion';
 import { TICKS_PER_SECOND } from '../time/ticks';
 import { buildCharacter, CHARACTER_PRESETS, setCharacterLook } from './character';
 import { buildAsset, placeGroup, TEMPLATES } from './place';
@@ -61,6 +62,9 @@ export function buildExampleProject(measure: MeasureText, now = new Date()): Pro
   // 1. Había una vez: la escena de partida se dibuja y la cámara se acerca a la casa.
   const s1 = p.scenes[0]!;
   s1.name = 'Había una vez';
+  // Cielo en degradado: azul claro arriba, cálido abajo.
+  s1.background = '#d9ecf7';
+  s1.gradient = '#fff3b0';
   add(s1, ...template('campo'));
   text(s1, 'Había una vez una casa en el campo…', 0.91, 70, 'hand', INK, 'words');
   // El texto se lee un segundo, se desvanece y entonces la cámara se acerca a la casa.
@@ -108,10 +112,35 @@ export function buildExampleProject(measure: MeasureText, now = new Date()): Pro
   const s3 = p.scenes.find((s) => s.id === s3Id)!;
   s3.name = 'Ahora tú';
   s3.transition = { kind: 'fade', duration: Math.round(0.8 * TICKS_PER_SECOND) };
-  add(s3, placeGroup(buildAsset('corazon'), { cx: 0.5 * W, cy: 0.3 * H, height: 0.26 * H }));
+  s3.background = '#fde2e4';
+  s3.gradient = '#e9e1f7';
+  const row = [
+    placeGroup(buildAsset('estrella'), { cx: 0.3 * W, cy: 0.3 * H, height: 0.16 * H }),
+    placeGroup(buildAsset('corazon'), { cx: 0.5 * W, cy: 0.3 * H, height: 0.26 * H }),
+    placeGroup(buildAsset('estrella'), { cx: 0.7 * W, cy: 0.3 * H, height: 0.16 * H }),
+  ];
+  add(s3, ...row);
   text(s3, '¡Ahora te toca a ti!', 0.55, 120, 'script', '#c2521e', 'bounce');
+  // Letras con contorno blanco y sombra: se leen sobre cualquier fondo.
+  const title = s3.layers[0]!.items!.at(-1)!;
+  if (title.type === 'text') {
+    title.outline = { color: '#ffffff', width: 0.08 };
+    title.shadow = true;
+  }
   text(s3, 'Cambia los textos, graba tu voz en «Audio» y exporta el vídeo.', 0.74, 46, 'rounded', INK, 'words');
+  // Cuando ya se ha escrito todo, estrella, corazón y estrella saltan en ola.
+  const items3 = s3.layers[0]!.items!;
+  const written = items3.reduce((t, it) => Math.max(t, it.in + (it.enter?.duration ?? 0)), 0);
+  const starts = waveStarts(
+    row.map(() => written),
+    { step: Math.round(0.25 * TICKS_PER_SECOND) },
+  );
+  let waveEnd = 0;
+  row.forEach((g, i) => {
+    waveEnd = Math.max(waveEnd, applyPreset(g, 'jump', starts[i]!, { page: { width: W, height: H } }));
+  });
   fitSceneDuration(s3);
+  s3.duration = Math.max(s3.duration, waveEnd + TICKS_PER_SECOND);
 
   for (const s of p.scenes) fitSceneDuration(s);
   return p;

@@ -6,6 +6,7 @@ Los cambios relevantes se registran aquí. Se seguirá una estructura inspirada 
 - Preparación inicial del proyecto y del kit de desarrollo.
 - «Ver un ejemplo» en el inicio: proyecto de tres escenas hecho con la biblioteca, con textos, una salida con fundido y un zoom de cámara, para aprender viéndolo.
 - Arrastrar imágenes (al lienzo) y audio (a la línea de tiempo) desde el explorador; el audio pregunta su pista si no se suelta sobre una.
+- El proyecto de ejemplo enseña las novedades (fondos en degradado, letras con contorno y sombra, salto en ola) y hay una guía para instalar una versión de prueba y qué probar (`docs/PROBAR.md`).
 - Fondo degradado (de arriba a abajo) por escena o para todo el vídeo.
 - Colores recientes en todas las paletas. La barra de opciones de las herramientas cabe entera a 1024 px (el color se elige desde un botón en ventanas estrechas).
 - Textos con contorno y sombra (también al escribirse palabra a palabra), y opción en el guion rápido para que las letras se lean sobre cualquier fondo.

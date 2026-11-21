@@ -88,7 +88,7 @@ Cambiar de modo nunca toca el documento: solo ajusta paneles y ayudas.
 
 `src/core/library/example.ts` monta, con las mismas piezas de la biblioteca, un proyecto de tres escenas («Había una vez», «Un día en la ciudad» y «Ahora tú»). Los textos se miden con las fuentes reales al crearlo. Se abre desde «Ver un ejemplo» en el inicio.
 
-Enseña las herramientas viéndolas: textos que se escriben palabra a palabra o con letras que saltan, un zoom de cámara, la segunda escena entrando en círculo y la tercera con un fundido, nubes, sol, árbol y corazón con vida propia, y Lucía que, al terminar de escribirse el texto, se ríe, levanta los brazos y salta (un cambio de aspecto y una animación rápida). Como todo proyecto nuevo, tiene trazo vivo, elasticidad y mano que dibuja.
+Enseña las herramientas viéndolas: textos que se escriben palabra a palabra o con letras que saltan, un zoom de cámara, la segunda escena entrando en círculo y la tercera con un fundido, nubes, sol, árbol y corazón con vida propia, y Lucía que, al terminar de escribirse el texto, se ríe, levanta los brazos y salta (un cambio de aspecto y una animación rápida). La primera escena tiene el cielo en degradado y la última, fondo degradado, el título con contorno blanco y sombra, y dos estrellas y el corazón que saltan en ola al terminar de escribirse los textos. Como todo proyecto nuevo, tiene trazo vivo, elasticidad y mano que dibuja.
 
 ## Guías magnéticas
 
