@@ -21,7 +21,7 @@ import { EASE_LABELS, itemEase, PRESET_LABELS, type Direction, type PresetId } f
 import type { Ease, Item } from '@core/model/types';
 import { applyPresetToSelection, setSelectionEase } from './actions';
 
-const PRESETS: { id: PresetId; icon: LucideIcon }[] = [
+export const PRESETS: { id: PresetId; icon: LucideIcon }[] = [
   { id: 'enter', icon: LogIn },
   { id: 'exit', icon: LogOut },
   { id: 'jump', icon: ChevronsUp },
@@ -33,7 +33,7 @@ const PRESETS: { id: PresetId; icon: LucideIcon }[] = [
   { id: 'grow', icon: Expand },
 ];
 
-const DIRECTIONS: { id: Direction; label: string; icon: LucideIcon }[] = [
+export const DIRECTIONS: { id: Direction; label: string; icon: LucideIcon }[] = [
   { id: 'left', label: 'Izquierda', icon: ArrowLeft },
   { id: 'right', label: 'Derecha', icon: ArrowRight },
   { id: 'up', label: 'Arriba', icon: ArrowUp },

@@ -70,7 +70,9 @@ Marca lo que funcione y apunta lo que no (qué hiciste, qué esperabas y qué pa
 - [ ] Colores personalizados: aparecen después en «recientes» en todas las paletas.
 
 **Animar**
-- [ ] Animaciones rápidas (saltar, balancearse…), animar arrastrando y repetir movimiento.
+- [ ] Selecciona un personaje y abre **Animar → Fácil**: ¿se entiende «Lo que hace» y cómo añadir pasos?
+      Prueba un gesto, «Ir a otro sitio» (arrastra varias veces seguidas) y quitar un paso con la ×.
+- [ ] En **Detallado**: animaciones rápidas, animar arrastrando, keyframes, suavizado y repetir movimiento.
 - [ ] Copiar animación de un elemento y pegarla en varios, a la vez y en ola.
 - [ ] Vida automática, elasticidad, trazo vivo y mano que dibuja (al reproducir).
 - [ ] Cámara: encuadre, zoom y «Seguir con la cámara» a un personaje.
@@ -96,7 +98,8 @@ Marca lo que funcione y apunta lo que no (qué hiciste, qué esperabas y qué pa
 - [ ] Cierra la aplicación a la fuerza con cambios sin guardar y vuelve a abrirla: ofrece recuperar.
 
 **Pantalla**
-- [ ] En una pantalla de portátil (1366 × 768 o 1024 × 768) todo cabe y se puede usar.
+- [ ] En una pantalla de portátil (1366 × 768 o 1024 × 768) la ventana cabe y todo se puede usar.
+- [ ] El panel derecho se ensancha arrastrando su borde y se oculta con el botón de la barra superior.
 
 ## 4. Si algo falla
 

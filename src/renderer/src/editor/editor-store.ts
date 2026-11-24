@@ -84,6 +84,12 @@ interface EditorState {
   /** Ancho del panel lateral (px) y si está plegado. */
   sideWidth: number;
   sideCollapsed: boolean;
+  /** Pestaña del panel del elemento seleccionado. */
+  propsTab: 'look' | 'animate';
+  /** Nivel del panel «Animar»: pasos sencillos o todos los controles. */
+  animLevel: 'easy' | 'detailed';
+  /** «Ir a otro sitio»: al mover un elemento se crea el movimiento desde el cabezal (duración en ticks). */
+  moveTo: { duration: Ticks } | null;
   /** La reproducción no hace sonar la narración (mientras se graba una nueva). */
   muteNarration: boolean;
   /** Clip de audio seleccionado (excluye la selección de elementos). */
@@ -115,6 +121,9 @@ interface EditorState {
   setTimelineHeight(h: number): void;
   setSideWidth(w: number): void;
   toggleSide(): void;
+  setPropsTab(tab: 'look' | 'animate'): void;
+  setAnimLevel(level: 'easy' | 'detailed'): void;
+  setMoveTo(moveTo: { duration: Ticks } | null): void;
   selectClip(id: string | null): void;
   setMuteNarration(mute: boolean): void;
   selectMarker(id: string | null): void;
@@ -130,6 +139,7 @@ export const SIDE_MAX_W = 560;
 const SIDE_DEFAULT_W = 272;
 const SIDE_W_KEY = 'dw.side.width';
 const SIDE_COLLAPSED_KEY = 'dw.side.collapsed';
+const ANIM_LEVEL_KEY = 'dw.anim.level';
 
 function readNumber(key: string, fallback: number, min: number, max: number): number {
   try {
@@ -199,13 +209,29 @@ export const useEditor = create<EditorState>()((set) => ({
   timelineHeight: readTimelineHeight(),
   sideWidth: readNumber(SIDE_W_KEY, SIDE_DEFAULT_W, SIDE_MIN_W, SIDE_MAX_W),
   sideCollapsed: readFlag(SIDE_COLLAPSED_KEY),
+  propsTab: 'look',
+  animLevel: (() => {
+    try {
+      return localStorage.getItem(ANIM_LEVEL_KEY) === 'detailed' ? 'detailed' : 'easy';
+    } catch {
+      return 'easy';
+    }
+  })(),
+  moveTo: null,
   clipId: null,
   markerId: null,
   muteNarration: false,
   puppet: false,
   mirrorAxis: null,
 
-  setTool: (tool) => set((s) => ({ tool, selection: tool === 'select' ? s.selection : [], editingTextId: null })),
+  setTool: (tool) =>
+    set((s) => ({
+      tool,
+      selection: tool === 'select' ? s.selection : [],
+      editingTextId: null,
+      // «Ir a otro sitio» solo tiene sentido moviendo con la flecha de selección.
+      moveTo: tool === 'select' ? s.moveTo : null,
+    })),
   setOptions: (patch) => set((s) => ({ options: { ...s.options, ...patch } })),
   select: (ids) => set({ selection: ids, clipId: null, markerId: null }),
   setActiveLayer: (id) => set({ activeLayerId: id }),
@@ -236,6 +262,12 @@ export const useEditor = create<EditorState>()((set) => ({
     store(SIDE_W_KEY, String(v));
     set({ sideWidth: v });
   },
+  setPropsTab: (propsTab) => set({ propsTab }),
+  setAnimLevel: (animLevel) => {
+    store(ANIM_LEVEL_KEY, animLevel);
+    set({ animLevel });
+  },
+  setMoveTo: (moveTo) => set((s) => ({ moveTo, tool: moveTo ? 'select' : s.tool, puppet: moveTo ? false : s.puppet })),
   toggleSide: () =>
     set((s) => {
       store(SIDE_COLLAPSED_KEY, s.sideCollapsed ? '0' : '1');

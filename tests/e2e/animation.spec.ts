@@ -8,6 +8,7 @@ import {
   itemCount,
   launch,
   newFreeProject,
+  openAnimate,
   saveAndRead,
   sceneHash,
   stubMessageBox,
@@ -126,6 +127,7 @@ test('animaciones rápidas de un clic y suavizado del movimiento', async () => {
   const c = await center(page);
   await page.keyboard.press('r');
   await drag(page, { x: c.x - 40, y: c.y - 30 }, { x: c.x + 40, y: c.y + 30 }, 4);
+  await openAnimate(page);
   const quick = page.getByRole('group', { name: 'Animaciones rápidas' });
   await quick.getByRole('button', { name: /^Saltar/ }).click();
   // Los keyframes aparecen en la línea de tiempo (rombos de la selección).
@@ -153,6 +155,7 @@ test('animar arrastrando graba el recorrido mientras avanza el vídeo', async ()
   const c = await center(page);
   await page.keyboard.press('r');
   await drag(page, { x: c.x - 40, y: c.y - 30 }, { x: c.x + 40, y: c.y + 30 }, 4);
+  await openAnimate(page);
   const toggle = page.getByRole('button', { name: 'Animar arrastrando' });
   await toggle.click();
   await expect(toggle).toHaveAttribute('aria-pressed', 'true');
@@ -240,6 +243,7 @@ test('vida automática: el elemento se mueve solo al reproducir, sin keyframes',
   await page.keyboard.press('r');
   await drag(page, { x: c.x - 50, y: c.y - 40 }, { x: c.x + 50, y: c.y + 40 }, 4);
 
+  await openAnimate(page);
   const life = page.getByLabel('Vida automática');
   await expect(life).toHaveValue('');
   await scrubTo(page, 3);
@@ -271,6 +275,7 @@ test('elasticidad del proyecto y estela de un elemento', async () => {
   const c = await center(page);
   await page.keyboard.press('r');
   await drag(page, { x: c.x - 40, y: c.y - 30 }, { x: c.x + 40, y: c.y + 30 }, 4);
+  await openAnimate(page);
   await page.getByRole('checkbox', { name: 'Estela al moverse' }).check();
   await page.getByRole('button', { name: 'Elasticidad: Normal' }).click();
   await page.getByRole('radio', { name: 'Marcado' }).check();
@@ -387,6 +392,7 @@ test('repetir movimiento: un salto que se repite sigue moviéndose', async () =>
   const c = await center(page);
   await page.keyboard.press('r');
   await drag(page, { x: c.x - 40, y: c.y - 30 }, { x: c.x + 40, y: c.y + 30 }, 4);
+  await openAnimate(page);
   await page
     .getByRole('group', { name: 'Animaciones rápidas' })
     .getByRole('button', { name: /^Saltar/ })
@@ -460,6 +466,7 @@ test('la cámara sigue a un elemento', async () => {
   await scrubTo(page, 2);
   const plain = await sceneHash(page);
   await page.getByRole('button', { name: 'Vista previa' }).click();
+  await openAnimate(page);
   await page.getByRole('button', { name: 'Seguir con la cámara' }).click();
   await page.getByLabel('Distancia de la cámara').selectOption({ label: 'La cámara lo sigue · cerca' });
   // En la vista previa el encuadre se acerca al elemento.
@@ -482,6 +489,7 @@ test('copiar la animación de un elemento y pegarla en otro', async () => {
   const c = await center(page);
   await page.keyboard.press('r');
   await drag(page, { x: c.x - 200, y: c.y - 30 }, { x: c.x - 120, y: c.y + 30 }, 4);
+  await openAnimate(page);
   const quick = page.getByRole('group', { name: 'Animaciones rápidas' });
   await quick.getByRole('button', { name: /^Saltar/ }).click();
   await page.getByRole('button', { name: 'Copiar animación' }).click();
@@ -583,6 +591,7 @@ test('pegar la animación en varios en ola, de izquierda a derecha', async () =>
     await page.keyboard.press('r');
     await drag(page, { x: c.x + dx - 30, y: c.y - 30 }, { x: c.x + dx + 30, y: c.y + 30 }, 4);
     if (dx === 0) {
+      await openAnimate(page);
       await page
         .getByRole('group', { name: 'Animaciones rápidas' })
         .getByRole('button', { name: /^Saltar/ })
@@ -652,6 +661,52 @@ test('fondo degradado: de arriba a abajo, y para todas las escenas', async () =>
   expect(p.settings.gradient).toBe('#2b2d42');
   expect(p.scenes[0]!.gradient).toBeUndefined();
   expect(p.scenes[1]!.gradient).toBeNull();
+  await stubMessageBox(app, 1);
+  await app.close();
+});
+
+test('animar en nivel Fácil: lo que hace, gestos e ir a otro sitio encadenado', async () => {
+  const file = path.join(await tempDir(), 'facil.dwings');
+  const { app, page } = await launch(await tempDir());
+  await newFreeProject(page, 'Fácil');
+  const c = await center(page);
+  await page.keyboard.press('r');
+  await drag(page, { x: c.x - 40, y: c.y - 30 }, { x: c.x + 40, y: c.y + 30 }, 4);
+  await openAnimate(page, 'Fácil');
+  const steps = page.getByRole('group', { name: 'Lo que hace' }).getByRole('listitem');
+  await expect(steps).toHaveText([/Se dibuja/]);
+
+  // Un gesto de un clic aparece en la lista, y se puede quitar.
+  await page.getByRole('group', { name: 'Gestos' }).getByRole('button', { name: 'Saltar' }).click();
+  await expect(steps).toHaveText([/Se dibuja/, /Salta/]);
+  await page.getByRole('button', { name: 'Quitar: Salta' }).click();
+  await expect(steps).toHaveCount(1);
+
+  // Ir a otro sitio: cada arrastre añade un tramo de 1 s desde el cabezal, que avanza.
+  await page.getByRole('button', { name: 'Ir a otro sitio' }).click();
+  await expect(page.getByRole('note').filter({ hasText: 'Ir a otro sitio' })).toBeVisible();
+  await drag(page, c, { x: c.x + 200, y: c.y }, 6);
+  await expect(page.getByTestId('timeline-time')).toContainText('00:01:00 /');
+  await drag(page, { x: c.x + 200, y: c.y }, { x: c.x + 200, y: c.y + 100 }, 6);
+  await expect(page.getByTestId('timeline-time')).toContainText('00:02:00 /');
+  await expect(steps).toHaveText([/Se dibuja/, /Se mueve/]);
+  await page.getByRole('button', { name: 'Listo' }).first().click();
+  await expect(page.getByRole('note').filter({ hasText: 'Ir a otro sitio' })).toHaveCount(0);
+
+  // Cómo aparece y vida, con un clic.
+  await page.getByRole('radiogroup', { name: 'Cómo aparece' }).getByRole('radio', { name: 'De golpe' }).click();
+  await page.getByRole('radiogroup', { name: 'Vida' }).getByRole('radio', { name: 'Flotar' }).click();
+  await expect(steps).toHaveText([/Aparece de golpe/, /Se mueve/, /Flotar/]);
+
+  const p = await saveAndRead(app, page, file);
+  const [rect] = items(p);
+  const x = rect!.transform.x;
+  const y = rect!.transform.y;
+  if (!('keys' in x) || !('keys' in y)) throw new Error('se esperaban keyframes');
+  expect(x.keys.map((k) => k.t)).toEqual([0, TICKS_PER_SECOND, 2 * TICKS_PER_SECOND]);
+  expect(x.keys[1]!.v).toBeGreaterThan(x.keys[0]!.v);
+  expect(y.keys.at(-1)!.v).toBeGreaterThan(y.keys[0]!.v);
+  expect(rect).toMatchObject({ enter: { kind: 'pop' }, life: { kind: 'float' } });
   await stubMessageBox(app, 1);
   await app.close();
 });

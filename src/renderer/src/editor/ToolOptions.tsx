@@ -25,12 +25,16 @@ const PUPPET_HINT =
 const FILL_HINT =
   'Haz clic dentro de un dibujo cerrado para pintarlo (los huecos pequeños se cierran solos). Sobre un relleno, cambia su color.';
 
+const MOVE_TO_HINT =
+  'Ir a otro sitio: arrastra el elemento a donde tiene que llegar. El cabezal avanza para que puedas seguir con otro sitio.';
+
 export function ToolOptions() {
   const tool = useEditor((s) => s.tool);
   const o = useEditor((s) => s.options);
   const set = useEditor((s) => s.setOptions);
   const hasSelection = useEditor((s) => s.selection.length > 0);
   const puppet = useEditor((s) => s.puppet);
+  const moveTo = useEditor((s) => s.moveTo);
   const sceneId = useEditor((s) => s.sceneId);
   const followName = useApp((s) => {
     const scene = s.doc?.project.scenes.find((sc) => sc.id === sceneId);
@@ -58,6 +62,17 @@ export function ToolOptions() {
         </span>
         <button className="btn btn-ghost btn-sm" onClick={resetCamera}>
           Restablecer encuadre
+        </button>
+      </div>
+    );
+  if (tool === 'select' && moveTo)
+    return (
+      <div className="tool-options" role="note">
+        <span className="tool-hint" title={MOVE_TO_HINT}>
+          {MOVE_TO_HINT}
+        </span>
+        <button className="btn btn-primary btn-sm" onClick={() => useEditor.getState().setMoveTo(null)}>
+          Listo
         </button>
       </div>
     );

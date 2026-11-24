@@ -3,6 +3,7 @@
 Los cambios relevantes se registran aquí. Se seguirá una estructura inspirada en Keep a Changelog.
 
 ## [Unreleased]
+- Animar más intuitivo: el panel del elemento se divide en «Aspecto» y «Animar», y «Animar» tiene nivel Fácil (lo que hace el elemento paso a paso, con botones grandes para añadir gestos, movimientos, entradas, salidas y vida) o Detallado (todos los controles). «Ir a otro sitio»: arrastrar el elemento crea el movimiento desde el cabezal y se pueden encadenar varios. Arrastrar dentro de lo seleccionado lo mueve aunque no se toque el dibujo.
 - Corrección: la ventana se abre ajustada a la pantalla (en portátiles con escala se salía por la derecha); el panel lateral se estira arrastrando su borde y se puede ocultar.
 - Preparación inicial del proyecto y del kit de desarrollo.
 - «Ver un ejemplo» en el inicio: proyecto de tres escenas hecho con la biblioteca, con textos, una salida con fundido y un zoom de cámara, para aprender viéndolo.

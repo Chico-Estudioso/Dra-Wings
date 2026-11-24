@@ -80,8 +80,10 @@ export function useEditorShortcuts(viewport: () => { w: number; h: number }) {
         if (ed.clipId) deleteClip(ed.clipId);
         else if (ed.markerId) deleteMarker(ed.markerId);
         else deleteSelection();
-      } else if (k === 'escape') ed.select([]);
-      else if (k === 'm') addMarkerAtPlayhead();
+      } else if (k === 'escape') {
+        if (ed.moveTo) ed.setMoveTo(null);
+        else ed.select([]);
+      } else if (k === 'm') addMarkerAtPlayhead();
       else if (k.startsWith('arrow')) {
         const d = e.shiftKey ? 10 : 1;
         nudgeSelection(

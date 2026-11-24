@@ -21,7 +21,8 @@ import type { StaticTransform } from '@core/geometry/matrix';
 import { appendTiming, fitSceneDuration } from '@core/anim/timing';
 import { ANIMATABLE, clearAnimation, keyTimes, removeKeyAt, setValueAt, shiftItemTime } from '@core/anim/keyframes';
 import { addScene, duplicateScene, moveScene, removeScene } from '@core/edit/scenes';
-import { ticksPerFrame } from '@core/time/ticks';
+import { ticksPerFrame, TICKS_PER_SECOND, type Ticks } from '@core/time/ticks';
+import { moveBetween, removeStep, type Step } from '@core/anim/steps';
 import { groupItems, recolorSlot, removeSwap, ungroupItem } from '@core/edit/group';
 import { setCharacterLook, type CharacterOptions } from '@core/library/character';
 import type { BoilLevel } from '@core/render/boil';
@@ -167,6 +168,8 @@ export function reorderSelection(move: ZMove): void {
 export function commitTransforms(label: string, transforms: ReadonlyMap<string, StaticTransform>): void {
   if (transforms.size === 0) return;
   const t = playhead();
+  const moveTo = useEditor.getState().moveTo;
+  if (moveTo) return commitMoveTo(transforms, t, moveTo.duration);
   const record = useEditor.getState().autoKey;
   editScene(label, (scene) => {
     for (const [id, st] of transforms) {
@@ -177,6 +180,28 @@ export function commitTransforms(label: string, transforms: ReadonlyMap<string, 
     }
   });
 }
+
+/**
+ * «Ir a otro sitio»: lo movido va desde donde estaba en el cabezal hasta donde se ha soltado, en
+ * `duration`. El cabezal avanza al final para poder encadenar otro paso; la escena se alarga si hace
+ * falta.
+ */
+function commitMoveTo(transforms: ReadonlyMap<string, StaticTransform>, t0: Ticks, duration: Ticks): void {
+  const t1 = t0 + duration;
+  editScene('Ir a otro sitio', (scene) => {
+    for (const [id, st] of transforms) {
+      const loc = locateItem(scene, id);
+      if (!loc) continue;
+      const tr = loc.item.transform;
+      for (const p of ANIMATABLE) tr[p] = moveBetween(tr[p], Math.max(t0, loc.item.in), t1, st[p]);
+    }
+    if (t1 + HOLD_AFTER_MOVE > scene.duration) scene.duration = t1 + HOLD_AFTER_MOVE;
+  });
+  useEditor.getState().setPlayhead(t1);
+}
+
+/** Rato que queda tras el último «ir a otro sitio» si la escena se alarga. */
+const HOLD_AFTER_MOVE = Math.round(TICKS_PER_SECOND / 2);
 
 export function setSelectedOpacity(v: number): void {
   const t = playhead();
@@ -649,3 +674,8 @@ function itemListsIds(layer: Layer): string[] {
 }
 
 export { layerItemCount };
+
+/** Quita un paso de lo que hace el elemento seleccionado (lista «Lo que hace»). */
+export function removeStepFromSelection(step: Step): void {
+  updateSelected(`Quitar: ${step.label.toLowerCase()}`, (it) => removeStep(it, step));
+}

@@ -7,6 +7,7 @@ import {
   itemCount,
   launch,
   newFreeProject,
+  openAnimate,
   saveAndRead,
   sceneHash,
   stubMessageBox,
@@ -187,8 +188,9 @@ test('un personaje habla con la narración: la boca sigue a la voz', async () =>
   await page.getByRole('radio', { name: 'Quieto' }).check();
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Añadir Alex' }).click();
-  await page.getByLabel('Vida automática').selectOption({ label: 'Quieto' });
   await page.getByRole('checkbox', { name: 'Habla con la narración' }).check();
+  await openAnimate(page);
+  await page.getByLabel('Vida automática').selectOption({ label: 'Quieto' });
 
   await stubOpenDialog(app, voice);
   await page.getByRole('button', { name: 'Audio', exact: true }).click();

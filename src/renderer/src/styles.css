@@ -2010,3 +2010,140 @@ kbd {
     grid-template-columns: auto minmax(50px, 1fr) 2.8em;
   }
 }
+
+/* Panel del elemento: pestañas Aspecto / Animar y nivel Fácil / Detallado */
+.props-tabs {
+  display: flex;
+  gap: 4px;
+  margin: -4px 0 10px;
+  border-bottom: 1px solid var(--border);
+}
+.props-tabs .side-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.level-toggle {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  margin-bottom: 10px;
+  border-radius: 9px;
+  background: var(--surface-2);
+}
+.level-toggle .mode-item {
+  flex: 1;
+  justify-content: center;
+}
+
+/* Animar en nivel Fácil */
+.easy-anim {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+.easy-block {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  min-width: 0;
+}
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.step {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 6px 6px 4px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+.step-time {
+  border: none;
+  background: var(--surface);
+  border-radius: 6px;
+  padding: 3px 7px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+}
+.step-time:disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+.step-label {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.easy-when {
+  margin: 0;
+}
+.easy-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.easy-grid-3 {
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+}
+.easy-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 12.5px;
+  cursor: pointer;
+  text-align: center;
+}
+.easy-btn:hover {
+  border-color: var(--accent);
+}
+.easy-btn.is-on {
+  border-color: var(--accent);
+  background: var(--accent-soft, var(--surface-2));
+}
+.easy-btn-sm {
+  padding: 8px 4px;
+  font-size: 12px;
+}
+.easy-note {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 10px;
+  border-radius: var(--radius);
+  background: var(--info-bg);
+  font-size: 12.5px;
+}
+.easy-note p {
+  margin: 0;
+}
+.easy-play {
+  justify-self: start;
+  white-space: normal;
+  text-align: left;
+}
+
+/* Filas del nivel Detallado: que nada se corte en paneles estrechos */
+.anim-row,
+.anim-life {
+  flex-wrap: wrap;
+}
+.anim-section {
+  min-width: 0;
+}

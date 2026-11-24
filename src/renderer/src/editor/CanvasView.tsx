@@ -588,6 +588,16 @@ export function CanvasView({ project }: { project: Project }) {
   };
 
   /** Lo que se agarra al animar arrastrando: lo que hay bajo el puntero o el seleccionado (por dentro de su caja). */
+  /** Elemento seleccionado cuya caja contiene el punto (el de más arriba). */
+  const selectedAt = (p: Point): Item | null => {
+    const { selection: sel, playhead: t } = useEditor.getState();
+    for (let i = sel.length - 1; i >= 0; i--) {
+      const it = locateItem(scene, sel[i]!)?.item;
+      if (it && rectsIntersect(worldBounds(it, t), { ...p, w: 0, h: 0 })) return it;
+    }
+    return null;
+  };
+
   const puppetTarget = (p: Point): Item | null => {
     const { selection: sel, playhead: t } = useEditor.getState();
     const selected = sel.length === 1 ? locateItem(scene, sel[0]!)?.item : undefined;
@@ -761,7 +771,8 @@ export function CanvasView({ project }: { project: Project }) {
           gesture.current = { kind: 'resize', handle, ids: ed.selection, t0: startTransformGesture(ed.selection) };
           break;
         }
-        const hit = topItemAt(p);
+        // Dentro de la caja de lo ya seleccionado también se arrastra (aunque el dibujo no tenga relleno).
+        const hit = topItemAt(p) ?? selectedAt(p);
         if (hit) {
           let sel = ed.selection;
           if (e.shiftKey) sel = sel.includes(hit.id) ? sel.filter((x) => x !== hit.id) : [...sel, hit.id];

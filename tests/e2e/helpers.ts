@@ -115,3 +115,9 @@ export async function saveAndRead(
   const files = unzipSync(await readFile(file));
   return JSON.parse(strFromU8(files['project.json']!)) as Project;
 }
+
+/** Abre la pestaña «Animar» del elemento seleccionado en el nivel indicado. */
+export async function openAnimate(page: Page, level: 'Fácil' | 'Detallado' = 'Detallado') {
+  await page.getByRole('tab', { name: 'Animar', exact: true }).click();
+  await page.getByRole('radio', { name: level, exact: true }).click();
+}

@@ -94,6 +94,17 @@ Botón «Ayudas» en las opciones del lápiz (`src/core/draw/`). Están activas 
 
 Ver `docs/LIBRARY.md`: recursos, constructor de personajes, escenas de partida, grupos con ranuras de color, guías magnéticas (Alt para desactivarlas al arrastrar) y comportamiento por modo. Los recursos se insertan con un clic en el centro de la hoja o arrastrándolos al lienzo. Las imágenes y el audio propios también se pueden arrastrar desde el explorador (imágenes al lienzo, audio a la línea de tiempo).
 
+## Panel del elemento: Aspecto y Animar
+
+Al seleccionar algo, el panel lateral muestra dos pestañas:
+
+- **Aspecto:** colores, pincel, contorno, tamaño, expresión y postura (personajes), opacidad y orden.
+- **Animar**, con dos niveles (se recuerda el último elegido):
+  - **Fácil** (`EasyAnimate.tsx`): arriba, **lo que hace** el elemento como una lista de pasos con su momento («0:00 se dibuja», «0:02 salta», «siempre · respirar»…); pulsar el momento lleva el cabezal allí y la × quita ese paso. Debajo, botones grandes que añaden pasos **desde el cabezal** (se indica en qué segundo): **Moverse** («Ir a otro sitio» y «Arrastrar y grabar»), **Gestos** (saltar, balancearse, latir, flotar, girar, temblar, crecer), **Entrar y salir** (por un lado, o desaparecer aquí), **Cómo aparece** (dibujándose o, en textos, letra a letra, palabra a palabra o con saltos; con fundido; de golpe), **Siempre** (vida automática), y en personajes la expresión y postura y hablar con la narración. «Ver cómo queda» reproduce la escena desde el principio.
+  - **Detallado:** todos los controles (aparición y duración, cuándo empieza y desaparece, keyframes, suavizado, repetir, copiar y pegar, vida e intensidad, estela, cámara, animar arrastrando y animaciones rápidas con su lado). Las filas se parten en líneas para no cortarse en paneles estrechos.
+- **Ir a otro sitio:** con el modo activo (aviso en la barra de opciones y en el panel), arrastrar el elemento crea un movimiento desde el cabezal hasta donde se suelta, en el tiempo elegido (rápido 0,5 s, normal 1 s, lento 2 s); el cabezal avanza al final, así que el siguiente arrastre encadena otro tramo («de aquí a allí, y luego a allá»). Si hace falta, la escena se alarga. Termina con «Listo», Esc o cambiando de herramienta.
+- **Arrastrar dentro de lo seleccionado** lo mueve aunque el punto no toque el dibujo (por ejemplo, el interior de un rectángulo sin relleno).
+
 ## Línea de tiempo
 
 - **Barra superior:** ir al inicio, reproducir, **repetir la escena** (bucle al reproducir), tiempo, pestañas de escena (doble clic para renombrar, +, mover, duplicar y eliminar), duración de la escena, **Vista previa** (ojo), **Grabar movimiento** (●), papel cebolla y botones de fotograma (con una capa de fotogramas activa) y zoom.

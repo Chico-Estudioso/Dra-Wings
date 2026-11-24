@@ -55,7 +55,7 @@ const FOLLOW_ZOOMS = [
 ];
 
 /** La cámara de la escena sigue a este elemento. */
-function FollowRow({ id }: { id: string }) {
+export function FollowRow({ id }: { id: string }) {
   const sceneId = useEditor((s) => s.sceneId);
   const follow = useApp((s) => s.doc?.project.scenes.find((sc) => sc.id === sceneId)?.follow);
   if (follow?.id !== id)

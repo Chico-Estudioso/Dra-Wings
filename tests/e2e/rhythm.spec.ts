@@ -2,7 +2,17 @@ import { expect, test } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { Project } from '../../src/core/model/types';
-import { center, drag, launch, newFreeProject, saveAndRead, stubMessageBox, stubOpenDialog, tempDir } from './helpers';
+import {
+  center,
+  drag,
+  launch,
+  newFreeProject,
+  openAnimate,
+  saveAndRead,
+  stubMessageBox,
+  stubOpenDialog,
+  tempDir,
+} from './helpers';
 import { beatWav } from './media-files';
 
 test('la música se analiza sola y los personajes pueden moverse a su ritmo', async () => {
@@ -18,6 +28,7 @@ test('la música se analiza sola y los personajes pueden moverse a su ritmo', as
   await drag(page, { x: c.x - 50, y: c.y - 40 }, { x: c.x + 50, y: c.y + 40 }, 4);
 
   // Vida al ritmo antes de tener música: sigue 120 BPM y lo avisa.
+  await openAnimate(page);
   await page.getByLabel('Vida automática').selectOption({ label: 'Saltar al ritmo' });
   await expect(page.getByText(/Sigue un pulso de 120 BPM/)).toBeVisible();
 

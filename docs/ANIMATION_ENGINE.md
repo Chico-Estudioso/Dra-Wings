@@ -172,6 +172,18 @@ El selector «Suavizado» del panel «Animación» cambia todos los tramos del e
 
 **Pegar en ola** (selector «Al pegar», con varios seleccionados): todos a la vez (cada uno cuando aparece), en ola rápida, normal o lenta (0,1, 0,25 o 0,5 s entre uno y el siguiente) o uno en cada golpe de la música. En ola, el orden es de izquierda a derecha y el primero empieza cuando ya han aparecido todos (`waveStarts`). Si la ola acaba después del final, la escena se alarga.
 
+## Pasos de un elemento (nivel Fácil)
+
+`itemSteps` (`src/core/anim/steps.ts`) **lee** lo que ya tiene el elemento y lo cuenta como pasos; no hay formato nuevo, así que se puede animar con cualquier herramienta y la lista lo refleja:
+
+- **Aparece:** según su entrada («Se dibuja», «Se escribe», «Aparece con un fundido», «Aparece de golpe»).
+- **Tramos de movimiento** (`motionSpans`): intervalos entre keyframes consecutivos (de cualquier propiedad) en los que algo cambia, unidos si se tocan. Se nombran por lo que cambia y si terminan como empezaron: «Salta» (posición y escala que vuelven), «Se mueve y vuelve», «Se balancea» (giro que vuelve), «Late» (escala que vuelve), «Parpadea»; si no vuelven, «Se mueve», «Gira», «Cambia de tamaño», «Se desvanece»… combinados.
+- **Cambios de aspecto** de un personaje («Cambia a Risa, brazos arriba»), **desaparece** (con su salida), y los continuos: hablar con la narración, vida, repetir, estela y la cámara que lo sigue.
+
+`removeStep` quita un paso. Al quitar un tramo de movimiento, lo que viene después sigue igual pero desde donde se queda el elemento (posición y giro se restan; la escala se divide), en vez de saltar a las posiciones antiguas.
+
+`moveBetween` hace «de aquí a allí»: el valor va desde el que tiene en `t0` hasta el nuevo en `t1`, sustituyendo lo que hubiera entre medias. Es la base de «Ir a otro sitio».
+
 ## Animar arrastrando y trayectorias
 
 **Animar arrastrando** (botón del panel «Animación»; con él activo, la herramienta de selección agarra en vez de mover): al arrastrar un elemento, la escena se reproduce desde el cabezal (con su audio) y el elemento sigue al puntero. Se recoge su posición en cada fotograma de la reproducción y, al soltar, el recorrido se convierte en keyframes de posición:
