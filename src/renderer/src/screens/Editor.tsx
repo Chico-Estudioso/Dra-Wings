@@ -11,6 +11,8 @@ import {
   Magnet,
   Maximize,
   Minus,
+  PanelRightClose,
+  PanelRightOpen,
   Plus,
   Redo2,
   Save,
@@ -38,6 +40,7 @@ import { openShortcuts, ShortcutsDialog } from '../editor/ShortcutsDialog';
 import { RecordPanel } from '../editor/RecordPanel';
 import { AudioDropChooser } from '../editor/AudioDropChooser';
 import { useEditorShortcuts } from '../editor/shortcuts';
+import { SideResizer } from '../editor/SideResizer';
 import { zoomAt } from '../editor/view';
 
 const SAVE_LABEL: Record<SaveStatus, string> = {
@@ -148,6 +151,8 @@ export function Editor() {
   const snap = useEditor((s) => s.snap);
   const toggleSnap = useEditor((s) => s.toggleSnap);
   const sideTab = useEditor((s) => s.sideTab);
+  const sideWidth = useEditor((s) => s.sideWidth);
+  const sideCollapsed = useEditor((s) => s.sideCollapsed);
   const setSideTab = useEditor((s) => s.setSideTab);
   const clipId = useEditor((s) => s.clipId);
   const markerId = useEditor((s) => s.markerId);
@@ -206,6 +211,15 @@ export function Editor() {
           ))}
         </ToggleGroup.Root>
         <div className="topbar-spacer" />
+        <button
+          className="icon-btn"
+          aria-label={sideCollapsed ? 'Mostrar el panel lateral' : 'Ocultar el panel lateral'}
+          aria-pressed={!sideCollapsed}
+          title={sideCollapsed ? 'Mostrar el panel lateral' : 'Ocultar el panel lateral (más sitio para el lienzo)'}
+          onClick={() => useEditor.getState().toggleSide()}
+        >
+          {sideCollapsed ? <PanelRightOpen size={18} /> : <PanelRightClose size={18} />}
+        </button>
         <button className="icon-btn" aria-label="Deshacer" title="Deshacer (Ctrl+Z)" disabled={!canUndo} onClick={undo}>
           <Undo2 size={18} />
         </button>
@@ -220,7 +234,10 @@ export function Editor() {
         </button>
       </header>
 
-      <div className="workspace">
+      <div
+        className="workspace"
+        style={{ gridTemplateColumns: `52px minmax(0, 1fr) ${sideCollapsed ? '0px' : `${sideWidth}px`}` }}
+      >
         <Toolbar />
         <div className="canvas-column">
           <ToolOptions />
@@ -229,38 +246,41 @@ export function Editor() {
             <RecordPanel />
           </div>
         </div>
-        <aside className="sidepanel" aria-label="Paneles">
-          {project.settings.mode === 'guided' && <GuidedTips />}
-          <div className="side-tabs" role="tablist" aria-label="Paneles laterales">
-            <button
-              role="tab"
-              aria-selected={sideTab === 'library'}
-              className={`side-tab ${sideTab === 'library' ? 'is-active' : ''}`}
-              onClick={() => setSideTab('library')}
-            >
-              Biblioteca
-            </button>
-            <button
-              role="tab"
-              aria-selected={sideTab === 'layers'}
-              className={`side-tab ${sideTab === 'layers' ? 'is-active' : ''}`}
-              onClick={() => setSideTab('layers')}
-            >
-              Capas
-            </button>
+        <aside className="sidepanel" aria-label="Paneles" hidden={sideCollapsed}>
+          <SideResizer />
+          <div className="sidepanel-scroll">
+            {project.settings.mode === 'guided' && <GuidedTips />}
+            <div className="side-tabs" role="tablist" aria-label="Paneles laterales">
+              <button
+                role="tab"
+                aria-selected={sideTab === 'library'}
+                className={`side-tab ${sideTab === 'library' ? 'is-active' : ''}`}
+                onClick={() => setSideTab('library')}
+              >
+                Biblioteca
+              </button>
+              <button
+                role="tab"
+                aria-selected={sideTab === 'layers'}
+                className={`side-tab ${sideTab === 'layers' ? 'is-active' : ''}`}
+                onClick={() => setSideTab('layers')}
+              >
+                Capas
+              </button>
+            </div>
+            {clipId ? (
+              <AudioClipPanel project={project} clipId={clipId} />
+            ) : markerId ? (
+              <MarkerPanel key={markerId} project={project} markerId={markerId} />
+            ) : (
+              <PropertiesPanel
+                scene={scene}
+                docSize={{ w: project.settings.width, h: project.settings.height }}
+                fps={project.settings.fps}
+              />
+            )}
+            {sideTab === 'library' ? <LibraryPanel project={project} /> : <LayersPanel scene={scene} />}
           </div>
-          {clipId ? (
-            <AudioClipPanel project={project} clipId={clipId} />
-          ) : markerId ? (
-            <MarkerPanel key={markerId} project={project} markerId={markerId} />
-          ) : (
-            <PropertiesPanel
-              scene={scene}
-              docSize={{ w: project.settings.width, h: project.settings.height }}
-              fps={project.settings.fps}
-            />
-          )}
-          {sideTab === 'library' ? <LibraryPanel project={project} /> : <LayersPanel scene={scene} />}
         </aside>
       </div>
 

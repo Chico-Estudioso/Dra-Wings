@@ -81,6 +81,9 @@ interface EditorState {
   timelineZoom: number;
   /** Alto de la línea de tiempo elegido por el usuario (null: el predeterminado). */
   timelineHeight: number | null;
+  /** Ancho del panel lateral (px) y si está plegado. */
+  sideWidth: number;
+  sideCollapsed: boolean;
   /** La reproducción no hace sonar la narración (mientras se graba una nueva). */
   muteNarration: boolean;
   /** Clip de audio seleccionado (excluye la selección de elementos). */
@@ -110,6 +113,8 @@ interface EditorState {
   toggleOnion(): void;
   setTimelineZoom(z: number): void;
   setTimelineHeight(h: number): void;
+  setSideWidth(w: number): void;
+  toggleSide(): void;
   selectClip(id: string | null): void;
   setMuteNarration(mute: boolean): void;
   selectMarker(id: string | null): void;
@@ -120,6 +125,36 @@ interface EditorState {
 }
 
 export const TIMELINE_MIN_H = 110;
+export const SIDE_MIN_W = 220;
+export const SIDE_MAX_W = 560;
+const SIDE_DEFAULT_W = 272;
+const SIDE_W_KEY = 'dw.side.width';
+const SIDE_COLLAPSED_KEY = 'dw.side.collapsed';
+
+function readNumber(key: string, fallback: number, min: number, max: number): number {
+  try {
+    const v = Number(localStorage.getItem(key));
+    return Number.isFinite(v) && v >= min && v <= max ? v : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function readFlag(key: string): boolean {
+  try {
+    return localStorage.getItem(key) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function store(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* sin almacenamiento: solo en esta sesión */
+  }
+}
 const TIMELINE_H_KEY = 'dw.timeline.height';
 
 function readTimelineHeight(): number | null {
@@ -162,6 +197,8 @@ export const useEditor = create<EditorState>()((set) => ({
   onion: true,
   timelineZoom: 80,
   timelineHeight: readTimelineHeight(),
+  sideWidth: readNumber(SIDE_W_KEY, SIDE_DEFAULT_W, SIDE_MIN_W, SIDE_MAX_W),
+  sideCollapsed: readFlag(SIDE_COLLAPSED_KEY),
   clipId: null,
   markerId: null,
   muteNarration: false,
@@ -194,6 +231,16 @@ export const useEditor = create<EditorState>()((set) => ({
     }
     set({ timelineHeight: v });
   },
+  setSideWidth: (w) => {
+    const v = Math.round(Math.min(SIDE_MAX_W, Math.max(SIDE_MIN_W, w)));
+    store(SIDE_W_KEY, String(v));
+    set({ sideWidth: v });
+  },
+  toggleSide: () =>
+    set((s) => {
+      store(SIDE_COLLAPSED_KEY, s.sideCollapsed ? '0' : '1');
+      return { sideCollapsed: !s.sideCollapsed };
+    }),
   selectClip: (id) => set({ clipId: id, markerId: null, selection: [] }),
   setMuteNarration: (muteNarration) => set({ muteNarration }),
   selectMarker: (id) => set({ markerId: id, clipId: null, selection: [] }),

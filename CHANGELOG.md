@@ -3,6 +3,7 @@
 Los cambios relevantes se registran aquí. Se seguirá una estructura inspirada en Keep a Changelog.
 
 ## [Unreleased]
+- Corrección: la ventana se abre ajustada a la pantalla (en portátiles con escala se salía por la derecha); el panel lateral se estira arrastrando su borde y se puede ocultar.
 - Preparación inicial del proyecto y del kit de desarrollo.
 - «Ver un ejemplo» en el inicio: proyecto de tres escenas hecho con la biblioteca, con textos, una salida con fundido y un zoom de cámara, para aprender viéndolo.
 - Arrastrar imágenes (al lienzo) y audio (a la línea de tiempo) desde el explorador; el audio pregunta su pista si no se suelta sobre una.

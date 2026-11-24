@@ -1,4 +1,16 @@
-import { app, BrowserWindow, dialog, ipcMain, Menu, nativeTheme, net, protocol, session, shell } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  Menu,
+  nativeTheme,
+  net,
+  protocol,
+  screen,
+  session,
+  shell,
+} from 'electron';
 import type { MenuItemConstructorOptions } from 'electron';
 import { mkdir, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -30,6 +42,7 @@ import { RecoveryStore } from './recovery';
 import { RecentStore } from './recent';
 import { MEDIA_NAME, MediaError, MediaStore } from './media';
 import { checkPng, ExportError, ExportSessions, frameImageName } from './export';
+import { windowSizeFor } from './window-size';
 import { APP_ORIGIN, MEDIA_EXT_BY_MIME } from '@shared/media';
 
 // Permite aislar los datos en pruebas E2E.
@@ -206,11 +219,14 @@ function runSmokeTest(win: BrowserWindow) {
 
 function createWindow() {
   closeConfirmed = false;
+  // Tamaño según la pantalla: en portátiles con escala (p. ej. 1366 × 768 al 125 % deja ~1093 × 574)
+  // una ventana fija de 1280 × 820 se salía por la derecha y por abajo.
+  const area = screen.getPrimaryDisplay().workAreaSize;
+  const fits = windowSizeFor(area);
   const win = new BrowserWindow({
-    width: 1280,
-    height: 820,
-    minWidth: 960,
-    minHeight: 600,
+    ...fits.size,
+    minWidth: fits.min.width,
+    minHeight: fits.min.height,
     show: false,
     title: 'Dra-Wings',
     backgroundColor: nativeTheme.shouldUseDarkColors ? '#1c1b19' : '#f6f4ef',
@@ -224,6 +240,8 @@ function createWindow() {
     },
   });
   mainWindow = win;
+  // En pantallas pequeñas se abre maximizada para aprovechar todo el espacio.
+  if (fits.maximize) win.maximize();
   win.once('ready-to-show', () => win.show());
   if (process.env.DW_SMOKE_TEST) runSmokeTest(win);
   win.on('closed', () => {

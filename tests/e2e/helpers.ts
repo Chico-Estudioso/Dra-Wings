@@ -25,7 +25,12 @@ export async function launch(userData: string, extraArgs: string[] = []): Promis
   const app = await electron.launch({ args, env });
   const page = await app.firstWindow();
   // Mismo tamaño en todas las plataformas (los runners de Windows tienen pantallas de 1024×768).
-  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.setContentSize(1024, 700));
+  // En pantallas pequeñas la ventana se abre maximizada: se restaura antes de fijar el tamaño.
+  await app.evaluate(({ BrowserWindow }) => {
+    const win = BrowserWindow.getAllWindows()[0]!;
+    win.unmaximize();
+    win.setContentSize(1024, 700);
+  });
   // Inicio o, si se abrió con un proyecto en la línea de órdenes, directamente el editor.
   await page.getByRole('button', { name: 'Nuevo proyecto' }).or(page.getByTestId('overlay-canvas')).waitFor();
   return { app, page };

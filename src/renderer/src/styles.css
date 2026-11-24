@@ -494,7 +494,7 @@ select {
 .workspace {
   display: grid;
   /* Anchos fijos: el lienzo no cambia de tamaño porque aparezca o no una barra de desplazamiento. */
-  grid-template-columns: 52px minmax(0, 1fr) 272px;
+  grid-template-columns: 52px minmax(0, 1fr) 272px; /* el ancho del panel lo fija el editor */
   /* Una sola fila que no crece con el contenido: en ventanas bajas, cada columna se desplaza
      por dentro en lugar de invadir la línea de tiempo. */
   grid-template-rows: minmax(0, 1fr);
@@ -590,13 +590,38 @@ select {
   min-width: 2ch;
 }
 .sidepanel {
+  position: relative;
   display: flex;
   flex-direction: column;
   background: var(--surface);
-  overflow-x: hidden;
   border-left: 1px solid var(--border);
-  overflow-y: auto;
   min-height: 0;
+  min-width: 0;
+}
+.sidepanel[hidden] {
+  display: none;
+}
+.sidepanel-scroll {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.side-resizer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -4px;
+  width: 8px;
+  cursor: ew-resize;
+  z-index: 4;
+}
+.side-resizer:hover,
+.side-resizer:focus-visible {
+  outline: none;
+  background: linear-gradient(90deg, transparent 3px, var(--focus) 3px 5px, transparent 5px);
 }
 .panel {
   background: var(--surface);
